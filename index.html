@@ -124,6 +124,11 @@ Promise.all(new Array(fetch("geo_plotly.json").then(r=>r.json()), fetch("metrics
   render();
 });
 
+function buildPlotlyScale(hexArr) {
+  const n = hexArr.length;
+  return hexArr.map((c, i) => Array.of(n === 1 ? 0 : i / (n - 1), c));
+}
+
 function render() {
   if (!GEO || !DATA) return;
   const mode = document.getElementById("selMode").value, base = document.getElementById("selBase").value;
@@ -137,6 +142,8 @@ function render() {
   const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
   const yrs = new Array("2019","2020","2021","2022","2023","2024");
   const activeColors = PALETTES[currentPal] || PALETTES["RdYlGn"];
+  const plScale = buildPlotlyScale(activeColors);
+  const CORE_COLOR = "#e6007e";
 
   if (mode === "table") {
     const rows = feats.filter(f => f.properties._map_status === "В_выборке" && f.properties.coh);
@@ -188,7 +195,7 @@ function render() {
   wrap.innerHTML = '<div id="mapDiv"></div>';
   const subGeo = {type: "FeatureCollection", features: feats};
   const projObj = (fo === "RF" || fo === "Дальневосточный")
-    ? {type: "mercator", rotation: {lon: 100}}
+    ? {type: "mercator", rotation: {lon: 105}}
     : {type: "mercator"};
 
   if (mode === "grid") {
@@ -235,7 +242,7 @@ function render() {
         hoverinfo: "text", showlegend: false,
         marker: {
           size: fo === "RF" ? 6 : 10, color: pts.map(f => Number(ym[f.properties.join_key])),
-          cmin: zmin, cmax: zmax, colorscale: currentPal, reversescale: mMeta.inv,
+          cmin: zmin, cmax: zmax, colorscale: plScale, reversescale: mMeta.inv,
           showscale: (idx === 5), colorbar: {title: mMeta.id, len: 0.65, x: 1.01},
           line: {color: "#1e293b", width: 0.6}
         }
@@ -284,10 +291,43 @@ function render() {
       z: inFeats.map(f => valMap[f.properties.join_key] ?? null),
       zmin: zmin, zmax: zmax,
       text: inFeats.map(f => "<b>" + f.properties._lbl + "</b><br>" + f.properties.region + "<br>Значение: <b>" + fmtNum(valMap[f.properties.join_key], mMeta.dec) + "</b>"),
-      hoverinfo: "text", colorscale: currentPal, reversescale: mMeta.inv,
+      hoverinfo: "text", colorscale: plScale, reversescale: mMeta.inv, showlegend: false,
       colorbar: {title: mMeta.id, len: 0.72},
       marker: {line: {color: "#64748b", width: 0.35}}
     });
+  }
+
+  // Ядра регионов: точками на РФ/ФО, утолщённой границей на уровне региона (цвет #e6007e отсутствует в палитрах)
+  const coreFeats = feats.filter(f => f.properties.is_center && f.properties._map_status === "В_выборке");
+  if (coreFeats.length > 0) {
+    if (reg === "ALL") {
+      traces.push({
+        type: "scattergeo", name: "Ядро региона (макс. население)",
+        lon: coreFeats.map(f => f.properties._cent.lon), lat: coreFeats.map(f => f.properties._cent.lat),
+        text: coreFeats.map(f => "<b>Ядро региона:</b> " + f.properties._lbl + " (" + f.properties.region + ")"),
+        hoverinfo: "text", showlegend: true,
+
+  // Ядра регионов: точками на РФ/ФО, утолщённой границей на уровне региона (цвет #e6007e отсутствует в палитрах)
+  const coreFeats = feats.filter(f => f.properties.is_center && f.properties._map_status === "В_выборке");
+  if (coreFeats.length > 0) {
+    if (reg === "ALL") {
+      traces.push({
+        type: "scattergeo", name: "Ядро региона (макс. население)",
+        lon: coreFeats.map(f => f.properties._cent.lon), lat: coreFeats.map(f => f.properties._cent.lat),
+        text: coreFeats.map(f => "<b>Ядро региона:</b> " + f.properties._lbl + " (" + f.properties.region + ")"),
+        hoverinfo: "text", showlegend: true,
+        marker: {size: fo === "RF" ? 6 : 9, color: CORE_COLOR, line: {color: "#ffffff", width: 1.0}}
+      });
+    } else {
+      traces.push({
+        type: "choropleth", geojson: subGeo, featureidkey: "properties.join_key",
+        name: "Ядро региона (макс. население)",
+        locations: coreFeats.map(f => f.properties.join_key), z: coreFeats.map(() => 1),
+        colorscale: new Array(new Array(0, "rgba(0,0,0,0)"), new Array(1, "rgba(0,0,0,0)")),
+        showscale: false, showlegend: true, hoverinfo: "skip",
+        marker: {line: {color: CORE_COLOR, width: 2.8}}
+      });
+    }
   }
 
   const layout = {
