@@ -84,7 +84,13 @@ function getBounds(feats) {
 }
 
 function geomToPath(geom, mapX, mapY) {
-  if (!geom || !geom.coordinates) return "";
+  if (!geom) return "";
+  if (geom.type === "GeometryCollection" && Array.isArray(geom.geometries)) {
+    let out = "";
+    for (const gSub of geom.geometries) out += geomToPath(gSub, mapX, mapY);
+    return out;
+  }
+  if (!Array.isArray(geom.coordinates)) return "";
   const polys = geom.type === "Polygon" ? Array.of(geom.coordinates) : geom.coordinates;
   let d = "";
   for (const poly of polys) {
