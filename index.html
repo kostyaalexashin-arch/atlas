@@ -306,16 +306,6 @@ function render() {
         lon: coreFeats.map(f => f.properties._cent.lon), lat: coreFeats.map(f => f.properties._cent.lat),
         text: coreFeats.map(f => "<b>Ядро региона:</b> " + f.properties._lbl + " (" + f.properties.region + ")"),
         hoverinfo: "text", showlegend: true,
-
-  // Ядра регионов: точками на РФ/ФО, утолщённой границей на уровне региона (цвет #e6007e отсутствует в палитрах)
-  const coreFeats = feats.filter(f => f.properties.is_center && f.properties._map_status === "В_выборке");
-  if (coreFeats.length > 0) {
-    if (reg === "ALL") {
-      traces.push({
-        type: "scattergeo", name: "Ядро региона (макс. население)",
-        lon: coreFeats.map(f => f.properties._cent.lon), lat: coreFeats.map(f => f.properties._cent.lat),
-        text: coreFeats.map(f => "<b>Ядро региона:</b> " + f.properties._lbl + " (" + f.properties.region + ")"),
-        hoverinfo: "text", showlegend: true,
         marker: {size: fo === "RF" ? 6 : 9, color: CORE_COLOR, line: {color: "#ffffff", width: 1.0}}
       });
     } else {
