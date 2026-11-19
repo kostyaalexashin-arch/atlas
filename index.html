@@ -10,12 +10,13 @@
   .toolbar select, .toolbar button { font-family: inherit; font-size: 13px; padding: 5px 9px; border-radius: 4px; border: 1px solid #cbd5e1; }
   .toolbar button { background: #0284c7; color: #fff; border: none; cursor: pointer; font-weight: bold; }
   .toolbar button:hover { background: #0369a1; }
-  .main-box { max-width: 1620px; margin: 10px auto; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.1); padding: 8px; }
+  .main-box { max-width: 1620px; margin: 10px auto; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.1); padding: 12px; }
   #mapDiv { width: 100%; height: 840px; }
   table.dyn-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.dyn-tbl th { background: #eef3f8; border: 1px solid #9eb0c2; padding: 6px; text-align: center; }
-  table.dyn-tbl td { border: 1px solid #e2e8f0; padding: 5px 8px; text-align: center; }
+  table.dyn-tbl th { background: #eef3f8; border: 1px solid #9eb0c2; padding: 7px; text-align: center; }
+  table.dyn-tbl td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: center; vertical-align: middle; }
   table.dyn-tbl td.mo-name { text-align: left; }
+  .tbl-legend { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 12px; gap: 12px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -39,7 +40,17 @@
 <div class="main-box" id="wrap"><div id="mapDiv" style="padding:40px;font-size:17px;">Загрузка геометрии и показателей...</div></div>
 <script>
 let GEO = null, DATA = null;
+const YLGNBU = Array.of("#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58");
 const fmtNum = (v, dec) => (v === null || v === undefined || v === "" || isNaN(Number(v))) ? "н/д" : Number(v).toLocaleString("ru-RU", {minimumFractionDigits: dec, maximumFractionDigits: dec});
+
+function markerSvg(catCode, fillHex) {
+  const st = "#1e293b";
+  if (catCode === "1") return '<svg width="22" height="22"><rect x="3" y="3" width="16" height="16" fill="'+fillHex+'" stroke="'+st+'" stroke-width="1.2"/></svg>';
+  if (catCode === "2") return '<svg width="22" height="22"><polygon points="11,2 20,11 11,20 2,11" fill="'+fillHex+'" stroke="'+st+'" stroke-width="1.2"/></svg>';
+  if (catCode === "3") return '<svg width="22" height="22"><polygon points="11,2 20,19 2,19" fill="'+fillHex+'" stroke="'+st+'" stroke-width="1.2"/></svg>';
+  if (catCode === "4") return '<svg width="22" height="22"><circle cx="11" cy="11" r="8" fill="'+fillHex+'" stroke="'+st+'" stroke-width="1.2"/></svg>';
+  return '<svg width="22" height="22"><polygon points="11,2 20,9 16,19 6,19 2,9" fill="'+fillHex+'" stroke="'+st+'" stroke-width="1.2"/></svg>';
+}
 
 function getCenter(geom) {
   let sx = 0, sy = 0, n = 0;
@@ -66,7 +77,7 @@ Promise.all(new Array(fetch("geo_plotly.json").then(r=>r.json()), fetch("metrics
   new Array("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id => document.getElementById(id).onchange = render);
   document.getElementById("btnPng").onclick = () => {
     const div = document.getElementById("mapDiv");
-    if (!div) return alert("Переключитесь в режим карты или сетки.");
+    if (!div) return alert("Для скачивания PNG переключитесь в режим карты или сетки.");
     Plotly.downloadImage(div, {format: "png", width: 3300, height: 2240, filename: "Карта_" + document.getElementById("selMetric").value});
   };
   render();
@@ -83,14 +94,48 @@ function render() {
 
   const feats = GEO.features.filter(f => (fo === "RF" || f.properties.fo === fo) && (reg === "ALL" || f.properties.region === reg));
   const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
+  const yrs = new Array("2019","2020","2021","2022","2023","2024");
 
   if (mode === "table") {
     const rows = feats.filter(f => f.properties._map_status === "В_выборке" && f.properties.coh);
-    let h = '<h2 style="text-align:center;">' + mMeta.title + ' (2019–2024 гг.)</h2><table class="dyn-tbl"><tr><th>Регион</th><th>Муниципальное образование</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th></tr>';
+    const refFeats = (scMode === "global") ? GEO.features : feats;
+    const allV = new Array();
+    yrs.forEach(y => {
+      const ym = DATA.panel[mId]?.[y] || {};
+      refFeats.filter(f => f.properties._map_status === "В_выборке" && f.properties.coh).forEach(f => {
+        const v = Number(ym[f.properties.join_key]);
+        if (!isNaN(v)) allV.push(v);
+      });
+    });
+    allV.sort((a,b)=>a-b);
+    const zmin = allV.at(Math.floor(allV.length * 0.02)) ?? 0;
+    const zmax = allV.at(Math.min(allV.length - 1, Math.floor(allV.length * 0.98))) ?? 1;
+    const pal = mMeta.inv ? YLGNBU.slice().reverse() : YLGNBU;
+    const getHex = v => {
+      if (v === null || v === undefined || isNaN(Number(v))) return "#eeeeee";
+      if (zmax <= zmin) return pal.at(4);
+      const idx = Math.max(0, Math.min(pal.length - 1, Math.floor(((Number(v) - zmin) / (zmax - zmin)) * pal.length)));
+      return pal.at(idx);
+    };
+
+    let legHtml = '<div class="tbl-legend"><div>' +
+      markerSvg("1","#41b6c4") + ' Крупнейшие (>1 млн) &nbsp; ' +
+      markerSvg("2","#41b6c4") + ' Крупные (250 тыс.–1 млн) &nbsp; ' +
+      markerSvg("3","#41b6c4") + ' Большие (100–250 тыс.) &nbsp; ' +
+      markerSvg("4","#41b6c4") + ' Средние (50–100 тыс.) &nbsp; ' +
+      markerSvg("5","#41b6c4") + ' Малые (≤50 тыс.)</div>' +
+      '<div>Шкала: <b>' + fmtNum(zmin, mMeta.dec) + '</b> — <b>' + fmtNum(zmax, mMeta.dec) + '</b></div></div>';
+
+    let h = '<h2 style="text-align:center;margin:6px 0 10px 0;">' + mMeta.title + ' (2019–2024 гг.)</h2>' + legHtml +
+      '<table class="dyn-tbl"><tr><th>Регион</th><th>Муниципальное образование</th><th>2019 г.</th><th>2020 г.</th><th>2021 г.</th><th>2022 г.</th><th>2023 г.</th><th>2024 г.</th></tr>';
     rows.forEach(f => {
       const id = f.properties.join_key;
-      h += '<tr><td>' + f.properties.region + '</td><td class="mo-name">' + f.properties._lbl + '</td>';
-      new Array("2019","2020","2021","2022","2023","2024").forEach(y => h += '<td>' + fmtNum(DATA.panel[mId]?.[y]?.[id], mMeta.dec) + '</td>');
+      h += '<tr><td>' + f.properties.region + '</td><td class="mo-name"><b>' + f.properties._lbl + '</b></td>';
+      yrs.forEach(y => {
+        const val = DATA.panel[mId]?.[y]?.[id];
+        const catC = DATA.panel_cats?.[y]?.[id] || "5";
+        h += '<td><div>' + markerSvg(catC, getHex(val)) + '</div><div style="font-size:12px;margin-top:2px;">' + fmtNum(val, mMeta.dec) + '</div></td>';
+      });
       h += '</tr>';
     });
     wrap.innerHTML = h + '</table>';
@@ -99,10 +144,11 @@ function render() {
 
   wrap.innerHTML = '<div id="mapDiv"></div>';
   const subGeo = {type: "FeatureCollection", features: feats};
-  const projObj = (fo === "RF" || fo === "Дальневосточный") ? {type: "conic equal area", parallels: new Array(50, 70), rotation: {lon: 100}} : {type: "mercator"};
+  const projObj = (fo === "RF" || fo === "Дальневосточный")
+    ? {type: "conic equal area", rotation: {lon: 100, lat: 0, roll: 0}, parallels: new Array(50, 70)}
+    : {type: "mercator"};
 
   if (mode === "grid") {
-    const yrs = new Array("2019","2020","2021","2022","2023","2024");
     const refFeats = (scMode === "global") ? GEO.features : feats;
     const allV = new Array();
     yrs.forEach(y => {
