@@ -31,7 +31,7 @@ function computeScale(vals,palArr,inv){
   const getHex=v=>(v===null||v===undefined||isNaN(Number(v)))?"#eeeeee":pal.at(Math.min(pal.length-1,Math.floor(norm(Number(v))*pal.length)));
   return{vmin,vmax,gamma,pal,plScale,ticks,getHex};
 }
-const getJson=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u+": HTTP "+r.status);return r.json();});
+const getJson=u=>fetch(u+"?v="+Date.now()).then(r=>{if(!r.ok)throw new Error(u+": HTTP "+r.status);return r.json();});
 Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJson("metrics_data.json"))).then(res=>{try{
   GEO=res.at(0);REGS=res.at(1);DATA=res.at(2);GEO.features.forEach(f=>{f.properties._cent=getCenter(f.geometry);});
   const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric");
