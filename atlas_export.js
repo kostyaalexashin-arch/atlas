@@ -13,19 +13,18 @@ async function exportFullSheetPng(){
     const mapW=hasRightList?2460:3160,mapH=1680;
     const imgData=await Plotly.toImage(mapEl,{format:"png",width:mapW,height:mapH});
 
-    // Единый фиксированный шаг строки 24 px и шрифт 18 px для всех регионов
+    // Фиксированный шаг строки 24 px и шрифт 18 px для одноколоночного списка МО справа
     const xList=2485,yTop=95,LINE_STEP=24,FONT_SIZE=18;
     const listBottom=hasRightList?(yTop+18+regFeats.length*LINE_STEP+16):mapH;
     const contentH=Math.max(mapH,listBottom);
 
     const canvas=document.createElement("canvas");
-    canvas.width=3160;canvas.height=contentH+200;
+    canvas.width=3160;canvas.height=contentH+190;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
     const mapImg=new Image();
     await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,0,0,mapW,mapH);
 
-    // Справа от карты — список МО в одну колонку
     if(hasRightList){
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(xList-15,yTop-38,3145-xList,contentH-yTop+38);
       ctx.fillStyle="#111111";ctx.font="bold 21px 'Times New Roman'";
@@ -37,22 +36,42 @@ async function exportFullSheetPng(){
       });
     }
 
-    // Нижний блок: легенда слева и шкала справа
-    let yCur=contentH+25,xCur=40;ctx.fillStyle="#111111";ctx.font="bold 24px 'Times New Roman'";
-    document.querySelectorAll("#sheetBox .leg-item").forEach(sp=>{
-      const txt="▪ "+sp.textContent.trim();
-      ctx.fillText(txt,xCur,yCur+26);xCur+=ctx.measureText(txt).width+42;
-      if(xCur>1860){xCur=40;yCur+=34;}
+    // Нижний блок: в точности повторяет рамку легенды и шкалу со страницы
+    const hasCbar=!!document.querySelector("#sheetBox .cbar-strip");
+    const legW=hasCbar?1920:3080,footY=contentH+14,footH=155;
+    ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(40,footY,legW,footH);
+
+    const items=Array.from(document.querySelectorAll("#sheetBox .leg-item"));
+    const cols=hasCbar?3:5,colW=Math.floor((legW-30)/cols);
+    ctx.font="21px 'Times New Roman'";
+    items.forEach((el,idx)=>{
+      const c=idx%cols,r=Math.floor(idx/cols),ix=58+c*colW,iy=footY+36+r*36;
+      const colHex=el.dataset.color||"#94a3b8",kind=el.dataset.kind||"box";
+      if(kind==="dot"){
+        ctx.fillStyle=colHex;ctx.beginPath();ctx.arc(ix+10,iy-6,8,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.stroke();
+      }else if(kind==="line"){
+        ctx.strokeStyle=colHex;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ix,iy-6);ctx.lineTo(ix+24,iy-6);ctx.stroke();
+      }else{
+        ctx.fillStyle=colHex;ctx.fillRect(ix,iy-16,24,17);
+        ctx.strokeStyle="#555555";ctx.lineWidth=1;ctx.strokeRect(ix,iy-16,24,17);
+      }
+      ctx.fillStyle="#111111";ctx.fillText(el.textContent.trim(),ix+32,iy);
     });
-    if(document.querySelector("#sheetBox .cbar-strip")){
+
+    if(hasCbar){
       const actCol=PALETTES[currentPal]||PALETTES["RdYlGn"];
-      const grd=ctx.createLinearGradient(1920,0,3100,0);
+      const xBar=2000,wBar=1120;
+      const grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
       actCol.forEach((c,i)=>grd.addColorStop(i/(actCol.length-1),c));
-      ctx.fillStyle=grd;ctx.fillRect(1920,contentH+20,1180,25);ctx.strokeStyle="#475569";ctx.strokeRect(1920,contentH+20,1180,25);
-      ctx.fillStyle="#111111";ctx.font="21px 'Times New Roman'";
-      Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).forEach((s,i)=>ctx.fillText(s.textContent,1940+i*275,contentH+70));
-      ctx.font="bold 23px 'Times New Roman'";ctx.textAlign="center";
-      ctx.fillText(document.querySelector("#sheetBox .cbar-title")?.textContent||"",2510,contentH+102);ctx.textAlign="left";
+      ctx.fillStyle=grd;ctx.fillRect(xBar,footY+22,wBar,26);
+      ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+22,wBar,26);
+      ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";ctx.textAlign="center";
+      const tks=Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).map(s=>s.textContent);
+      tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.08+i*0.21)),footY+74));
+      ctx.font="bold 22px 'Times New Roman'";
+      ctx.fillText(document.querySelector("#sheetBox .cbar-title")?.textContent||"",xBar+wBar/2,footY+110);
+      ctx.textAlign="left";
     }
     const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=canvas.toDataURL("image/png");a.click();
   }finally{
