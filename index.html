@@ -8,7 +8,7 @@
   .toolbar { background: #1e293b; color: #fff; padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .toolbar select, .toolbar button { font-family: inherit; font-size: 13px; padding: 5px 9px; border-radius: 4px; border: 1px solid #cbd5e1; }
   .toolbar button { background: #0284c7; color: #fff; border: none; cursor: pointer; font-weight: bold; }
-  .toolbar button:hover { background: #0369a1; }
+  .status-bar { background: #e2e8f0; padding: 4px 18px; font-size: 12px; color: #334155; }
   .canvas-wrap { display: flex; justify-content: center; padding: 14px; }
   svg#atlas { background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-width: 100%; height: auto; }
   .tooltip { position: fixed; pointer-events: none; background: rgba(15,23,42,0.94); color: #fff; padding: 8px 11px; border-radius: 5px; font-size: 13px; display: none; z-index: 99; max-width: 300px; line-height: 1.35; }
@@ -36,12 +36,14 @@
   <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
   <button id="btnPng">Скачать PNG (300 DPI)</button>
 </div>
-<div class="canvas-wrap" id="viewArea"><div id="loader" style="padding:60px;font-size:18px;">Загрузка данных атласа...</div></div>
+<div class="status-bar" id="statusBar">Инициализация...</div>
+<div class="canvas-wrap" id="viewArea"></div>
 <div class="tooltip" id="tip"></div>
 <script>
 let GEO = null, DATA = null;
 const NS = "http://w3.org";
 const YLGNBU = Array.of("#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58");
+const setStatus = msg => { document.getElementById("statusBar").textContent = msg; };
 
 function el(tag, attrs, parent) {
   const node = document.createElementNS(NS, tag);
@@ -62,7 +64,7 @@ function walkPoints(coords, cb) {
   if (typeof first === "number") {
     let x = 0, y = 0, i = 0;
     for (const num of coords) { if (i === 0) x = num; else if (i === 1) y = num; i++; }
-    cb(x, y);
+    if (isFinite(x) && isFinite(y)) cb(x, y);
   } else {
     for (const sub of coords) walkPoints(sub, cb);
   }
@@ -71,28 +73,33 @@ function walkPoints(coords, cb) {
 function getBounds(feats) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const f of feats) {
-    if (f.geometry) walkPoints(f.geometry.coordinates, (x, y) => {
-      if (x < x0) x0 = x; if (x > x1) x1 = x;
-      if (y < y0) y0 = y; if (y > y1) y1 = y;
-    });
+    if (f && f.geometry && f.geometry.coordinates) {
+      walkPoints(f.geometry.coordinates, (x, y) => {
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      });
+    }
   }
   return {x0, y0, x1, y1};
 }
 
 function geomToPath(geom, mapX, mapY) {
-  if (!geom) return "";
+  if (!geom || !geom.coordinates) return "";
   const polys = geom.type === "Polygon" ? Array.of(geom.coordinates) : geom.coordinates;
   let d = "";
   for (const poly of polys) {
+    if (!Array.isArray(poly)) continue;
     for (const ring of poly) {
+      if (!Array.isArray(ring)) continue;
       let idx = 0;
       for (const pt of ring) {
+        if (!Array.isArray(pt)) continue;
         let px = 0, py = 0, j = 0;
         for (const c of pt) { if (j === 0) px = c; else if (j === 1) py = c; j++; }
         d += (idx === 0 ? "M" : "L") + mapX(px).toFixed(1) + "," + mapY(py).toFixed(1);
         idx++;
       }
-      d += "Z";
+      if (idx > 0) d += "Z";
     }
   }
   return d;
@@ -100,10 +107,11 @@ function geomToPath(geom, mapX, mapY) {
 
 function geomCentroid(geom) {
   let sx = 0, sy = 0, n = 0;
-  if (geom) walkPoints(geom.coordinates, (x, y) => { sx += x; sy += y; n++; });
+  if (geom && geom.coordinates) walkPoints(geom.coordinates, (x, y) => { sx += x; sy += y; n++; });
   return n ? {x: sx / n, y: sy / n} : {x: 0, y: 0};
 }
 
+setStatus("Загрузка geo_2024.json и metrics_data.json...");
 Promise.all(Array.of(fetch("geo_2024.json").then(r=>r.json()), fetch("metrics_data.json").then(r=>r.json()))).then(res => {
   let idx = 0;
   for (const item of res) { if (idx === 0) GEO = item; else DATA = item; idx++; }
@@ -123,7 +131,7 @@ Promise.all(Array.of(fetch("geo_2024.json").then(r=>r.json()), fetch("metrics_da
   document.getElementById("btnPng").onclick = downloadPng;
   render();
 }).catch(err => {
-  document.getElementById("viewArea").innerHTML = '<div style="color:red;padding:40px;">Ошибка: ' + err + '</div>';
+  setStatus("ОШИБКА ЗАГРУЗКИ: " + err);
 });
 
 function getFilteredFeatures() {
@@ -132,122 +140,135 @@ function getFilteredFeatures() {
 }
 
 function render() {
-  if (!GEO || !DATA) return;
-  const mode = document.getElementById("selMode").value, base = document.getElementById("selBase").value;
-  const yr = document.getElementById("selYear").value, mId = document.getElementById("selMetric").value;
-  const scMode = document.getElementById("selScale").value;
-  let mMeta = null;
-  for (const m of DATA.metrics) { if (!mMeta) mMeta = m; if (m.id === mId) { mMeta = m; break; } }
-  const area = document.getElementById("viewArea");
+  try {
+    if (!GEO || !DATA) return;
+    const mode = document.getElementById("selMode").value, base = document.getElementById("selBase").value;
+    const yr = document.getElementById("selYear").value, mId = document.getElementById("selMetric").value;
+    const scMode = document.getElementById("selScale").value;
+    let mMeta = null;
+    for (const m of DATA.metrics) { if (!mMeta) mMeta = m; if (m.id === mId) { mMeta = m; break; } }
+    const area = document.getElementById("viewArea");
 
-  if (mode === "table") {
-    const feats = getFilteredFeatures().filter(f => f.properties.st === "В_выборке" && f.properties.coh);
-    let html = '<div style="width:1280px;background:#fff;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.12);"><h2 style="text-align:center;">' + mMeta.title + ' (2019–2024 гг.)</h2><table class="dyn-tbl"><tr><th>Регион</th><th>Муниципальное образование</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th></tr>';
-    for (const f of feats) {
-      const id = f.properties.id;
-      html += '<tr><td>' + f.properties.reg + '</td><td class="mo-name">' + f.properties.name + '</td>';
-      for (const y of Array.of("2019","2020","2021","2022","2023","2024")) {
-        const val = (DATA.panel[mId] && DATA.panel[mId][y]) ? DATA.panel[mId][y][id] : null;
-        html += '<td>' + fmtNum(val, mMeta.dec) + '</td>';
-      }
-      html += '</tr>';
-    }
-    area.innerHTML = html + '</table></div>';
-    return;
-  }
-
-  area.innerHTML = '<svg id="atlas" viewBox="0 0 1650 1120" width="1320" height="896"></svg>';
-  const svg = document.getElementById("atlas");
-  const feats = getFilteredFeatures();
-  const valMap = (base === "all" && yr === "2024") ? (DATA.v2024[mId] || {}) : ((DATA.panel[mId] && DATA.panel[mId][yr]) || {});
-  const refFeats = (scMode === "global") ? GEO.features : feats;
-  const numVals = refFeats.filter(f => f.properties.st === "В_выборке" && (base === "all" || f.properties.coh)).map(f => Number(valMap[f.properties.id])).filter(v => !isNaN(v)).sort((a,b)=>a-b);
-  let vmin = 0, vmax = 1, nIdx = 0;
-  const iMin = Math.floor(numVals.length * 0.02), iMax = Math.min(numVals.length - 1, Math.floor(numVals.length * 0.98));
-  for (const v of numVals) { if (nIdx === iMin) vmin = v; if (nIdx === iMax) vmax = v; nIdx++; }
-  const pal = mMeta.inv ? YLGNBU.slice().reverse() : YLGNBU;
-  const getColor = v => {
-    let idx = vmax <= vmin ? 0 : Math.max(0, Math.min(pal.length - 1, Math.floor(((v - vmin) / (vmax - vmin)) * pal.length)));
-    let cOut = "#ffffd9", k = 0;
-    for (const c of pal) { if (k === idx) { cOut = c; break; } k++; }
-    return cOut;
-  };
-
-  const fo = document.getElementById("selFO").value, reg = document.getElementById("selReg").value;
-  const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
-  el("text", {x: 560, y: 42, "text-anchor": "end", "font-size": 20, "font-weight": "bold"}, svg).textContent = terrTitle + ":";
-  el("text", {x: 575, y: 42, "text-anchor": "start", "font-size": 20, "font-weight": "bold"}, svg).textContent = mMeta.title + " (" + (mode==="grid"?"2019–2024 гг.":yr+" г.") + ")";
-
-  const tip = document.getElementById("tip");
-  const bnd = getBounds(feats);
-  const bw = Math.max(bnd.x1 - bnd.x0, 1), bh = Math.max(bnd.y1 - bnd.y0, 1);
-
-  const drawMapBlock = (box, yKey, isPointMode) => {
-    const sc = Math.min(box.w / bw, box.h / bh);
-    const ox = box.x + (box.w - bw * sc) / 2, oy = box.y + (box.h - bh * sc) / 2;
-    const mapX = x => ox + (x - bnd.x0) * sc;
-    const mapY = y => oy + (bnd.y1 - y) * sc;
-    const vYr = isPointMode ? ((DATA.panel[mId] && DATA.panel[mId][yKey]) || {}) : valMap;
-    const g = el("g", {}, svg);
-
-    for (const f of feats) {
-      let fill = isPointMode ? "#f4f4f4" : "#f0f0f0";
-      if (!isPointMode && f.properties.st === "В_выборке" && (base === "all" || f.properties.coh)) {
-        const v = vYr[f.properties.id];
-        if (v !== undefined && v !== null) fill = mMeta.cat ? (DATA.cluster_colors[v] || "#f0f0f0") : getColor(Number(v));
-      }
-      const p = el("path", {d: geomToPath(f.geometry, mapX, mapY), fill: fill, stroke: "#7a828e", "stroke-width": isPointMode ? 0.35 : 0.6}, g);
-      p.onmousemove = ev => {
-        const v = vYr[f.properties.id];
-        const vTxt = mMeta.cat ? (v || "Вне выборки") : fmtNum(v, mMeta.dec);
-        tip.style.display = "block"; tip.style.left = (ev.clientX+12)+"px"; tip.style.top = (ev.clientY+12)+"px";
-        tip.innerHTML = "<b>" + f.properties.name + "</b><br>" + f.properties.reg + "<br>Значение: <b>" + vTxt + "</b>";
-      };
-      p.onmouseout = () => tip.style.display = "none";
-    }
-
-    if (isPointMode) {
+    if (mode === "table") {
+      const feats = getFilteredFeatures().filter(f => f.properties.st === "В_выборке" && f.properties.coh);
+      let html = '<div style="width:1280px;background:#fff;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.12);"><h2 style="text-align:center;">' + mMeta.title + ' (2019–2024 гг.)</h2><table class="dyn-tbl"><tr><th>Регион</th><th>Муниципальное образование</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th></tr>';
       for (const f of feats) {
-        const v = vYr[f.properties.id];
-        if (f.properties.st === "В_выборке" && f.properties.coh && v !== undefined) {
-          const cPt = geomCentroid(f.geometry);
-          el("circle", {cx: mapX(cPt.x).toFixed(1), cy: mapY(cPt.y).toFixed(1), r: fo === "RF" ? 3.5 : 5.5, fill: getColor(Number(v)), stroke: "#222", "stroke-width": 0.7}, g);
+        const id = f.properties.id;
+        html += '<tr><td>' + f.properties.reg + '</td><td class="mo-name">' + f.properties.name + '</td>';
+        for (const y of Array.of("2019","2020","2021","2022","2023","2024")) {
+          const val = (DATA.panel[mId] && DATA.panel[mId][y]) ? DATA.panel[mId][y][id] : null;
+          html += '<td>' + fmtNum(val, mMeta.dec) + '</td>';
         }
+        html += '</tr>';
       }
-      el("text", {x: box.x + box.w/2, y: box.y - 6, "text-anchor": "middle", "font-size": 15, "font-weight": "bold"}, g).textContent = yKey + " г.";
+      area.innerHTML = html + '</table></div>';
+      setStatus("Таблица построена: " + feats.length + " МО.");
+      return;
     }
-  };
 
-  if (mode === "single") {
-    drawMapBlock({x: 50, y: 85, w: 1550, h: 895}, yr, false);
-  } else {
-    let gIdx = 0;
-    for (const yKey of Array.of("2019","2020","2021","2022","2023","2024")) {
-      const col = gIdx % 3, row = Math.floor(gIdx / 3);
-      drawMapBlock({x: 50 + col*525, y: 110 + row*445, w: 500, h: 400}, yKey, true);
-      gIdx++;
+    area.innerHTML = '<svg id="atlas" viewBox="0 0 1650 1120" width="1320" height="896"></svg>';
+    const svg = document.getElementById("atlas");
+    const feats = getFilteredFeatures();
+    const bnd = getBounds(feats);
+    if (!isFinite(bnd.x0)) {
+      setStatus("Внимание: не найдены координаты для выбранной территории (" + feats.length + " объектов).");
+      return;
     }
-  }
 
-  if (mMeta.cat) {
-    let idx = 0;
-    for (const lbl in DATA.cluster_colors) {
-      const col = DATA.cluster_colors[lbl];
-      const colI = idx % 4, rowI = Math.floor(idx / 4);
-      const lx = 55 + colI * 395, ly = 1020 + rowI * 32;
-      el("rect", {x: lx, y: ly, width: 18, height: 18, fill: col, stroke: "#666"}, svg);
-      el("text", {x: lx + 26, y: ly + 14, "font-size": 13}, svg).textContent = lbl;
-      idx++;
+    const valMap = (base === "all" && yr === "2024") ? (DATA.v2024[mId] || {}) : ((DATA.panel[mId] && DATA.panel[mId][yr]) || {});
+    const refFeats = (scMode === "global") ? GEO.features : feats;
+    const numVals = refFeats.filter(f => f.properties.st === "В_выборке" && (base === "all" || f.properties.coh)).map(f => Number(valMap[f.properties.id])).filter(v => !isNaN(v)).sort((a,b)=>a-b);
+    let vmin = 0, vmax = 1, nIdx = 0;
+    const iMin = Math.floor(numVals.length * 0.02), iMax = Math.min(numVals.length - 1, Math.floor(numVals.length * 0.98));
+    for (const v of numVals) { if (nIdx === iMin) vmin = v; if (nIdx === iMax) vmax = v; nIdx++; }
+    const pal = mMeta.inv ? YLGNBU.slice().reverse() : YLGNBU;
+    const getColor = v => {
+      let idx = vmax <= vmin ? 0 : Math.max(0, Math.min(pal.length - 1, Math.floor(((v - vmin) / (vmax - vmin)) * pal.length)));
+      let cOut = "#ffffd9", k = 0;
+      for (const c of pal) { if (k === idx) { cOut = c; break; } k++; }
+      return cOut;
+    };
+
+    const fo = document.getElementById("selFO").value, reg = document.getElementById("selReg").value;
+    const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
+    el("text", {x: 560, y: 42, "text-anchor": "end", "font-size": 20, "font-weight": "bold"}, svg).textContent = terrTitle + ":";
+    el("text", {x: 575, y: 42, "text-anchor": "start", "font-size": 20, "font-weight": "bold"}, svg).textContent = mMeta.title + " (" + (mode==="grid"?"2019–2024 гг.":yr+" г.") + ")";
+
+    const tip = document.getElementById("tip");
+    const bw = Math.max(bnd.x1 - bnd.x0, 1), bh = Math.max(bnd.y1 - bnd.y0, 1);
+
+    const drawMapBlock = (box, yKey, isPointMode) => {
+      const sc = Math.min(box.w / bw, box.h / bh);
+      const ox = box.x + (box.w - bw * sc) / 2, oy = box.y + (box.h - bh * sc) / 2;
+      const mapX = x => ox + (x - bnd.x0) * sc;
+      const mapY = y => oy + (bnd.y1 - y) * sc;
+      const vYr = isPointMode ? ((DATA.panel[mId] && DATA.panel[mId][yKey]) || {}) : valMap;
+      const g = el("g", {}, svg);
+
+      for (const f of feats) {
+        let fill = isPointMode ? "#f4f4f4" : "#f0f0f0";
+        if (!isPointMode && f.properties.st === "В_выборке" && (base === "all" || f.properties.coh)) {
+          const v = vYr[f.properties.id];
+          if (v !== undefined && v !== null) fill = mMeta.cat ? (DATA.cluster_colors[v] || "#f0f0f0") : getColor(Number(v));
+        }
+        const dPath = geomToPath(f.geometry, mapX, mapY);
+        if (!dPath) continue;
+        const p = el("path", {d: dPath, fill: fill, stroke: "#7a828e", "stroke-width": isPointMode ? 0.35 : 0.6}, g);
+        p.onmousemove = ev => {
+          const v = vYr[f.properties.id];
+          const vTxt = mMeta.cat ? (v || "Вне выборки") : fmtNum(v, mMeta.dec);
+          tip.style.display = "block"; tip.style.left = (ev.clientX+12)+"px"; tip.style.top = (ev.clientY+12)+"px";
+          tip.innerHTML = "<b>" + f.properties.name + "</b><br>" + f.properties.reg + "<br>Значение: <b>" + vTxt + "</b>";
+        };
+        p.onmouseout = () => tip.style.display = "none";
+      }
+
+      if (isPointMode) {
+        for (const f of feats) {
+          const v = vYr[f.properties.id];
+          if (f.properties.st === "В_выборке" && f.properties.coh && v !== undefined) {
+            const cPt = geomCentroid(f.geometry);
+            el("circle", {cx: mapX(cPt.x).toFixed(1), cy: mapY(cPt.y).toFixed(1), r: fo === "RF" ? 3.5 : 5.5, fill: getColor(Number(v)), stroke: "#222", "stroke-width": 0.7}, g);
+          }
+        }
+        el("text", {x: box.x + box.w/2, y: box.y - 6, "text-anchor": "middle", "font-size": 15, "font-weight": "bold"}, g).textContent = yKey + " г.";
+      }
+    };
+
+    if (mode === "single") {
+      drawMapBlock({x: 50, y: 85, w: 1550, h: 895}, yr, false);
+    } else {
+      let gIdx = 0;
+      for (const yKey of Array.of("2019","2020","2021","2022","2023","2024")) {
+        const col = gIdx % 3, row = Math.floor(gIdx / 3);
+        drawMapBlock({x: 50 + col*525, y: 110 + row*445, w: 500, h: 400}, yKey, true);
+        gIdx++;
+      }
     }
-  } else {
-    const barX = 910, barY = 1020, barW = 690, barH = 18, stepW = barW / pal.length;
-    let i = 0;
-    for (const c of pal) { el("rect", {x: barX + i*stepW, y: barY, width: stepW, height: barH, fill: c, stroke: "#666", "stroke-width": 0.4}, svg); i++; }
-    for (const u of Array.of(0.1, 0.3, 0.5, 0.7, 0.9)) {
-      const valTick = vmin + u * (vmax - vmin);
-      el("text", {x: barX + u*barW, y: barY + 33, "text-anchor": "middle", "font-size": 12}, svg).textContent = fmtNum(valTick, mMeta.dec);
+
+    if (mMeta.cat) {
+      let idx = 0;
+      for (const lbl in DATA.cluster_colors) {
+        const col = DATA.cluster_colors[lbl];
+        const colI = idx % 4, rowI = Math.floor(idx / 4);
+        const lx = 55 + colI * 395, ly = 1020 + rowI * 32;
+        el("rect", {x: lx, y: ly, width: 18, height: 18, fill: col, stroke: "#666"}, svg);
+        el("text", {x: lx + 26, y: ly + 14, "font-size": 13}, svg).textContent = lbl;
+        idx++;
+      }
+    } else {
+      const barX = 910, barY = 1020, barW = 690, barH = 18, stepW = barW / pal.length;
+      let i = 0;
+      for (const c of pal) { el("rect", {x: barX + i*stepW, y: barY, width: stepW, height: barH, fill: c, stroke: "#666", "stroke-width": 0.4}, svg); i++; }
+      for (const u of Array.of(0.1, 0.3, 0.5, 0.7, 0.9)) {
+        const valTick = vmin + u * (vmax - vmin);
+        el("text", {x: barX + u*barW, y: barY + 33, "text-anchor": "middle", "font-size": 12}, svg).textContent = fmtNum(valTick, mMeta.dec);
+      }
+      el("text", {x: barX + barW/2, y: barY + 56, "text-anchor": "middle", "font-size": 13, "font-weight": "bold"}, svg).textContent = mMeta.title;
     }
-    el("text", {x: barX + barW/2, y: barY + 56, "text-anchor": "middle", "font-size": 13, "font-weight": "bold"}, svg).textContent = mMeta.title;
+    setStatus("Отрисовано объектов: " + feats.length + " | Территория: " + terrTitle);
+  } catch (e) {
+    setStatus("ОШИБКА ОТРИСОВКИ: " + e.message);
   }
 }
 
