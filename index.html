@@ -139,7 +139,7 @@ function render() {
 
   const layout = {
     title: {text: "<b>" + terrTitle + ":</b> " + mMeta.title + " (" + yr + " г.)", font: {family: "Times New Roman", size: 18}},
-    geo: {fitbounds: "locations", visible: false, projection: {type: "conic equal area", parallels:, rotation: {lon: 100}}},
+    geo: {fitbounds: "locations", visible: false, projection: {type: "conic equal area", parallels: new Array(50, 70), rotation: {lon: 100}}},
     legend: {orientation: "h", y: -0.04, x: 0.5, xanchor: "center"},
     margin: {l: 10, r: 10, t: 55, b: 40}, height: 820
   };
