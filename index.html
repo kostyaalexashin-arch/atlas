@@ -145,7 +145,7 @@ function render() {
   wrap.innerHTML = '<div id="mapDiv"></div>';
   const subGeo = {type: "FeatureCollection", features: feats};
   const projObj = (fo === "RF" || fo === "Дальневосточный")
-    ? {type: "azimuthal equal area", rotation: {lon: 100, lat: 62, roll: 0}}
+    ? {type: "mercator", rotation: {lon: 100}}
     : {type: "mercator"};
 
   if (mode === "grid") {
