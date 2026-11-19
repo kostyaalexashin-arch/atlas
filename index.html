@@ -36,7 +36,7 @@
   <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
   <button id="btnPng">Скачать PNG (300 DPI)</button>
 </div>
-<div class="canvas-wrap" id="viewArea"><div id="loader" style="padding:60px;font-size:18px;">Загрузка геометрии (2269 МО)... Подождите 2–3 секунды.</div></div>
+<div class="canvas-wrap" id="viewArea"><div id="loader" style="padding:60px;font-size:18px;">Загрузка данных атласа...</div></div>
 <div class="tooltip" id="tip"></div>
 <script>
 let GEO = null, DATA = null;
@@ -58,9 +58,10 @@ function fmtNum(v, dec) {
 function getBounds(feats) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   const scan = arr => {
-    if (typeof arr[0] === "number") {
-      if (arr[0] < x0) x0 = arr[0]; if (arr[0] > x1) x1 = arr[0];
-      if (arr[1] < y0) y0 = arr[1]; if (arr[1] > y1) y1 = arr[1];
+    if (typeof arr.at(0) === "number") {
+      const x = arr.at(0), y = arr.at(1);
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
     } else arr.forEach(scan);
   };
   feats.forEach(f => { if (f.geometry) scan(f.geometry.coordinates); });
@@ -69,12 +70,12 @@ function getBounds(feats) {
 
 function geomToPath(geom, mapX, mapY) {
   if (!geom) return "";
-  const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+  const polys = geom.type === "Polygon" ? Array.of(geom.coordinates) : geom.coordinates;
   let d = "";
   polys.forEach(poly => {
     poly.forEach(ring => {
       ring.forEach((pt, idx) => {
-        d += (idx === 0 ? "M" : "L") + mapX(pt[0]).toFixed(1) + "," + mapY(pt[1]).toFixed(1);
+        d += (idx === 0 ? "M" : "L") + mapX(pt.at(0)).toFixed(1) + "," + mapY(pt.at(1)).toFixed(1);
       });
       d += "Z";
     });
@@ -85,11 +86,11 @@ function geomToPath(geom, mapX, mapY) {
 function geomCentroid(geom) {
   let sx = 0, sy = 0, n = 0;
   const walk = arr => {
-    if (typeof arr[0] === "number") { sx += arr[0]; sy += arr[1]; n++; }
+    if (typeof arr.at(0) === "number") { sx += arr.at(0); sy += arr.at(1); n++; }
     else arr.forEach(walk);
   };
   if (geom) walk(geom.coordinates);
-  return n ? [sx / n, sy / n] :;
+  return n ? Array.of(sx / n, sy / n) : Array.of(0, 0);
 }
 
 Promise.all([fetch("geo_2024.json").then(r=>r.json()), fetch("metrics_data.json").then(r=>r.json())]).then(([g, d]) => {
@@ -103,12 +104,14 @@ Promise.all([fetch("geo_2024.json").then(r=>r.json()), fetch("metrics_data.json"
   });
   sFO.onchange = () => {
     sReg.innerHTML = '<option value="ALL">Весь округ / РФ</option>';
-    if (sFO.value !== "RF") (d.fo_to_regs[sFO.value] || []).forEach(r => sReg.add(new Option(r, r)));
+    if (sFO.value !== "RF") (d.fo_to_regs[sFO.value] || Array.of()).forEach(r => sReg.add(new Option(r, r)));
     render();
   };
-  ["selMode","selBase","selYear","selReg","selMetric","selScale"].forEach(id => document.getElementById(id).onchange = render);
+  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id => document.getElementById(id).onchange = render);
   document.getElementById("btnPng").onclick = downloadPng;
   render();
+}).catch(err => {
+  document.getElementById("viewArea").innerHTML = '<div style="color:red;padding:40px;">Ошибка загрузки: ' + err + '</div>';
 });
 
 function getFilteredFeatures() {
@@ -121,7 +124,7 @@ function render() {
   const mode = document.getElementById("selMode").value, base = document.getElementById("selBase").value;
   const yr = document.getElementById("selYear").value, mId = document.getElementById("selMetric").value;
   const scMode = document.getElementById("selScale").value;
-  const mMeta = DATA.metrics.find(x => x.id === mId) || DATA.metrics[0];
+  const mMeta = DATA.metrics.find(x => x.id === mId) || DATA.metrics.at(0);
   const area = document.getElementById("viewArea");
 
   if (mode === "table") {
@@ -130,7 +133,7 @@ function render() {
     feats.forEach(f => {
       const id = f.properties.id;
       html += '<tr><td>' + f.properties.reg + '</td><td class="mo-name">' + f.properties.name + '</td>';
-      ["2019","2020","2021","2022","2023","2024"].forEach(y => {
+      Array.of("2019","2020","2021","2022","2023","2024").forEach(y => {
         const val = (DATA.panel[mId] && DATA.panel[mId][y]) ? DATA.panel[mId][y][id] : null;
         html += '<td>' + fmtNum(val, mMeta.dec) + '</td>';
       });
@@ -146,13 +149,13 @@ function render() {
   const valMap = (base === "all" && yr === "2024") ? (DATA.v2024[mId] || {}) : ((DATA.panel[mId] && DATA.panel[mId][yr]) || {});
   const refFeats = (scMode === "global") ? GEO.features : feats;
   const numVals = refFeats.filter(f => f.properties.st === "В_выборке" && (base === "all" || f.properties.coh)).map(f => Number(valMap[f.properties.id])).filter(v => !isNaN(v)).sort((a,b)=>a-b);
-  const vmin = numVals.length ? numVals[Math.floor(numVals.length * 0.02)] : 0;
-  const vmax = numVals.length ? numVals[Math.min(numVals.length - 1, Math.floor(numVals.length * 0.98))] : 1;
-  const pal = mMeta.inv ? [...YLGNBU].reverse() : YLGNBU;
+  const vmin = numVals.length ? numVals.at(Math.floor(numVals.length * 0.02)) : 0;
+  const vmax = numVals.length ? numVals.at(Math.min(numVals.length - 1, Math.floor(numVals.length * 0.98))) : 1;
+  const pal = mMeta.inv ? YLGNBU.slice().reverse() : YLGNBU;
   const getColor = v => {
-    if (vmax <= vmin) return pal[4];
+    if (vmax <= vmin) return pal.at(0);
     const idx = Math.max(0, Math.min(pal.length - 1, Math.floor(((v - vmin) / (vmax - vmin)) * pal.length)));
-    return pal[idx];
+    return pal.at(idx);
   };
 
   const fo = document.getElementById("selFO").value, reg = document.getElementById("selReg").value;
@@ -193,8 +196,8 @@ function render() {
       feats.forEach(f => {
         const v = vYr[f.properties.id];
         if (f.properties.st === "В_выборке" && f.properties.coh && v !== undefined) {
-          const [cx, cy] = geomCentroid(f.geometry);
-          el("circle", {cx: mapX(cx).toFixed(1), cy: mapY(cy).toFixed(1), r: fo === "RF" ? 3.5 : 5.5, fill: getColor(Number(v)), stroke: "#222", "stroke-width": 0.7}, g);
+          const cPt = geomCentroid(f.geometry);
+          el("circle", {cx: mapX(cPt.at(0)).toFixed(1), cy: mapY(cPt.at(1)).toFixed(1), r: fo === "RF" ? 3.5 : 5.5, fill: getColor(Number(v)), stroke: "#222", "stroke-width": 0.7}, g);
         }
       });
       el("text", {x: box.x + box.w/2, y: box.y - 6, "text-anchor": "middle", "font-size": 15, "font-weight": "bold"}, g).textContent = yKey + " г.";
@@ -204,14 +207,15 @@ function render() {
   if (mode === "single") {
     drawMapBlock({x: 50, y: 85, w: 1550, h: 895}, yr, false);
   } else {
-    ["2019","2020","2021","2022","2023","2024"].forEach((yKey, idx) => {
+    Array.of("2019","2020","2021","2022","2023","2024").forEach((yKey, idx) => {
       const col = idx % 3, row = Math.floor(idx / 3);
       drawMapBlock({x: 50 + col*525, y: 110 + row*445, w: 500, h: 400}, yKey, true);
     });
   }
 
   if (mMeta.cat) {
-    Object.entries(DATA.cluster_colors).forEach(([lbl, col], idx) => {
+    Object.entries(DATA.cluster_colors).forEach((pair, idx) => {
+      const lbl = pair.at(0), col = pair.at(1);
       const colI = idx % 4, rowI = Math.floor(idx / 4);
       const lx = 55 + colI * 395, ly = 1020 + rowI * 32;
       el("rect", {x: lx, y: ly, width: 18, height: 18, fill: col, stroke: "#666"}, svg);
@@ -220,7 +224,7 @@ function render() {
   } else {
     const barX = 910, barY = 1020, barW = 690, barH = 18, stepW = barW / pal.length;
     pal.forEach((c, i) => el("rect", {x: barX + i*stepW, y: barY, width: stepW, height: barH, fill: c, stroke: "#666", "stroke-width": 0.4}, svg));
-    [0.1, 0.3, 0.5, 0.7, 0.9].forEach(u => {
+    Array.of(0.1, 0.3, 0.5, 0.7, 0.9).forEach(u => {
       const valTick = vmin + u * (vmax - vmin);
       el("text", {x: barX + u*barW, y: barY + 33, "text-anchor": "middle", "font-size": 12}, svg).textContent = fmtNum(valTick, mMeta.dec);
     });
