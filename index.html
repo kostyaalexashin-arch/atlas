@@ -65,7 +65,7 @@ function getCenter(g){let sx=0,sy=0,n=0;const w=c=>{if(typeof c.at(0)==="number"
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear");
   if(sM.value==="grid"||sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
-  else{sB.disabled=false;if(sB.value==="coh"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
+  else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
 }
 function computeScale(vals,palArr,inv){
   const s=vals.slice().sort((a,b)=>a-b);
