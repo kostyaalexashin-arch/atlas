@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Атлас устойчивого развития МО России</title>
+<script src="https://d3js.org"></script>
+<style>
+  body { font-family: "Times New Roman", Georgia, serif; margin: 0; background: #f4f6f9; color: #111; }
+  .toolbar { background: #1e293b; color: #fff; padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .toolbar select, .toolbar button { font-family: inherit; font-size: 13px; padding: 5px 9px; border-radius: 4px; border: 1px solid #cbd5e1; }
+  .toolbar button { background: #0284c7; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+  .toolbar button:hover { background: #0369a1; }
+  .canvas-wrap { display: flex; justify-content: center; padding: 14px; }
+  svg#atlas { background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-width: 100%; height: auto; }
+  .tooltip { position: fixed; pointer-events: none; background: rgba(15,23,42,0.94); color: #fff; padding: 8px 11px; border-radius: 5px; font-size: 13px; display: none; z-index: 99; max-width: 300px; line-height: 1.35; }
+  table.dyn-tbl { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+  table.dyn-tbl th { background: #eef3f8; border: 1px solid #9eb0c2; padding: 6px; text-align: center; }
+  table.dyn-tbl td { border: 1px solid #e2e8f0; padding: 5px 8px; text-align: center; }
+  table.dyn-tbl td.mo-name { text-align: left; }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <select id="selMode">
+    <option value="single">Одиночная карта (срез)</option>
+    <option value="grid">Сетка динамики (2019–2024)</option>
+    <option value="table">Таблица динамики МО (2019–2024)</option>
+  </select>
+  <select id="selBase">
+    <option value="all">Генеральный срез 2024 (2269 МО)</option>
+    <option value="coh">Динамическая когорта (193 МО)</option>
+  </select>
+  <select id="selYear"><option value="2024">2024 г.</option><option value="2023">2023 г.</option><option value="2022">2022 г.</option><option value="2021">2021 г.</option><option value="2020">2020 г.</option><option value="2019">2019 г.</option></select>
+  <select id="selFO"><option value="RF">Российская Федерация</option></select>
+  <select id="selReg"><option value="ALL">Весь округ / РФ</option></select>
+  <select id="selMetric" style="max-width:340px;"></select>
+  <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
+  <button id="btnPng">Скачать PNG (300 DPI)</button>
+</div>
+<div class="canvas-wrap" id="viewArea"><svg id="atlas" viewBox="0 0 1650 1120" width="1320" height="896"></svg></div>
+<div class="tooltip" id="tip"></div>
+<script>
+let GEO = null, DATA = null;
+const YLGNBU = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"];
+
+function fmtNum(v, dec) {
+  if (v === null || v === undefined || isNaN(v)) return "н/д";
+  return Number(v).toLocaleString("ru-RU", {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+
+Promise.all([fetch("geo_2024.json").then(r=>r.json()), fetch("metrics_data.json").then(r=>r.json())]).then(([g, d]) => {
+  GEO = g; DATA = d;
+  const sFO = document.getElementById("selFO"), sReg = document.getElementById("selReg"), sMet = document.getElementById("selMetric");
+  d.fos.forEach(f => sFO.add(new Option(f + " ФО", f)));
+  const grpMap = {};
+  d.metrics.forEach(m => {
+    if (!grpMap[m.group]) { grpMap[m.group] = document.createElement("optgroup"); grpMap[m.group].label = m.group; sMet.add(grpMap[m.group]); }
+    grpMap[m.group].appendChild(new Option(m.id + " — " + m.title, m.id));
+  });
+  sFO.onchange = () => {
+    sReg.innerHTML = '<option value="ALL">Весь округ / РФ</option>';
+    if (sFO.value !== "RF") (d.fo_to_regs[sFO.value] || []).forEach(r => sReg.add(new Option(r, r)));
+    render();
+  };
+  ["selMode","selBase","selYear","selReg","selMetric","selScale"].forEach(id => document.getElementById(id).onchange = render);
+  document.getElementById("btnPng").onclick = downloadPng;
+  render();
+});
+
+function getFilteredFeatures() {
+  const fo = document.getElementById("selFO").value, reg = document.getElementById("selReg").value;
+  return GEO.features.filter(f => (fo === "RF" || f.properties.fo === fo) && (reg === "ALL" || f.properties.reg === reg));
+}
+
+function render() {
+  const mode = document.getElementById("selMode").value, base = document.getElementById("selBase").value;
+  const yr = document.getElementById("selYear").value, mId = document.getElementById("selMetric").value;
+  const scMode = document.getElementById("selScale").value;
+  const mMeta = DATA.metrics.find(x => x.id === mId) || DATA.metrics[0];
+  const area = document.getElementById("viewArea");
+
+  if (mode === "table") {
+    const feats = getFilteredFeatures().filter(f => f.properties.st === "В_выборке" && f.properties.coh);
+    let html = '<div style="width:1280px;background:#fff;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,0.12);"><h2 style="text-align:center;">' + mMeta.title + ' (2019–2024 гг.)</h2><table class="dyn-tbl"><tr><th>Регион</th><th>Муниципальное образование</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th></tr>';
+    feats.forEach(f => {
+      const id = f.properties.id;
+      html += '<tr><td>' + f.properties.reg + '</td><td class="mo-name">' + f.properties.name + '</td>';
+      ["2019","2020","2021","2022","2023","2024"].forEach(y => {
+        const val = (DATA.panel[mId] && DATA.panel[mId][y]) ? DATA.panel[mId][y][id] : null;
+        html += '<td>' + fmtNum(val, mMeta.dec) + '</td>';
+      });
+      html += '</tr>';
+    });
+    area.innerHTML = html + '</table></div>';
+    return;
+  }
+
+  if (!document.getElementById("atlas")) area.innerHTML = '<svg id="atlas" viewBox="0 0 1650 1120" width="1320" height="896"></svg>';
+  const svg = d3.select("#atlas"); svg.selectAll("*").remove();
+  const feats = getFilteredFeatures();
+  const valMap = (base === "all" && yr === "2024") ? (DATA.v2024[mId] || {}) : ((DATA.panel[mId] && DATA.panel[mId][yr]) || {});
+  const refFeats = (scMode === "global") ? GEO.features : feats;
+  const numVals = refFeats.filter(f => f.properties.st === "В_выборке" && (base === "all" || f.properties.coh)).map(f => Number(valMap[f.properties.id])).filter(v => !isNaN(v)).sort(d3.ascending);
+  const vmin = d3.quantile(numVals, 0.02) || 0, vmax = d3.quantile(numVals, 0.98) || 1;
+  const pal = mMeta.inv ? [...YLGNBU].reverse() : YLGNBU;
+  const colorScale = d3.scaleQuantize().domain([vmin, vmax]).range(pal);
+
+  const fo = document.getElementById("selFO").value, reg = document.getElementById("selReg").value;
+  const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
+  svg.append("text").attr("x", 560).attr("y", 42).attr("text-anchor", "end").attr("font-size", 21).attr("font-weight", "bold").text(terrTitle + ":");
+  svg.append("text").attr("x", 575).attr("y", 42).attr("text-anchor", "start").attr("font-size", 21).attr("font-weight", "bold").text(mMeta.title + " (" + (mode==="grid"?"2019–2024 гг.":yr+" г.") + ")");
+
+  const tip = d3.select("#tip");
+  const drawMapBlock = (gWrap, box, yKey, isPointMode) => {
+    const fc = {type: "FeatureCollection", features: feats};
+    const proj = d3.geoIdentity().reflectY(true).fitExtent([[box.x, box.y], [box.x + box.w, box.y + box.h]], fc);
+    const pathGen = d3.geoPath().projection(proj);
+    const vYr = isPointMode ? ((DATA.panel[mId] && DATA.panel[mId][yKey]) || {}) : valMap;
+
+    gWrap.selectAll("path").data(feats).enter().append("path").attr("d", pathGen)
+      .attr("fill", d => {
+        if (isPointMode) return "#f4f4f4";
+        if (d.properties.st !== "В_выборке" || (base === "coh" && !d.properties.coh)) return "#f0f0f0";
+        const v = vYr[d.properties.id];
+        if (v === undefined || v === null) return "#f0f0f0";
+        return mMeta.cat ? (DATA.cluster_colors[v] || "#f0f0f0") : colorScale(Number(v));
+      })
+      .attr("stroke", "#7a828e").attr("stroke-width", isPointMode ? 0.35 : 0.6)
+      .on("mousemove", (ev, d) => {
+        const v = vYr[d.properties.id];
+        const vTxt = mMeta.cat ? (v || "Вне выборки") : fmtNum(v, mMeta.dec);
+        tip.style("display", "block").style("left", (ev.clientX+12)+"px").style("top", (ev.clientY+12)+"px")
+           .html("<b>" + d.properties.name + "</b><br>" + d.properties.reg + "<br>Значение: <b>" + vTxt + "</b>");
+      }).on("mouseout", () => tip.style("display", "none"));
+
+    if (isPointMode) {
+      const cFeats = feats.filter(f => f.properties.st === "В_выборке" && f.properties.coh && vYr[f.properties.id] !== undefined);
+      gWrap.selectAll("circle").data(cFeats).enter().append("circle")
+        .attr("cx", d => pathGen.centroid(d)[0]).attr("cy", d => pathGen.centroid(d)[1]).attr("r", fo === "RF" ? 3.5 : 5.5)
+        .attr("fill", d => colorScale(Number(vYr[d.properties.id]))).attr("stroke", "#222").attr("stroke-width", 0.7);
+      gWrap.append("text").attr("x", box.x + box.w/2).attr("y", box.y - 6).attr("text-anchor", "middle").attr("font-size", 15).attr("font-weight", "bold").text(yKey + " г.");
+    }
+  };
+
+  if (mode === "single") {
+    drawMapBlock(svg.append("g"), {x: 50, y: 95, w: 1550, h: 880}, yr, false);
+  } else {
+    const yrs = ["2019","2020","2021","2022","2023","2024"];
+    yrs.forEach((yKey, idx) => {
+      const col = idx % 3, row = Math.floor(idx / 3);
+      drawMapBlock(svg.append("g"), {x: 50 + col*525, y: 115 + row*445, w: 500, h: 400}, yKey, true);
+    });
+  }
+
+  if (!mMeta.cat) {
+    const barX = 910, barY = 1020, barW = 690, barH = 18, stepW = barW / pal.length;
+    pal.forEach((c, i) => {
+      svg.append("rect")
+        .attr("x", barX + i * stepW).attr("y", barY)
+        .attr("width", stepW).attr("height", barH)
+        .attr("fill", c).attr("stroke", "#666").attr("stroke-width", 0.4);
+    });
+    const ticksU = [0.1, 0.3, 0.5, 0.7, 0.9];
+    ticksU.forEach(u => {
+      const valTick = vmin + u * (vmax - vmin);
+      svg.append("text")
+        .attr("x", barX + u * barW).attr("y", barY + 33)
+        .attr("text-anchor", "middle").attr("font-size", 12)
+        .text(fmtNum(valTick, mMeta.dec));
+    });
+    svg.append("text")
+      .attr("x", barX + barW / 2).attr("y", barY + 56)
+      .attr("text-anchor", "middle").attr("font-size", 13).attr("font-weight", "bold")
+      .text(mMeta.title);
+  }
+}
+
+function downloadPng() {
+  const svgEl = document.getElementById("atlas");
+  if (!svgEl) {
+    alert("Для скачивания PNG переключитесь в режим карты или сетки.");
+    return;
+  }
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 3300;
+    canvas.height = 2240;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const a = document.createElement("a");
+    a.download = "Карта_" + document.getElementById("selMetric").value + ".png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  };
+  img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+}
+</script>
+</body>
+</html>
