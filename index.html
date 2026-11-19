@@ -10,8 +10,8 @@
   .toolbar select, .toolbar button { font-family: inherit; font-size: 13px; padding: 5px 9px; border-radius: 4px; border: 1px solid #cbd5e1; }
   .toolbar button { background: #0284c7; color: #fff; border: none; cursor: pointer; font-weight: bold; }
   .toolbar button:hover { background: #0369a1; }
-  .main-box { max-width: 1560px; margin: 12px auto; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.1); padding: 10px; }
-  #mapDiv { width: 100%; height: 820px; }
+  .main-box { max-width: 1620px; margin: 10px auto; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.1); padding: 8px; }
+  #mapDiv { width: 100%; height: 840px; }
   table.dyn-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.dyn-tbl th { background: #eef3f8; border: 1px solid #9eb0c2; padding: 6px; text-align: center; }
   table.dyn-tbl td { border: 1px solid #e2e8f0; padding: 5px 8px; text-align: center; }
@@ -36,26 +36,34 @@
   <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
   <button id="btnPng">Скачать PNG (300 DPI)</button>
 </div>
-<div class="main-box" id="wrap"><div id="mapDiv">Загрузка геометрии и показателей...</div></div>
+<div class="main-box" id="wrap"><div id="mapDiv" style="padding:40px;font-size:17px;">Загрузка геометрии и показателей...</div></div>
 <script>
 let GEO = null, DATA = null;
 const fmtNum = (v, dec) => (v === null || v === undefined || v === "" || isNaN(Number(v))) ? "н/д" : Number(v).toLocaleString("ru-RU", {minimumFractionDigits: dec, maximumFractionDigits: dec});
 
-Promise.all([fetch("geo_plotly.json").then(r=>r.json()), fetch("metrics_data.json").then(r=>r.json())]).then(([g, d]) => {
-  GEO = g; DATA = d;
+function getCenter(geom) {
+  let sx = 0, sy = 0, n = 0;
+  const walk = c => { if (typeof c.at(0) === "number") { sx += c.at(0); sy += c.at(1); n++; } else c.forEach(walk); };
+  if (geom && geom.coordinates) walk(geom.coordinates);
+  return n ? {lon: sx / n, lat: sy / n} : {lon: 0, lat: 0};
+}
+
+Promise.all(new Array(fetch("geo_plotly.json").then(r=>r.json()), fetch("metrics_data.json").then(r=>r.json()))).then(res => {
+  GEO = res.at(0); DATA = res.at(1);
+  GEO.features.forEach(f => { f.properties._cent = getCenter(f.geometry); });
   const sFO = document.getElementById("selFO"), sReg = document.getElementById("selReg"), sMet = document.getElementById("selMetric");
-  d.fos.forEach(f => sFO.add(new Option(f + " ФО", f)));
+  DATA.fos.forEach(f => sFO.add(new Option(f + " ФО", f)));
   const grpMap = {};
-  d.metrics.forEach(m => {
+  DATA.metrics.forEach(m => {
     if (!grpMap[m.group]) { grpMap[m.group] = document.createElement("optgroup"); grpMap[m.group].label = m.group; sMet.add(grpMap[m.group]); }
     grpMap[m.group].appendChild(new Option(m.id + " — " + m.title, m.id));
   });
   sFO.onchange = () => {
     sReg.innerHTML = '<option value="ALL">Весь округ / РФ</option>';
-    if (sFO.value !== "RF") (d.fo_to_regs[sFO.value] || []).forEach(r => sReg.add(new Option(r, r)));
+    if (sFO.value !== "RF") (DATA.fo_to_regs[sFO.value] || new Array()).forEach(r => sReg.add(new Option(r, r)));
     render();
   };
-  ["selMode","selBase","selYear","selReg","selMetric","selScale"].forEach(id => document.getElementById(id).onchange = render);
+  new Array("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id => document.getElementById(id).onchange = render);
   document.getElementById("btnPng").onclick = () => {
     const div = document.getElementById("mapDiv");
     if (!div) return alert("Переключитесь в режим карты или сетки.");
@@ -70,10 +78,11 @@ function render() {
   const yr = document.getElementById("selYear").value, mId = document.getElementById("selMetric").value;
   const fo = document.getElementById("selFO").value, reg = document.getElementById("selReg").value;
   const scMode = document.getElementById("selScale").value;
-  const mMeta = DATA.metrics.find(x => x.id === mId) || DATA.metrics[0];
+  const mMeta = DATA.metrics.find(x => x.id === mId) || DATA.metrics.at(0);
   const wrap = document.getElementById("wrap");
 
-  const feats = GEO.features.filter(f => (fo === "RF" || f.properties.fo === fo) && (reg === "ALL" || f.properties.reg === reg));
+  const feats = GEO.features.filter(f => (fo === "RF" || f.properties.fo === fo) && (reg === "ALL" || f.properties.region === reg));
+  const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
 
   if (mode === "table") {
     const rows = feats.filter(f => f.properties._map_status === "В_выборке" && f.properties.coh);
@@ -81,7 +90,7 @@ function render() {
     rows.forEach(f => {
       const id = f.properties.join_key;
       h += '<tr><td>' + f.properties.region + '</td><td class="mo-name">' + f.properties._lbl + '</td>';
-      ["2019","2020","2021","2022","2023","2024"].forEach(y => h += '<td>' + fmtNum(DATA.panel[mId]?.[y]?.[id], mMeta.dec) + '</td>');
+      new Array("2019","2020","2021","2022","2023","2024").forEach(y => h += '<td>' + fmtNum(DATA.panel[mId]?.[y]?.[id], mMeta.dec) + '</td>');
       h += '</tr>';
     });
     wrap.innerHTML = h + '</table>';
@@ -90,30 +99,85 @@ function render() {
 
   wrap.innerHTML = '<div id="mapDiv"></div>';
   const subGeo = {type: "FeatureCollection", features: feats};
-  const valMap = (base === "all" && yr === "2024") ? (DATA.v2024[mId] || {}) : (DATA.panel[mId]?.[yr] || {});
-  const terrTitle = reg !== "ALL" ? reg : (fo !== "RF" ? fo + " федеральный округ" : "Российская Федерация");
-  const traces = [];
+  const projObj = (fo === "RF" || fo === "Дальневосточный") ? {type: "conic equal area", parallels: new Array(50, 70), rotation: {lon: 100}} : {type: "mercator"};
 
-  // Фоновый слой (ЗАТО и Вне выборки)
+  if (mode === "grid") {
+    const yrs = new Array("2019","2020","2021","2022","2023","2024");
+    const refFeats = (scMode === "global") ? GEO.features : feats;
+    const allV = new Array();
+    yrs.forEach(y => {
+      const ym = DATA.panel[mId]?.[y] || {};
+      refFeats.filter(f => f.properties._map_status === "В_выборке" && f.properties.coh).forEach(f => {
+        const v = Number(ym[f.properties.join_key]);
+        if (!isNaN(v)) allV.push(v);
+      });
+    });
+    allV.sort((a,b)=>a-b);
+    const zmin = allV.at(Math.floor(allV.length * 0.02)) ?? 0;
+    const zmax = allV.at(Math.min(allV.length - 1, Math.floor(allV.length * 0.98))) ?? 1;
+
+    const traces = new Array();
+    const layout = {
+      title: {text: "<b>" + terrTitle + ":</b> " + mMeta.title + " (2019–2024 гг.)", font: {family: "Times New Roman", size: 18}},
+      margin: {l: 10, r: 10, t: 65, b: 20}, height: 850, annotations: new Array()
+    };
+
+    yrs.forEach((yKey, idx) => {
+      const geoKey = idx === 0 ? "geo" : "geo" + (idx + 1);
+      const col = idx % 3, row = Math.floor(idx / 3);
+      const x0 = col * 0.335, x1 = x0 + 0.32;
+      const y1 = 1.0 - row * 0.50, y0 = y1 - 0.44;
+      layout[geoKey] = {domain: {x: new Array(x0, x1), y: new Array(y0, y1)}, fitbounds: "locations", visible: false, projection: projObj};
+      layout.annotations.push({text: "<b>" + yKey + " г.</b>", x: (x0 + x1)/2, y: y1 + 0.02, xref: "paper", yref: "paper", showarrow: false, font: {size: 14}});
+
+      traces.push({
+        type: "choropleth", geo: geoKey, geojson: subGeo, featureidkey: "properties.join_key",
+        locations: feats.map(f => f.properties.join_key), z: feats.map(() => 0),
+        colorscale: new Array(new Array(0, "#f1f5f9"), new Array(1, "#f1f5f9")), showscale: false, hoverinfo: "skip",
+        marker: {line: {color: "#cbd5e1", width: 0.3}}
+      });
+
+      const ym = DATA.panel[mId]?.[yKey] || {};
+      const pts = feats.filter(f => f.properties._map_status === "В_выборке" && f.properties.coh && ym[f.properties.join_key] !== undefined);
+      traces.push({
+        type: "scattergeo", geo: geoKey,
+        lon: pts.map(f => f.properties._cent.lon), lat: pts.map(f => f.properties._cent.lat),
+        text: pts.map(f => "<b>" + f.properties._lbl + "</b> (" + yKey + " г.): <b>" + fmtNum(ym[f.properties.join_key], mMeta.dec) + "</b>"),
+        hoverinfo: "text", showlegend: false,
+        marker: {
+          size: fo === "RF" ? 6 : 10, color: pts.map(f => Number(ym[f.properties.join_key])),
+          cmin: zmin, cmax: zmax, colorscale: "YlGnBu", reversescale: mMeta.inv,
+          showscale: (idx === 5), colorbar: {title: mMeta.id, len: 0.65, x: 1.01},
+          line: {color: "#1e293b", width: 0.6}
+        }
+      });
+    });
+    Plotly.newPlot("mapDiv", traces, layout, {responsive: true});
+    return;
+  }
+
+  const valMap = (base === "all" && yr === "2024") ? (DATA.v2024[mId] || {}) : (DATA.panel[mId]?.[yr] || {});
+  const traces = new Array();
   traces.push({
     type: "choropleth", geojson: subGeo, featureidkey: "properties.join_key",
     locations: feats.map(f => f.properties.join_key), z: feats.map(() => 0),
     text: feats.map(f => f.properties._lbl + " (" + f.properties.region + ") — " + f.properties._map_status),
-    hoverinfo: "text", colorscale: [[0, "#eceff4"], [1, "#eceff4"]], showscale: false,
+    hoverinfo: "text", colorscale: new Array(new Array(0, "#eceff4"), new Array(1, "#eceff4")), showscale: false,
     marker: {line: {color: "#9aa2ae", width: 0.35}}
   });
 
   const inFeats = feats.filter(f => f.properties._map_status === "В_выборке" && (base === "all" || f.properties.coh));
 
   if (mMeta.cat) {
-    Object.entries(DATA.cluster_colors).forEach(([clName, clHex]) => {
+    Object.entries(DATA.cluster_colors).forEach(pair => {
+      const clName = pair.at(0), clHex = pair.at(1);
       const clFeats = inFeats.filter(f => valMap[f.properties.join_key] === clName);
       if (clFeats.length > 0) {
         traces.push({
           type: "choropleth", geojson: subGeo, featureidkey: "properties.join_key",
           name: clName, locations: clFeats.map(f => f.properties.join_key), z: clFeats.map(() => 1),
           text: clFeats.map(f => "<b>" + f.properties._lbl + "</b><br>" + f.properties.region + "<br>" + clName),
-          hoverinfo: "text", colorscale: [[0, clHex], [1, clHex]], showscale: false, showlegend: true,
+          hoverinfo: "text", colorscale: new Array(new Array(0, clHex), new Array(1, clHex)), showscale: false, showlegend: true,
           marker: {line: {color: "#64748b", width: 0.35}}
         });
       }
@@ -122,8 +186,8 @@ function render() {
     const refFeats = (scMode === "global") ? GEO.features : feats;
     const allV = refFeats.filter(f => f.properties._map_status === "В_выборке" && (base === "all" || f.properties.coh))
       .map(f => Number(valMap[f.properties.join_key])).filter(v => !isNaN(v)).sort((a,b)=>a-b);
-    const zmin = allV[Math.floor(allV.length * 0.02)] ?? 0;
-    const zmax = allV[Math.min(allV.length - 1, Math.floor(allV.length * 0.98))] ?? 1;
+    const zmin = allV.at(Math.floor(allV.length * 0.02)) ?? 0;
+    const zmax = allV.at(Math.min(allV.length - 1, Math.floor(allV.length * 0.98))) ?? 1;
 
     traces.push({
       type: "choropleth", geojson: subGeo, featureidkey: "properties.join_key",
@@ -139,9 +203,9 @@ function render() {
 
   const layout = {
     title: {text: "<b>" + terrTitle + ":</b> " + mMeta.title + " (" + yr + " г.)", font: {family: "Times New Roman", size: 18}},
-    geo: {fitbounds: "locations", visible: false, projection: {type: "conic equal area", parallels: new Array(50, 70), rotation: {lon: 100}}},
+    geo: {domain: {x: new Array(0, 1), y: new Array(0, 1)}, fitbounds: "locations", visible: false, projection: projObj},
     legend: {orientation: "h", y: -0.04, x: 0.5, xanchor: "center"},
-    margin: {l: 10, r: 10, t: 55, b: 40}, height: 820
+    margin: {l: 10, r: 10, t: 55, b: 40}, height: 840
   };
   Plotly.newPlot("mapDiv", traces, layout, {responsive: true});
 }
