@@ -121,8 +121,7 @@ Promise.all(new Array(fetch("geo_plotly.json").then(r=>r.json()), fetch("metrics
     if (!div) return alert("Для скачивания PNG переключитесь в режим карты или сетки.");
     Plotly.downloadImage(div, {format: "png", width: 3300, height: 2240, filename: "Карта_" + document.getElementById("selMetric").value});
   };
-  render();
-});
+  render();}catch(e){document.getElementById("mapDiv").innerHTML="Ошибка скрипта: "+e.message;}}).catch(e=>{document.getElementById("mapDiv").innerHTML="Ошибка загрузки файлов: "+e.message;});
 
 function buildPlotlyScale(hexArr) {
   const n = hexArr.length;
