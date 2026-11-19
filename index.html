@@ -297,29 +297,53 @@ function render() {
   }
 
   // Ядра регионов: точками на РФ/ФО, утолщённой границей на уровне региона (цвет #e6007e отсутствует в палитрах)
-  const coreFeats = feats.filter(f => f.properties.is_center && f.properties._map_status === "В_выборке");
-  if (coreFeats.length > 0) {
-    if (reg === "ALL") {
-      traces.push({
-        type: "scattergeo", name: "Ядро региона (макс. население)",
-        lon: coreFeats.map(f => f.properties._cent.lon), lat: coreFeats.map(f => f.properties._cent.lat),
-        text: coreFeats.map(f => "<b>Ядро региона:</b> " + f.properties._lbl + " (" + f.properties.region + ")"),
-        hoverinfo: "text", showlegend: true,
-        marker: {size: fo === "RF" ? 6 : 9, color: CORE_COLOR, line: {color: "#ffffff", width: 1.0}}
-      });
-    } else {
-      traces.push({
-        type: "choropleth", geojson: subGeo, featureidkey: "properties.join_key",
-        name: "Ядро региона (макс. население)",
-        locations: coreFeats.map(f => f.properties.join_key), z: coreFeats.map(() => 1),
-        colorscale: new Array(new Array(0, "rgba(0,0,0,0)"), new Array(1, "rgba(0,0,0,0)")),
-        showscale: false, showlegend: true, hoverinfo: "skip",
-        marker: {line: {color: CORE_COLOR, width: 2.8}}
-      });
-    }
+  const coreF=feats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
+if(coreF.length>0){
+  if(reg==="ALL"){
+    const showTxt=(fo!=="RF");
+    traces.push({
+      type:"scattergeo",
+      mode:showTxt?"markers+text":"markers",
+      name:"Ядро региона (макс. население)",
+      lon:coreF.map(f=>f.properties._cent.lon),
+      lat:coreF.map(f=>f.properties._cent.lat),
+      text:coreF.map(f=>f.properties._lbl),
+      hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),
+      hoverinfo:"text",
+      textposition:"top center",
+      textfont:{family:"Times New Roman",size:11,color:"#111111"},
+      showlegend:true,
+      marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.0}}
+    });
+  }else{
+    traces.push({
+      type:"choropleth",geojson:subGeo,featureidkey:"properties.join_key",
+      locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),
+      colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),
+      showscale:false,showlegend:false,hoverinfo:"skip",
+      marker:{line:{color:CORE,width:2.8}}
+    });
+    traces.push({
+      type:"scattergeo",
+      mode:"text",
+      lon:coreF.map(f=>f.properties._cent.lon),
+      lat:coreF.map(f=>f.properties._cent.lat),
+      text:coreF.map(f=>"<b>"+f.properties._lbl+"</b>"),
+      hoverinfo:"skip",
+      showlegend:false,
+      textfont:{family:"Times New Roman",size:12,color:"#111111"}
+    });
+    traces.push({
+      type:"scattergeo",
+      mode:"lines",
+      name:"Граница ядра региона (макс. население)",
+      lon:Array.of(null),lat:Array.of(null),
+      line:{color:CORE,width:3.5},
+      showlegend:true
+    });
   }
-
-  const layout = {
+}
+const layout = {
     title: {text: "<b>" + terrTitle + ":</b> " + mMeta.title + " (" + yr + " г.)", font: {family: "Times New Roman", size: 18}},
     geo: {domain: {x: new Array(0, 1), y: new Array(0, 1)}, fitbounds: "locations", visible: false, projection: projObj},
     legend: {orientation: "h", y: -0.04, x: 0.5, xanchor: "center"},
