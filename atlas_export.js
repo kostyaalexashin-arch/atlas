@@ -1,83 +1,79 @@
 async function buildSheetCanvas(){
-  const mapEl=document.getElementById("mapDiv");
-  if(!mapEl)return alert("Переключитесь в режим карты или сетки.");
-  const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
+  const mode=document.getElementById("selMode").value;
+  if(mode==="table"){alert("Переключитесь в режим карты или сетки.");return null;}
+  const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value,yr=document.getElementById("selYear").value;
+  const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0);
+  const isArk=reg.includes("Архангельск"),isNW=(fo.includes("Северо-Запад")||fo==="СЗФО")&&reg==="ALL";
+  const hasInsets=isArk||isNW;
   const regFeats=(reg!=="ALL")?Array.from(GEO.features.filter(f=>f.properties.region===reg&&f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru")):Array.of();
-  const hasRightList=regFeats.length>0;
+  const hasList=regFeats.length>0,hasRightCol=hasInsets||hasList;
+  const prevExp=Boolean(window._isExportMode);
+  window._isExportMode=true;
+  if(reg!=="ALL"&&!isArk){render();if(window._plotReady)await window._plotReady;await new Promise(r=>setTimeout(r,180));}
+  const mapEl=document.getElementById("mapDiv");
   let numTraceAdded=false,savedAnns=null,coreTrIdx=-1;
-  if(hasRightList){
-    savedAnns=(mapEl.layout.annotations||Array.of()).slice();
-    coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");
-    if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));
-    await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
-    const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
-    for(let i=0;i<pts.length;i++){
-      for(let j=0;j<i;j++){
-        if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.075){
-          pts.at(j).lon-=0.038;pts.at(j).lat+=0.022;
-          pts.at(i).lon+=0.038;pts.at(i).lat-=0.022;
-        }
-      }
-    }
-    await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:14,color:"#111111"},showlegend:false,hoverinfo:"skip"});
-    numTraceAdded=true;
-  }
   try{
-    if(!hasRightList&&window._badgesReady)await window._badgesReady;
-    const mapW=hasRightList?2460:3160,mapH=1680;
-    mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
-    const imgData=await Plotly.toImage(mapEl,{format:"png",width:Math.round(mapW/2),height:Math.round(mapH/2),scale:2});
-    const xList=2485,yTop=95,LINE_STEP=24,FONT_SIZE=18;
-    const listBottom=hasRightList?(yTop+18+regFeats.length*LINE_STEP+16):mapH;
-    const contentH=Math.max(mapH,listBottom);
-    const canvas=document.createElement("canvas");
-    canvas.width=3160;canvas.height=contentH+190;
-    const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
-    const mapImg=new Image();
-    await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
-    ctx.drawImage(mapImg,0,0,mapW,mapH);
-    const hasIns=(reg.includes("Архангельск")||((fo.includes("Северо-Запад")||fo==="СЗФО")&&reg==="ALL"));
-    const bx0=hasIns?Math.round(mapW*0.225):40,bx1=hasRightList?(mapW-10):3120;
-    ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(bx0,78,bx1-bx0,mapH-92);
-    if(hasRightList){
-      ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(xList-15,yTop-38,3145-xList,contentH-yTop+38);
-      ctx.fillStyle="#111111";ctx.font="bold 21px 'Times New Roman'";
-      ctx.fillText("Муниципальные образования:",xList,yTop-10);
-      ctx.font=FONT_SIZE+"px 'Times New Roman'";
-      regFeats.forEach((f,i)=>{const lbl=(i+1)+". "+f.properties._lbl;ctx.fillText(lbl.length>46?lbl.slice(0,45)+"…":lbl,xList,yTop+18+i*LINE_STEP);});
-    }
+    if(hasList){
+      savedAnns=(mapEl.layout.annotations||Array.of()).slice();
+      coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");
+      if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));
+      await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
+      const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
+      for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.075){pts.at(j).lon-=0.038;pts.at(j).lat+=0.022;pts.at(i).lon+=0.038;pts.at(i).lat-=0.022;}}}
+      await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:14,color:"#111111"},showlegend:false,hoverinfo:"skip"});
+      numTraceAdded=true;
+    }else if(window._badgesReady){await window._badgesReady;}
 
-    const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),legW=hasCbar?1920:3080,footY=contentH+14,footH=155;
-    ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(40,footY,legW,footH);
-    const items=Array.from(document.querySelectorAll("#sheetBox .leg-item")),cols=hasCbar?3:5,colW=Math.floor((legW-30)/cols);
+    mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
+    const mapW=3080,mapH=1480,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:740,scale:2});
+    const canvas=document.createElement("canvas");canvas.width=3160;canvas.height=1820;
+    const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3160,1820);
+    const terrTitle=reg!=="ALL"?reg:(fo!=="RF"?fo+" федеральный округ":"Российская Федерация");
+    const fullMet=mMeta.title+" ("+(mode==="grid"?"2019–2024 гг.":yr+" г.")+")";
+    ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 34px 'Times New Roman'";
+    const lines=wrapTitle(fullMet,92).split("<br>");
+    if(lines.length===1){ctx.fillText(lines.at(0),1580,68);}else{ctx.fillText(lines.at(0),1580,48);ctx.fillText(lines.at(1),1580,88);}
+    ctx.font="bold 32px 'Times New Roman'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
+    const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
+    ctx.drawImage(mapImg,40,155,mapW,mapH);
+    if(hasList){
+      const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.56)):165,lyBot=155+mapH-10;
+      const step=23,fs=18,maxRows=Math.max(6,Math.floor((lyBot-lyTop-34)/step)),twoCols=regFeats.length>maxRows;
+      ctx.fillStyle="#111111";ctx.font="bold 20px 'Times New Roman'";ctx.fillText("Муниципальные образования:",lx,lyTop+18);
+      ctx.font=fs+"px 'Times New Roman'";
+      const splitIdx=twoCols?Math.ceil(regFeats.length/2):regFeats.length,colW=twoCols?Math.floor(lw/2):lw,maxCh=twoCols?25:52;
+      regFeats.forEach((f,i)=>{
+        const c=i<splitIdx?0:1,r=i<splitIdx?i:(i-splitIdx),txt=(i+1)+". "+f.properties._lbl;
+        ctx.fillText(txt.length>maxCh?txt.slice(0,maxCh-1)+"…":txt,lx+c*colW,lyTop+44+r*step);
+      });
+    }
+    const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),footY=1660,legW=hasCbar?1900:3080;
+    const items=Array.from(document.querySelectorAll("#sheetBox .leg-item")),cols=hasCbar?3:5,colW=Math.floor(legW/cols);
     ctx.font="21px 'Times New Roman'";
     items.forEach((el,idx)=>{
-      const c=idx%cols,r=Math.floor(idx/cols),ix=58+c*colW,iy=footY+36+r*36,colHex=el.dataset.color||"#94a3b8",kind=el.dataset.kind||"box";
+      const c=Math.floor(idx/2),r=idx%2,ix=46+c*colW,iy=footY+36+r*48,colHex=el.dataset.color||"#94a3b8",kind=el.dataset.kind||"box";
       if(kind==="dot"){ctx.fillStyle=colHex;ctx.beginPath();ctx.arc(ix+10,iy-6,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.stroke();}
       else if(kind==="line"){ctx.strokeStyle=colHex;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ix,iy-6);ctx.lineTo(ix+24,iy-6);ctx.stroke();}
       else{ctx.fillStyle=colHex;ctx.fillRect(ix,iy-16,24,17);ctx.strokeStyle="#555555";ctx.lineWidth=1;ctx.strokeRect(ix,iy-16,24,17);}
       ctx.fillStyle="#111111";ctx.fillText(el.textContent.trim(),ix+32,iy);
     });
     if(hasCbar){
-      const actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],xBar=2000,wBar=1120,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
+      const actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],xBar=2050,wBar=1070,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
       actCol.forEach((c,i)=>grd.addColorStop(i/(actCol.length-1),c));
-      ctx.fillStyle=grd;ctx.fillRect(xBar,footY,wBar,26);ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY,wBar,26);
-      ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";ctx.textAlign="center";
-      Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).map(s=>s.textContent).forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.08+i*0.21)),footY+54));
-      ctx.font="bold 22px 'Times New Roman'";
-      const cTitle=document.querySelector("#sheetBox .cbar-title")?.textContent||"";
-      ctx.fillText(cTitle.length>78?cTitle.slice(0,77)+"…":cTitle,xBar+wBar/2,footY+92);ctx.textAlign="left";
+      ctx.fillStyle=grd;ctx.fillRect(xBar,footY+12,wBar,34);ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+12,wBar,34);
+      ctx.fillStyle="#111111";ctx.font="bold 21px 'Times New Roman'";ctx.textAlign="center";
+      const tks=Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).map(s=>s.textContent);
+      tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.06+i*0.22)),footY+78));ctx.textAlign="left";
     }
     const sc=Number(document.getElementById("selDpi")?.value||1);
-    if(sc<0.99){
-      const c2=document.createElement("canvas");c2.width=Math.round(canvas.width*sc);c2.height=Math.round(canvas.height*sc);
-      const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;
-    }
+    if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(1820*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
     return canvas;
   }finally{
     if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    window._isExportMode=prevExp;if(reg!=="ALL"&&!isArk&&!prevExp)render();
   }
 }
+
 async function exportFullSheetPng(){
   const c=await buildSheetCanvas();if(!c)return;
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
@@ -85,12 +81,9 @@ async function exportFullSheetPng(){
 }
 function buildPdfBlob(pages){
   const enc=new TextEncoder(),chunks=Array.of(),offs=Array.of(0);let pos=0;
-  const push=s=>{const b=typeof s==="string"?enc.encode(s):s;chunks.push(b);pos+=b.length;};
-  const obj=id=>{offs[id]=pos;push(id+" 0 obj\n");};
-  push("%PDF-1.4\n");
-  const n=pages.length,kids=pages.map((_,i)=>(3+i*3)+" 0 R").join(" ");
-  obj(1);push("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
-  obj(2);push("<< /Type /Pages /Kids [ "+kids+" ] /Count "+n+" >>\nendobj\n");
+  const push=s=>{const b=typeof s==="string"?enc.encode(s):s;chunks.push(b);pos+=b.length;},obj=id=>{offs[id]=pos;push(id+" 0 obj\n");};
+  push("%PDF-1.4\n");const n=pages.length,kids=pages.map((_,i)=>(3+i*3)+" 0 R").join(" ");
+  obj(1);push("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");obj(2);push("<< /Type /Pages /Kids [ "+kids+" ] /Count "+n+" >>\nendobj\n");
   pages.forEach((p,i)=>{
     const idP=3+i*3,idX=4+i*3,idC=5+i*3,w=Math.round(p.w*0.5),h=Math.round(p.h*0.5),cs="q "+w+" 0 0 "+h+" 0 0 cm /Im0 Do Q\n";
     obj(idP);push("<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im0 "+idX+" 0 R >> >> /MediaBox [0 0 "+w+" "+h+"] /Contents "+idC+" 0 R >>\nendobj\n");
@@ -103,30 +96,25 @@ function buildPdfBlob(pages){
   return new Blob(chunks,{type:"application/pdf"});
 }
 async function exportBatchPdf(){
-  const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value;
-  const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
+  const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
   if(document.getElementById("selMode").value==="table")return alert("Переключитесь в режим карты или сетки.");
   const origFO=sFO.value,origReg=sReg.value,queue=Array.of(),pages=Array.of();
   if(scope==="fo"){queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>queue.push({fo:f,reg:"ALL"}));}
   else if(scope==="cur_fo"){const fl=origFO==="RF"?DATA.fos:Array.of(origFO);fl.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r})));}
   else{queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>{queue.push({fo:f,reg:"ALL"});(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r}));});}
-  btn.disabled=true;
+  btn.disabled=true;window._isExportMode=true;
   try{
     for(let i=0;i<queue.length;i++){
-      btn.textContent="PDF: "+(i+1)+" / "+queue.length+"...";
-      const it=queue.at(i);
+      btn.textContent="PDF: "+(i+1)+" / "+queue.length+"...";const it=queue.at(i);
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
-      sReg.value=it.reg;render();
-      if(window._plotReady)await window._plotReady;
-      await new Promise(r=>setTimeout(r,220));
+      sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>setTimeout(r,200));
       const c=await buildSheetCanvas();if(!c)continue;
       const b64=c.toDataURL("image/jpeg",0.82).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
-      for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
-      pages.push({w:c.width,h:c.height,jpg:arr});
+      for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
     }
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
   }finally{
-    sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
+    window._isExportMode=false;sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
     sReg.value=origReg;render();btn.disabled=false;btn.textContent="Выгрузить PDF";
   }
 }
