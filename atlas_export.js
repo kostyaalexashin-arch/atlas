@@ -18,9 +18,28 @@ async function buildSheetCanvas(){
       coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");
       if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));
       await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
-      const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
-      for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.075){pts.at(j).lon-=0.038;pts.at(j).lat+=0.022;pts.at(i).lon+=0.038;pts.at(i).lat-=0.022;}}}
-      await Plotly.addTraces(mapEl,Array.of({type:"scattergeo",mode:"markers",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),marker:{size:21,color:"rgba(255,255,255,0.82)",line:{color:"#64748b",width:0.9}},showlegend:false,hoverinfo:"skip"},{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:13,color:"#111111"},showlegend:false,hoverinfo:"skip"}));
+            const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{ox:c.lon,oy:c.lat,lon:c.lon,lat:c.lat,moved:false};});
+      const bds=pts.reduce((a,p)=>({x0:Math.min(a.x0,p.ox),x1:Math.max(a.x1,p.ox),y0:Math.min(a.y0,p.oy),y1:Math.max(a.y1,p.oy)}),{x0:999,x1:-999,y0:999,y1:-999});
+      const spanX=Math.max(0.5,bds.x1-bds.x0),spanY=Math.max(0.3,bds.y1-bds.y0),thrX=spanX*0.055,thrY=spanY*0.055;
+      for(let pass=0;pass<18;pass++){
+        for(let i=0;i<pts.length;i++){
+          for(let j=0;j<i;j++){
+            const dx=(pts.at(i).lon-pts.at(j).lon)/thrX,dy=(pts.at(i).lat-pts.at(j).lat)/thrY,dist=Math.hypot(dx,dy);
+            if(dist<1.0){
+              const ang=dist>0.01?Math.atan2(dy,dx):(i*1.1),push=(1.05-dist)*0.55;
+              pts.at(i).lon+=Math.cos(ang)*thrX*push;pts.at(i).lat+=Math.sin(ang)*thrY*push;pts.at(i).moved=true;
+              pts.at(j).lon-=Math.cos(ang)*thrX*push;pts.at(j).lat-=Math.sin(ang)*thrY*push;pts.at(j).moved=true;
+            }
+          }
+        }
+      }
+      const lineLon=Array.of(),lineLat=Array.of();
+      pts.forEach(p=>{if(Math.hypot((p.lon-p.ox)/thrX,(p.lat-p.oy)/thrY)>0.65){lineLon.push(p.ox,p.lon,null);lineLat.push(p.oy,p.lat,null);}});
+      await Plotly.addTraces(mapEl,Array.of(
+        {type:"scattergeo",mode:"lines",lon:lineLon,lat:lineLat,line:{color:"#334155",width:1.1},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",mode:"markers",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),marker:{size:21,color:"rgba(255,255,255,0.85)",line:{color:"#475569",width:0.9}},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:13,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+      ));
       numTraceAdded=true;
     }else if(window._badgesReady){await window._badgesReady;}
 
@@ -69,7 +88,7 @@ async function buildSheetCanvas(){
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(1820*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
     return canvas;
   }finally{
-    if(numTraceAdded){await Plotly.deleteTraces(mapEl,Array.of(-2,-1));if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    if(numTraceAdded){await Plotly.deleteTraces(mapEl,Array.of(-3,-2,-1));if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
     window._isExportMode=prevExp;if(reg!=="ALL"&&!isArk&&!prevExp)render();
   }
 }
@@ -107,7 +126,7 @@ async function exportBatchPdf(){
     for(let i=0;i<queue.length;i++){
       btn.textContent="PDF: "+(i+1)+" / "+queue.length+"...";const it=queue.at(i);
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
-      sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,380))));
+      sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,520))));
       const c=await buildSheetCanvas();if(!c)continue;
       const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:0.85)),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
