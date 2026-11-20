@@ -82,7 +82,7 @@ Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJ
   document.getElementById("prevMet").onclick=()=>stepSelect("selMetric",-1);document.getElementById("nextMet").onclick=()=>stepSelect("selMetric",1);
   document.getElementById("prevFO").onclick=()=>stepSelect("selFO",-1);document.getElementById("nextFO").onclick=()=>stepSelect("selFO",1);
   document.getElementById("prevReg").onclick=()=>stepSelect("selReg",-1);document.getElementById("nextReg").onclick=()=>stepSelect("selReg",1);
-  document.getElementById("btnPng").onclick=exportFullSheetPng;syncControls();render();
+  document.getElementById("btnPng").onclick=exportFullSheetPng;document.getElementById("btnPdf").onclick=exportBatchPdf;syncControls();render();
 }catch(e){document.getElementById("mapDiv").innerHTML="Ошибка: "+e.message;}}).catch(e=>{document.getElementById("mapDiv").innerHTML="Ошибка загрузки: "+e.message;});
 
 function buildFooterHtml(isCat,scObj,mMeta,legItems){

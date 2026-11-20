@@ -1,4 +1,4 @@
-async function exportFullSheetPng(){
+async function buildSheetCanvas(){
   const mapEl=document.getElementById("mapDiv");
   if(!mapEl)return alert("Переключитесь в режим карты или сетки.");
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
@@ -76,8 +76,60 @@ async function exportFullSheetPng(){
       ctx.fillText(cTitle.length>78?cTitle.slice(0,77)+"…":cTitle,xBar+wBar/2,footY+92);
       ctx.textAlign="left";
     }
-    const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=canvas.toDataURL("image/png");a.click();
+    return canvas;
   }finally{
     if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns});}
+  }
+}
+async function exportFullSheetPng(){
+  const c=await buildSheetCanvas();if(!c)return;
+  const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
+  const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=c.toDataURL("image/png");a.click();
+}
+function buildPdfBlob(pages){
+  const enc=new TextEncoder(),chunks=Array.of(),offs=Array.of(0);let pos=0;
+  const push=s=>{const b=typeof s==="string"?enc.encode(s):s;chunks.push(b);pos+=b.length;};
+  const obj=id=>{offs[id]=pos;push(id+" 0 obj\n");};
+  push("%PDF-1.4\n");
+  const n=pages.length,kids=pages.map((_,i)=>(3+i*3)+" 0 R").join(" ");
+  obj(1);push("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+  obj(2);push("<< /Type /Pages /Kids [ "+kids+" ] /Count "+n+" >>\nendobj\n");
+  pages.forEach((p,i)=>{
+    const idP=3+i*3,idX=4+i*3,idC=5+i*3,w=Math.round(p.w*0.5),h=Math.round(p.h*0.5);
+    const cs="q "+w+" 0 0 "+h+" 0 0 cm /Im0 Do Q\n";
+    obj(idP);push("<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im0 "+idX+" 0 R >> >> /MediaBox [0 0 "+w+" "+h+"] /Contents "+idC+" 0 R >>\nendobj\n");
+    obj(idX);push("<< /Type /XObject /Subtype /Image /Width "+p.w+" /Height "+p.h+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+p.jpg.length+" >>\nstream\n");push(p.jpg);push("\nendstream\nendobj\n");
+    obj(idC);push("<< /Length "+cs.length+" >>\nstream\n"+cs+"endstream\nendobj\n");
+  });
+  const xPos=pos;push("xref\n0 "+(3+n*3)+"\n0000000000 65535 f \n");
+  for(let i=1;i<3+n*3;i++)push(String(offs[i]).padStart(10,"0")+" 00000 n \n");
+  push("trailer\n<< /Size "+(3+n*3)+" /Root 1 0 R >>\nstartxref\n"+xPos+"\n%%EOF");
+  return new Blob(chunks,{type:"application/pdf"});
+}
+async function exportBatchPdf(){
+  const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value;
+  const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
+  if(document.getElementById("selMode").value==="table")return alert("Переключитесь в режим карты или сетки.");
+  const origFO=sFO.value,origReg=sReg.value,queue=Array.of(),pages=Array.of();
+  if(scope==="fo"){queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>queue.push({fo:f,reg:"ALL"}));}
+  else if(scope==="cur_fo"){const fl=origFO==="RF"?DATA.fos:Array.of(origFO);fl.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r})));}
+  else{queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>{queue.push({fo:f,reg:"ALL"});(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r}));});}
+  btn.disabled=true;
+  try{
+    for(let i=0;i<queue.length;i++){
+      btn.textContent="PDF: "+(i+1)+" / "+queue.length+"...";
+      const it=queue.at(i);
+      if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
+      sReg.value=it.reg;render();
+      await new Promise(r=>setTimeout(r,260));
+      const c=await buildSheetCanvas();if(!c)continue;
+      const b64=c.toDataURL("image/jpeg",0.90).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+      for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
+      pages.push({w:c.width,h:c.height,jpg:arr});
+    }
+    if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
+  }finally{
+    sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
+    sReg.value=origReg;render();btn.disabled=false;btn.textContent="Выгрузить PDF";
   }
 }
