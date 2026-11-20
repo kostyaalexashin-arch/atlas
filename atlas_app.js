@@ -38,15 +38,19 @@ function wideGeoCfg(feats,projObj,domX,domY){
   const w=c=>{if(typeof c.at(0)==="number"){if(c.at(0)<x0)x0=c.at(0);if(c.at(0)>x1)x1=c.at(0);if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};
   feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
   if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
-  const cx=(x0+x1)/2,cy=(y0+y1)/2,cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
-  const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0));
-  const spanX=Math.max(0.35,(x1-x0)*cosL),spanY=Math.max(0.25,(y1-y0)*(projObj.type==="albers"?0.88:1.15));
   if(projObj.type==="mercator"&&projObj.rotation?.lon===105){
     return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(-90,90)},lataxis:{range:Array.of(41,82)}};
   }
-  const sc=Math.min(boxW/(spanX*4.05),boxH/(spanY*4.05));
-  const p=Object.assign({},projObj,{scale:Math.max(0.85,sc)});
-  return{domain:{x:domX,y:domY},visible:false,projection:p,center:{lon:cx,lat:cy}};
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,cosL=Math.max(0.25,Math.cos(cy*Math.PI/180));
+  const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
+  let dx=Math.max(0.4,(x1-x0)*1.08),dy=Math.max(0.3,(y1-y0)*1.08);
+  const effW=dx*cosL,effH=dy*(projObj.type==="albers"?0.9:1.12);
+  if(effW/effH<aspect){dx=(effH*aspect)/cosL;}else{dy=(effW/aspect)/(projObj.type==="albers"?0.9:1.12);}
+  if(projObj.type==="albers"){
+    const sc=Math.min(boxW/(dx*cosL*4.0),boxH/(dy*0.9*4.0));
+    return{domain:{x:domX,y:domY},visible:false,projection:Object.assign({},projObj,{scale:Math.max(0.85,sc)}),center:{lon:cx,lat:cy}};
+  }
+  return{domain:{x:domX,y:domY},visible:false,projection:{type:"mercator"},lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(cy-dy/2,cy+dy/2)}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
