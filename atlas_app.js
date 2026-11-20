@@ -94,27 +94,29 @@ function addCoreBadges(mapEl,isRegLevel){
   setTimeout(()=>{
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
     const sRect=svg.getBoundingClientRect();if(!sRect.width||!sRect.height)return;
+    const pts=Array.from(svg.querySelectorAll(".geolayer .point"));
     const cSet=new Set(GEO.features.filter(f=>f.properties.is_center).map(f=>f.properties._lbl.trim()));
     const txtEls=Array.from(svg.querySelectorAll(".geolayer text")).filter(t=>cSet.has(t.textContent.trim()));
     const anns=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore);
     txtEls.forEach((tEl,idx)=>{
-      const r=tEl.getBoundingClientRect();
+      const anchorEl=(!isRegLevel&&pts.at(idx))?pts.at(idx):tEl;
+      const r=anchorEl.getBoundingClientRect();
       if(!r||r.width===0)return;
       const px=(r.left+r.width/2-sRect.left)/sRect.width;
       const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
-      const dirs=Array.of(Array.of(0,-18),Array.of(0,18),Array.of(34,0),Array.of(-34,0));
-      const d=isRegLevel?Array.of(0,-20):dirs.at(idx%4);
+      const dirs=Array.of(Array.of(0,-18),Array.of(0,18),Array.of(36,0),Array.of(-36,0));
+      const d=isRegLevel?Array.of(0,0):dirs.at(idx%4);
       anns.push({
         _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
         text:"<b>"+tEl.textContent.trim()+"</b>",
-        showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",
+        showarrow:!isRegLevel,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",
         ax:d.at(0),ay:d.at(1),
         bgcolor:"rgba(255,255,255,0.95)",
         bordercolor:isRegLevel?"#e6007e":"#475569",
         borderwidth:1,borderpad:3,
         font:{family:"Times New Roman",size:isRegLevel?13:12,color:"#111111"}
       });
-      tEl.setAttribute("opacity","0");
+      tEl.style.display="none";
     });
     mapEl._badgeBusy=true;
     Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{mapEl._badgeBusy=false;},80);});

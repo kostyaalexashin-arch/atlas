@@ -6,7 +6,7 @@ async function exportFullSheetPng(){
   const hasRightList=regFeats.length>0;
   let numTraceAdded=false;
   if(hasRightList){
-    const savedAnns=(mapEl.layout.annotations||Array.of()).slice();await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
+    const savedAnns=(mapEl.layout.annotations||Array.of()).slice();const coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
     await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:regFeats.map(f=>f.properties._cent.lon),lat:regFeats.map(f=>f.properties._cent.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:16,color:"#000000"},showlegend:false,hoverinfo:"skip"});
     numTraceAdded=true;
   }
@@ -76,6 +76,6 @@ async function exportFullSheetPng(){
     }
     const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=canvas.toDataURL("image/png");a.click();
   }finally{
-    if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns});}
   }
 }
