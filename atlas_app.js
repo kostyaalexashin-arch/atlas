@@ -31,8 +31,10 @@ function wideGeoCfg(feats,projObj,domX,domY){
   const cx=(x0+x1)/2,cy=(y0+y1)/2,cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
   const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0));
   const spanX=Math.max(0.35,(x1-x0)*cosL),spanY=Math.max(0.25,(y1-y0)*(projObj.type==="albers"?0.88:1.15));
-  const kPad=(projObj.type==="albers"&&projObj.rotation?.lon===104)?4.15:3.65;
-  const sc=Math.min(boxW/(spanX*kPad),boxH/(spanY*kPad));
+  if(projObj.type==="albers"&&projObj.rotation?.lon===104){
+    return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(-88,90)},lataxis:{range:Array.of(40,83)}};
+  }
+  const sc=Math.min(boxW/(spanX*3.65),boxH/(spanY*3.65));
   const p=Object.assign({},projObj,{scale:Math.max(0.85,sc)});
   return{domain:{x:domX,y:domY},visible:false,projection:p,center:{lon:cx,lat:cy}};
 }
