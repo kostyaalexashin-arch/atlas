@@ -107,9 +107,9 @@ async function exportBatchPdf(){
     for(let i=0;i<queue.length;i++){
       btn.textContent="PDF: "+(i+1)+" / "+queue.length+"...";const it=queue.at(i);
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
-      sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>setTimeout(r,200));
+      sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,380))));
       const c=await buildSheetCanvas();if(!c)continue;
-      const b64=c.toDataURL("image/jpeg",0.82).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+      const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.6?0.62:(scDpi<0.9?0.74:0.85),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
     }
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}

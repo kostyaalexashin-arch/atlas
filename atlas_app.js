@@ -24,32 +24,34 @@ function getCenter(g){
   let sx=0,sy=0;best.forEach(pt=>{sx+=pt.at(0);sy+=pt.at(1);});return best.length?{lon:sx/best.length,lat:sy/best.length}:{lon:0,lat:0};
 }
 function makeProj(fo,reg){
-  if(fo==="RF"&&reg==="ALL")return{type:"mercator",rotation:{lon:105}};
-  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область")return{type:"mercator",rotation:{lon:145}};
+  if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100,lat:58},parallels:[50,68]};
+  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область"||reg==="Сахалинская область")return{type:"mercator",rotation:{lon:155}};
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
+  if(projObj.type==="conic equal area"){
+    return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,showframe:false,projection:projObj};
+  }
   const rotLon=projObj.rotation?.lon||0;let x0=999,x1=-999,y0=999,y1=-999;
   const w=c=>{if(typeof c.at(0)==="number"){let lx=c.at(0)-rotLon;if(lx<-180)lx+=360;if(lx>180)lx-=360;if(lx<x0)x0=lx;if(lx>x1)x1=lx;if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};
   feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
   if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
-  const mEl=document.getElementById("mapDiv"),W=(mEl&&mEl.clientWidth>200)?mEl.clientWidth:1560,H=(mEl&&mEl.clientHeight>200)?mEl.clientHeight:740;
+  const mEl=document.getElementById("mapDiv"),W=(mEl&&mEl.clientWidth>200)?mEl.clientWidth:1540,H=(mEl&&mEl.clientHeight>200)?mEl.clientHeight:740;
   const boxW=W*(domX.at(1)-domX.at(0)),boxH=H*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
-  const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-81,Math.min(81,lat))*Math.PI/360))*180/Math.PI;
+  const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-84,Math.min(84,lat))*Math.PI/360))*180/Math.PI;
   const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
-  const pad=1.12,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
+  const pad=1.08,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
-  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(Math.max(-81,fromM(ymc-dym/2)),Math.min(83,fromM(ymc+dym/2)))}};
+  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
   const s=vals.slice().sort((a,b)=>a-b),vmin=s.at(Math.floor(s.length*0.02))??0,vmax=s.at(Math.min(s.length-1,Math.floor(s.length*0.98)))??1,med=s.at(Math.floor(s.length*0.5))??0;
-  const gamma=(vmin>=0&&med>0&&(vmax/med)>=4.5)?0.42:1.0,pal=inv?palArr.slice().reverse():palArr;
+  const gamma=(vmin>=0&&med>0&&(vmax/med)>=4.0)?0.42:1.0,pal=inv?palArr.slice().reverse():palArr;
   const norm=v=>{if(vmax<=vmin)return 0.5;return Math.pow(Math.max(0,Math.min(1,(v-vmin)/(vmax-vmin))),gamma);};
   const invNorm=u=>vmin+Math.pow(u,1/gamma)*(vmax-vmin);
   const plScale=Array.of(0,0.125,0.25,0.375,0.5,0.625,0.75,0.875,1.0).map(u=>Array.of(u,pal.at(Math.min(pal.length-1,Math.floor(u*pal.length)))));
-  const rawTicks=Array.of(0.08,0.29,0.50,0.71,0.92).map(u=>invNorm(u)),span=Math.max(1e-9,vmax-vmin),step=niceRound(span/5);
-  const ticks=rawTicks.map((t,i)=>{const v=Math.round(t/step)*step;return (i>0&&v===Math.round(rawTicks.at(i-1)/step)*step)?Number((v+step/2).toFixed(4)):v;});
+  const ticks=Array.of(0.06,0.28,0.50,0.72,0.94).map(u=>{const raw=invNorm(u),p=raw!==0?Math.pow(10,Math.floor(Math.log10(Math.abs(raw)))-1):1;return Math.round(raw/p)*p;});
   const getHex=v=>(v===null||v===undefined||isNaN(Number(v)))?"#eeeeee":pal.at(Math.min(pal.length-1,Math.floor(norm(Number(v))*pal.length)));
   return{vmin,vmax,gamma,pal,plScale,ticks,getHex};
 }
