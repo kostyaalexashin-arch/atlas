@@ -8,7 +8,7 @@ async function buildSheetCanvas(){
   if(hasRightList){
     savedAnns=(mapEl.layout.annotations||Array.of()).slice();coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
     const pts=regFeats.map(f=>{const c=(f.properties._cx&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
-    for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.055){pts.at(j).lon-=0.025;pts.at(j).lat+=0.015;pts.at(i).lon+=0.025;pts.at(i).lat-=0.015;}}}
+    for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.045){pts.at(j).lon-=0.024;pts.at(j).lat+=0.014;pts.at(i).lon+=0.024;pts.at(i).lat-=0.014;}}}}}
     for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.26){pts.at(j).lon-=0.13;pts.at(i).lon+=0.13;}}}
     await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:15,color:"#000000"},showlegend:false,hoverinfo:"skip"});
     numTraceAdded=true;

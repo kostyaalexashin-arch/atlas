@@ -122,9 +122,10 @@ function addCoreBadges(mapEl,isRegLevel){
         const ml=5,mr=5,mt=62,mb=5,pW=Math.max(1,sRect.width-ml-mr),pH=Math.max(1,sRect.height-mt-mb);
         const px=(r.left+r.width/2-sRect.left-ml)/pW;
         const py=1.0-(r.top+r.height/2-sRect.top-mt)/pH;
-        const isK=isNW&&f.properties.region.includes("Калининград");
-        const xMin=isK?0.02:(isNW?0.24:0.03),xMax=isK?0.20:0.97;
-        if(px<xMin||px>xMax||py<0.05||py>0.91)return;
+        const gLayer=svg.querySelector(".geolayer");
+        const gRect=gLayer?gLayer.getBoundingClientRect():sRect;
+        if(r.left<gRect.left+4||r.right>gRect.right-4||r.top<gRect.top+4||r.bottom>gRect.bottom-4)return;
+        if(px<0.02||px>0.98||py<0.04||py>0.92)return;
         const dirs=Array.of(Array.of(0,-22),Array.of(0,24),Array.of(52,0),Array.of(-52,0),Array.of(46,-22),Array.of(-46,24),Array.of(46,24),Array.of(-46,-22));
         let d=dirs.at(idx%8);
         for(let k=0;k<dirs.length;k++){
