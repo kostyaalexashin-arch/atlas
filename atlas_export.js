@@ -38,6 +38,9 @@ async function buildSheetCanvas(){
     const mapImg=new Image();
     await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,0,0,mapW,mapH);
+    const hasIns=(reg.includes("Архангельск")||((fo.includes("Северо-Запад")||fo==="СЗФО")&&reg==="ALL"));
+    const bx0=hasIns?Math.round(mapW*0.225):40,bx1=hasRightList?(mapW-10):3120;
+    ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(bx0,78,bx1-bx0,mapH-92);
 
     if(hasRightList){
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(xList-15,yTop-38,3145-xList,contentH-yTop+38);

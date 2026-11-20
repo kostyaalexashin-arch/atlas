@@ -56,7 +56,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   let ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
   const latMin=Math.max(-81,fromM(ymc-dym/2)),latMax=Math.min(83,fromM(ymc+dym/2));
-  return{domain:{x:domX,y:domY},visible:false,showframe:true,framecolor:"#cbd5e1",framewidth:1,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
+  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
