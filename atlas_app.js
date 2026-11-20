@@ -29,8 +29,7 @@ function getCenter(g){
 }
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"mercator",rotation:{lon:105}};
-  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область")return{type:"albers",rotation:{lon:142},parallels:Array.of(50,66)};
-  if(fo==="Сибирский"||fo==="Уральский")return{type:"albers",rotation:{lon:85},parallels:Array.of(52,66)};
+  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область")return{type:"mercator",rotation:{lon:145}};
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
@@ -42,6 +41,8 @@ function wideGeoCfg(feats,projObj,domX,domY){
     return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(-90,90)},lataxis:{range:Array.of(41,82)}};
   }
   const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
+  const rotLon=projObj.rotation?.lon||0;
+  if(rotLon===145){x0=999;x1=-999;const wR=c=>{if(typeof c.at(0)==="number"){let lx=c.at(0)-145;if(lx<-180)lx+=360;if(lx>180)lx-=360;if(lx<x0)x0=lx;if(lx>x1)x1=lx;}else c.forEach(wR);};feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)wR(f.geometry.coordinates);});}
   const cx=(x0+x1)/2,cy=(y0+y1)/2;
   if(projObj.type==="albers"){
     const cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
@@ -56,7 +57,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   let ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
   const latMin=Math.max(-80,fromM(ymc-dym/2)),latMax=Math.min(82,fromM(ymc+dym/2));
-  return{domain:{x:domX,y:domY},visible:false,projection:{type:"mercator"},lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
+  return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
