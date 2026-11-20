@@ -221,14 +221,14 @@ function render(){
   mapEl.on("plotly_relayout",()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
 
   if(reg!=="ALL"&&mode==="single"){
-    const regList=Array.from(mainFeats.filter(f=>f.properties._map_status==="В_выборке").reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
+    const regList=Array.from(mainFeats.filter(f=>f.properties._map_status==="В_выборке").reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
     if(regList.length>0){
       const stage=document.createElement("div");stage.className="map-stage";mapEl.parentNode.insertBefore(stage,mapEl);stage.appendChild(mapEl);
       const pnl=document.createElement("div");pnl.className="mo-side-panel"+(isArk?" ark":"");
       pnl.innerHTML='<div class="mo-side-hdr">Муниципальные образования:</div>';
       const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.locations&&t.locations.length===regList.length);
       regList.forEach((f,i)=>{
-        const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;
+        const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;if(f.properties.is_center)it.style.fontWeight="bold";
         it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));};
         pnl.appendChild(it);
       });

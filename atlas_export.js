@@ -5,7 +5,7 @@ async function buildSheetCanvas(){
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0);
   const isArk=reg.includes("Архангельск"),isNW=(fo.includes("Северо-Запад")||fo==="СЗФО")&&reg==="ALL";
   const hasInsets=isArk||isNW;
-  const regFeats=(reg!=="ALL")?Array.from(GEO.features.filter(f=>f.properties.region===reg&&f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru")):Array.of();
+  const regFeats=(reg!=="ALL")?Array.from(GEO.features.filter(f=>f.properties.region===reg&&f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru")):Array.of();
   const hasList=regFeats.length>0,hasRightCol=hasInsets||hasList;
   const prevExp=Boolean(window._isExportMode);
   window._isExportMode=true;
@@ -18,9 +18,12 @@ async function buildSheetCanvas(){
       coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");
       if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));
       await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
-      const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
-      for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.075){pts.at(j).lon-=0.038;pts.at(j).lat+=0.022;pts.at(i).lon+=0.038;pts.at(i).lat-=0.022;}}}
-      await Plotly.addTraces(mapEl,Array.of({type:"scattergeo",mode:"markers",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),marker:{size:21,color:"rgba(255,255,255,0.82)",line:{color:"#64748b",width:0.9}},showlegend:false,hoverinfo:"skip"},{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:13,color:"#111111"},showlegend:false,hoverinfo:"skip"}));
+      const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{ox:c.lon,oy:c.lat,lon:c.lon,lat:c.lat};});
+      const bds=pts.reduce((a,p)=>({x0:Math.min(a.x0,p.ox),x1:Math.max(a.x1,p.ox),y0:Math.min(a.y0,p.oy),y1:Math.max(a.y1,p.oy)}),{x0:999,x1:-999,y0:999,y1:-999});
+      const thrX=Math.max(0.5,bds.x1-bds.x0)*0.052,thrY=Math.max(0.3,bds.y1-bds.y0)*0.052;
+      for(let pass=0;pass<16;pass++){for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){const dx=(pts.at(i).lon-pts.at(j).lon)/thrX,dy=(pts.at(i).lat-pts.at(j).lat)/thrY,d=Math.hypot(dx,dy);if(d<1.0){const a=d>0.01?Math.atan2(dy,dx):(i*1.1),k=(1.04-d)*0.5;pts.at(i).lon+=Math.cos(a)*thrX*k;pts.at(i).lat+=Math.sin(a)*thrY*k;pts.at(j).lon-=Math.cos(a)*thrX*k;pts.at(j).lat-=Math.sin(a)*thrY*k;}}}}
+      const lLon=Array.of(),lLat=Array.of();pts.forEach(p=>{if(Math.hypot((p.lon-p.ox)/thrX,(p.lat-p.oy)/thrY)>0.65){lLon.push(p.ox,p.lon,null);lLat.push(p.oy,p.lat,null);}});
+      await Plotly.addTraces(mapEl,Array.of({type:"scattergeo",mode:"lines",lon:lLon,lat:lLat,line:{color:"#334155",width:1.1},showlegend:false,hoverinfo:"skip"},{type:"scattergeo",mode:"markers",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),marker:{size:21,color:"rgba(255,255,255,0.85)",line:{color:"#475569",width:0.9}},showlegend:false,hoverinfo:"skip"},{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:13,color:"#111111"},showlegend:false,hoverinfo:"skip"}));
       numTraceAdded=true;
     }else if(window._badgesReady){await window._badgesReady;}
 
@@ -44,7 +47,7 @@ async function buildSheetCanvas(){
       const splitIdx=twoCols?Math.ceil(regFeats.length/2):regFeats.length,colW=twoCols?Math.floor(lw/2):lw,maxCh=twoCols?25:52;
       regFeats.forEach((f,i)=>{
         const c=i<splitIdx?0:1,r=i<splitIdx?i:(i-splitIdx),txt=(i+1)+". "+f.properties._lbl;
-        ctx.fillText(txt.length>maxCh?txt.slice(0,maxCh-1)+"…":txt,lx+c*colW,lyTop+44+r*step);
+        ctx.font=(f.properties.is_center?"bold ":"")+fs+"px 'Times New Roman'";ctx.fillText(txt.length>maxCh?txt.slice(0,maxCh-1)+"…":txt,lx+c*colW,lyTop+44+r*step);
       });
     }
     const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),footY=1660,legW=hasCbar?1900:3080;
@@ -69,7 +72,7 @@ async function buildSheetCanvas(){
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(1820*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
     return canvas;
   }finally{
-    if(numTraceAdded){await Plotly.deleteTraces(mapEl,Array.of(-2,-1));if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    if(numTraceAdded){await Plotly.deleteTraces(mapEl,Array.of(-3,-2,-1));if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
     window._isExportMode=prevExp;if(reg!=="ALL"&&!isArk&&!prevExp)render();
   }
 }
