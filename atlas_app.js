@@ -119,8 +119,9 @@ function addCoreBadges(mapEl,isRegLevel){
       coreOrdered.forEach((f,idx)=>{
         const pEl=pts.at(idx);if(!pEl)return;
         const r=pEl.getBoundingClientRect();if(!r||r.width===0)return;
-        const px=(r.left+r.width/2-sRect.left)/sRect.width;
-        const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
+        const ml=5,mr=5,mt=62,mb=5,pW=Math.max(1,sRect.width-ml-mr),pH=Math.max(1,sRect.height-mt-mb);
+        const px=(r.left+r.width/2-sRect.left-ml)/pW;
+        const py=1.0-(r.top+r.height/2-sRect.top-mt)/pH;
         const isK=isNW&&f.properties.region.includes("Калининград");
         const xMin=isK?0.02:(isNW?0.24:0.03),xMax=isK?0.20:0.97;
         if(px<xMin||px>xMax||py<0.05||py>0.91)return;
@@ -146,8 +147,9 @@ function addCoreBadges(mapEl,isRegLevel){
       const lastP=paths.at(paths.length-1);
       if(lastP){
         const r=lastP.getBoundingClientRect();
-        const px=(r.left+r.width/2-sRect.left)/sRect.width;
-        const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
+        const ml=5,mr=5,mt=62,mb=5,pW=Math.max(1,sRect.width-ml-mr),pH=Math.max(1,sRect.height-mt-mb);
+        const px=(r.left+r.width/2-sRect.left-ml)/pW;
+        const py=1.0-(r.top+r.height/2-sRect.top-mt)/pH;
         const xMin=reg.includes("Архангельск")?0.24:0.03;
         if(px>=xMin&&px<=0.97&&py>=0.05&&py<=0.91){
           anns.push({
