@@ -103,8 +103,8 @@ function buildFooterHtml(isCat,scObj,mMeta,legItems){
 }
 
 function addCoreBadges(mapEl,isRegLevel){
-  if(mapEl._badgeBusy)return;
-  setTimeout(()=>{
+  if(mapEl._badgeBusy)return window._badgesReady||Promise.resolve();
+  window._badgesReady=new Promise(res=>{setTimeout(()=>{
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
     const sRect=svg.getBoundingClientRect();if(!sRect.width||!sRect.height)return;
     const fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value;
@@ -163,8 +163,8 @@ function addCoreBadges(mapEl,isRegLevel){
       }
     }
     mapEl._badgeBusy=true;
-    Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{mapEl._badgeBusy=false;},80);});
-  },120);
+    Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{mapEl._badgeBusy=false;res();},80);});
+  },140);});return window._badgesReady;
 }
 
 function render(){
@@ -281,8 +281,8 @@ function render(){
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.04,0.29));layout.geo4.showframe=true;layout.geo4.framecolor="#64748b";layout.geo4.framewidth=1;layout.annotations.push({text:"<b>Калининградская область</b>",x:0.11,y:0.315,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
 
   Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{
-    if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");
+    if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");
   });
-  mapEl.on("plotly_relayout",()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
+  mapEl.on("plotly_relayout",()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
   box.appendChild(buildFooterHtml(mMeta.cat,scObj,mMeta,legIt));
 }

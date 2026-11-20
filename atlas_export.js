@@ -23,6 +23,7 @@ async function buildSheetCanvas(){
     numTraceAdded=true;
   }
   try{
+    if(!hasRightList&&window._badgesReady)await window._badgesReady;
     const mapW=hasRightList?2460:3160,mapH=1680;
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
     const imgData=await Plotly.toImage(mapEl,{format:"png",width:Math.round(mapW/2),height:Math.round(mapH/2),scale:2});
