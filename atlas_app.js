@@ -56,7 +56,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   let ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
   const latMin=Math.max(-81,fromM(ymc-dym/2)),latMax=Math.min(83,fromM(ymc+dym/2));
-  return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
+  return{domain:{x:domX,y:domY},visible:false,showframe:true,framecolor:"#cbd5e1",framewidth:1,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
@@ -133,8 +133,8 @@ function addCoreBadges(mapEl,isRegLevel){
         const px=(r.left+r.width/2-sRect.left-ml)/pW;
         const py=1.0-(r.top+r.height/2-sRect.top-mt)/pH;
         const isK=isNW&&f.properties.region.includes("Калининград");
-        const xMin=isK?0.015:(isNW?0.235:0.02),xMax=isK?0.205:0.98;
-        if(px<xMin||px>xMax||py<0.04||py>0.92)return;
+        const xMin=isK?0.01:(isNW?0.23:0.01),xMax=isK?0.205:0.99;
+        if(px<xMin||px>xMax||py<0.02||py>0.97)return;
         const dirs=Array.of(Array.of(0,-22),Array.of(0,24),Array.of(52,0),Array.of(-52,0),Array.of(46,-22),Array.of(-46,24),Array.of(46,24),Array.of(-46,-22));
         let d=dirs.at(idx%8);
         for(let k=0;k<dirs.length;k++){
@@ -284,7 +284,7 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#cbd5e1;border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
-  const layout={title:hdrSvg,geo:wideGeoCfg(mainFeats,projObj,Array.of(hasInsets?0.23:0.0,1.0),Array.of(0.02,0.97)),annotations:Array.of(),showlegend:false,margin:{l:5,r:5,t:62,b:5},height:810};
+  const layout={title:hdrSvg,geo:wideGeoCfg(mainFeats,projObj,Array.of(hasInsets?0.225:0.005,0.995),Array.of(0.01,0.985)),annotations:Array.of(),showlegend:false,margin:{l:5,r:5,t:62,b:5},height:810};
   const yNZ=hasKal?Array.of(0.68,0.93):Array.of(0.52,0.92),yZFI=hasKal?Array.of(0.36,0.61):Array.of(0.04,0.44);
   if(nzFeats.length>0){layout.geo2=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.01,0.21),yNZ);layout.geo2.showframe=true;layout.geo2.framecolor="#64748b";layout.geo2.framewidth=1;layout.annotations.push({text:"<b>МО «Новая Земля»</b>",x:0.11,y:yNZ.at(1)+0.025,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(zfiFeats.length>0){layout.geo3=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.01,0.21),yZFI);layout.geo3.showframe=true;layout.geo3.framecolor="#64748b";layout.geo3.framewidth=1;layout.annotations.push({text:"<b>арх. Земля Франца-Иосифа</b>",x:0.11,y:yZFI.at(1)+0.025,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
