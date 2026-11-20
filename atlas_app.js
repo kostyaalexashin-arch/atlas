@@ -94,6 +94,18 @@ function buildFooterHtml(isCat,scObj,legItems){
   }
   return f;
 }
+function applyZatoHatch(mapEl){
+  const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
+  let defs=svg.querySelector("defs");if(!defs){defs=document.createElementNS("http://w3.org","defs");svg.insertBefore(defs,svg.firstChild);}
+  if(!defs.querySelector("#zatoHatch")){
+    const pat=document.createElementNS("http://w3.org","pattern");
+    pat.setAttribute("id","zatoHatch");pat.setAttribute("width","7");pat.setAttribute("height","7");pat.setAttribute("patternUnits","userSpaceOnUse");pat.setAttribute("patternTransform","rotate(45)");
+    const bg=document.createElementNS("http://w3.org","rect");bg.setAttribute("width","7");bg.setAttribute("height","7");bg.setAttribute("fill","#e2e8f0");
+    const ln=document.createElementNS("http://w3.org","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","7");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","2");
+    pat.append(bg,ln);defs.appendChild(pat);
+  }
+  svg.querySelectorAll(".geolayer .choropleth path").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl==="rgb(203,213,225)"||fl==="#cbd5e1")p.style.fill="url(#zatoHatch)";});
+}
 function addCoreBadges(mapEl,isRegLevel){
   if(mapEl._badgeBusy)return window._badgesReady||Promise.resolve();
   window._badgesReady=new Promise(res=>{setTimeout(()=>{
@@ -209,7 +221,7 @@ function render(){
     if(reg==="ALL"){traces.push({type:"scattergeo",geo:"geo",mode:"markers",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});}
     else{traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:3.5}}});legIt.push({col:CORE,kind:"line",icon:'<span style="display:inline-block;width:18px;height:3px;background:'+CORE+';"></span>',txt:"Ядро региона (макс. население)"});}
   }
-  if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#cbd5e1;border:1px solid #475569;"></span>',txt:"ЗАТО"});
+  if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"hatch",icon:'<span style="display:inline-block;width:18px;height:13px;background:repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0 3px,#475569 3px,#475569 4.5px);border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
   const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.01,0.99)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:740};
@@ -217,8 +229,8 @@ function render(){
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
-  mapEl.on("plotly_relayout",()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
+  window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
+  mapEl.on("plotly_relayout",()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
 
   if(reg!=="ALL"&&mode==="single"){
     const regList=Array.from(mainFeats.filter(f=>f.properties._map_status==="В_выборке").reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
