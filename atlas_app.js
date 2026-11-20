@@ -90,36 +90,35 @@ function buildFooterHtml(isCat,scObj,mMeta,legItems){
 }
 
 function addCoreBadges(mapEl,isRegLevel){
-  requestAnimationFrame(()=>{
+  if(mapEl._badgeBusy)return;
+  setTimeout(()=>{
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
-    const W=mapEl.clientWidth||1560,H=mapEl.clientHeight||810;
-    const sRect=svg.getBoundingClientRect();
-    const pts=Array.from(svg.querySelectorAll(".scatterlayer .trace .point"));
+    const sRect=svg.getBoundingClientRect();if(!sRect.width||!sRect.height)return;
     const cSet=new Set(GEO.features.filter(f=>f.properties.is_center).map(f=>f.properties._lbl.trim()));
-    const txtEls=Array.from(svg.querySelectorAll(".scatterlayer .trace text")).filter(t=>cSet.has(t.textContent.trim()));
+    const txtEls=Array.from(svg.querySelectorAll(".geolayer text")).filter(t=>cSet.has(t.textContent.trim()));
     const anns=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore);
     txtEls.forEach((tEl,idx)=>{
-      const pEl=pts.at(idx)||tEl;
-      const r=pEl.getBoundingClientRect();
+      const r=tEl.getBoundingClientRect();
       if(!r||r.width===0)return;
-      const px=(r.left+r.width/2-sRect.left)/W;
-      const py=1.0-(r.top+r.height/2-sRect.top)/H;
-      const dirs=Array.of(Array.of(0,-20),Array.of(0,20),Array.of(36,0),Array.of(-36,0));
-      const d=dirs.at(idx%4);
+      const px=(r.left+r.width/2-sRect.left)/sRect.width;
+      const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
+      const dirs=Array.of(Array.of(0,-18),Array.of(0,18),Array.of(34,0),Array.of(-34,0));
+      const d=isRegLevel?Array.of(0,-20):dirs.at(idx%4);
       anns.push({
         _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
         text:"<b>"+tEl.textContent.trim()+"</b>",
         showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",
         ax:d.at(0),ay:d.at(1),
-        bgcolor:"rgba(255,255,255,0.94)",
+        bgcolor:"rgba(255,255,255,0.95)",
         bordercolor:isRegLevel?"#e6007e":"#475569",
         borderwidth:1,borderpad:3,
         font:{family:"Times New Roman",size:isRegLevel?13:12,color:"#111111"}
       });
-      tEl.style.opacity="0";
+      tEl.setAttribute("opacity","0");
     });
-    Plotly.relayout(mapEl,{annotations:anns});
-  });
+    mapEl._badgeBusy=true;
+    Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{mapEl._badgeBusy=false;},80);});
+  },120);
 }
 
 function render(){
