@@ -44,7 +44,7 @@ function computeScale(vals,palArr,inv){
   const plScale=Array.of(0,0.125,0.25,0.375,0.5,0.625,0.75,0.875,1.0).map(u=>Array.of(u,pal.at(Math.min(pal.length-1,Math.floor(u*pal.length)))));
   const rawTicks=Array.of(0.08,0.29,0.50,0.71,0.92).map(u=>invNorm(u));
   const span=Math.max(1e-9,vmax-vmin),step=niceRound(span/5);
-  const ticks=rawTicks.map(t=>Math.round(t/step)*step);
+  const ticks=rawTicks.map((t,i)=>{const v=Math.round(t/step)*step;return (i>0&&v===Math.round(rawTicks.at(i-1)/step)*step)?Number((v+step/2).toFixed(4)):v;});
   const getHex=v=>(v===null||v===undefined||isNaN(Number(v)))?"#eeeeee":pal.at(Math.min(pal.length-1,Math.floor(norm(Number(v))*pal.length)));
   return{vmin,vmax,gamma,pal,plScale,ticks,getHex};
 }
@@ -93,7 +93,7 @@ function addCoreBadges(mapEl,isRegLevel){
   requestAnimationFrame(()=>{
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
     svg.querySelectorAll(".core-badge").forEach(el=>el.remove());
-    const txtNodes=Array.from(svg.querySelectorAll(".geolayer text"));
+    const cSet=new Set(GEO.features.filter(f=>f.properties.is_center).map(f=>f.properties._lbl.trim()));const txtNodes=Array.from(svg.querySelectorAll("text")).filter(t=>cSet.has(t.textContent.trim()));
     const ns="http://w3.org";
     txtNodes.forEach(tEl=>{
       if(!tEl.textContent||!tEl.textContent.trim())return;

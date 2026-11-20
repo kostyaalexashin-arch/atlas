@@ -6,6 +6,7 @@ async function exportFullSheetPng(){
   const hasRightList=regFeats.length>0;
   let numTraceAdded=false;
   if(hasRightList){
+    mapEl.querySelectorAll(".core-badge").forEach(e=>e.style.display="none");
     await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:regFeats.map(f=>f.properties._cent.lon),lat:regFeats.map(f=>f.properties._cent.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:16,color:"#000000"},showlegend:false,hoverinfo:"skip"});
     numTraceAdded=true;
   }
@@ -75,6 +76,6 @@ async function exportFullSheetPng(){
     }
     const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=canvas.toDataURL("image/png");a.click();
   }finally{
-    if(numTraceAdded)await Plotly.deleteTraces(mapEl,-1);
+    if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);mapEl.querySelectorAll(".core-badge").forEach(e=>e.style.display="");}
   }
 }
