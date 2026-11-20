@@ -16,7 +16,17 @@ document.addEventListener("click",()=>menuP.classList.remove("open"));updBtn(cur
 const fmtNum=(v,d)=>(v===null||v===undefined||v===""||isNaN(Number(v)))?"н/д":Number(v).toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d});
 function wrapTitle(s,lim=106){if(s.length<=lim)return s;const idx=s.lastIndexOf(" ",lim);if(idx<=30)return s;const tail=s.slice(idx+1);return tail.length<14?s:(s.slice(0,idx)+"<br>"+tail);}
 function markerSvg(c,f,sz=20){const s="#1e293b",h=sz/2;if(c==="1")return '<svg width="'+sz+'" height="'+sz+'"><rect x="3" y="3" width="'+(sz-6)+'" height="'+(sz-6)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="2")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+h+' '+h+','+(sz-2)+' 2,'+h+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="3")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz-3)+' 2,'+(sz-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="4")return '<svg width="'+sz+'" height="'+sz+'"><circle cx="'+h+'" cy="'+h+'" r="'+(h-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz*0.42)+' '+(sz*0.8)+','+(sz-2)+' '+(sz*0.2)+','+(sz-2)+' 2,'+(sz*0.42)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';}
-function getCenter(g){if(!g||!g.coordinates)return{lon:0,lat:0};const rings=g.type==="Polygon"?Array.of(g.coordinates.at(0)):g.coordinates.map(p=>p.at(0));let best=rings.at(0),bLen=0;rings.forEach(r=>{if(r.length>bLen){bLen=r.length;best=r;}});let sx=0,sy=0;best.forEach(pt=>{sx+=pt.at(0);sy+=pt.at(1);});return best.length?{lon:sx/best.length,lat:sy/best.length}:{lon:0,lat:0};}
+function getCenter(g){
+  if(!g)return{lon:0,lat:0};
+  const rings=Array.of();
+  const collect=obj=>{if(!obj)return;if(obj.type==="GeometryCollection"&&obj.geometries)obj.geometries.forEach(collect);else if(obj.type==="Polygon"&&obj.coordinates)rings.push(obj.coordinates.at(0));else if(obj.type==="MultiPolygon"&&obj.coordinates)obj.coordinates.forEach(p=>rings.push(p.at(0)));};
+  collect(g);
+  if(!rings.length)return{lon:0,lat:0};
+  let best=rings.at(0),bLen=0;
+  rings.forEach(r=>{if(r&&r.length>bLen){bLen=r.length;best=r;}});
+  let sx=0,sy=0;best.forEach(pt=>{sx+=pt.at(0);sy+=pt.at(1);});
+  return best.length?{lon:sx/best.length,lat:sy/best.length}:{lon:0,lat:0};
+}
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"mercator",rotation:{lon:105}};
   if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область")return{type:"albers",rotation:{lon:142},parallels:Array.of(50,66)};
@@ -242,7 +252,7 @@ function render(){
       traces.push({type:"scattergeo",geo:"geo",mode:"markers",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",textposition:coreF.map((f,i)=>{const near=coreF.some((g,j)=>j<i&&Math.hypot(f.properties._cent.lon-g.properties._cent.lon,f.properties._cent.lat-g.properties._cent.lat)<4.2);return near?Array.of("bottom center","middle right","middle left","top center").at(i%4):"top center";}),textfont:{family:"Times New Roman",size:13,color:"#111"},showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});
       legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});
     }else{
-      traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:2.8}}});
+      traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:3.5}}});
       
       legIt.push({col:CORE,kind:"line",icon:'<span style="display:inline-block;width:18px;height:3px;background:'+CORE+';"></span>',txt:"Ядро региона (макс. население)"});
     }
