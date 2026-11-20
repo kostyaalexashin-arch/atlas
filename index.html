@@ -27,17 +27,19 @@ body{font-family:"Times New Roman",Georgia,serif;margin:0;background:#eef1f5;col
 #selMetric option{padding:3px 5px;white-space:normal}
 .sheet{flex:1;min-width:0;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,0.12);padding:12px 16px 16px 16px;box-sizing:border-box}
 #mapDiv{width:100%;height:810px}
-.footer-grid{display:flex;justify-content:space-between;align-items:stretch;gap:16px;margin-top:8px;min-height:66px}
-.leg-box{flex:1;border:1px solid #cbd5e1;padding:7px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px 12px;align-items:center;font-size:12.5px;background:#fff}
+.footer-grid{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-top:8px;min-height:66px}
+.leg-box{flex:1;border:1px solid #cbd5e1;padding:7px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px 12px;align-items:center;font-size:12.5px;background:#fff;box-sizing:border-box}
 .leg-box.wide{grid-template-columns:repeat(5,1fr)}
 .leg-item{display:flex;align-items:center;gap:7px;white-space:nowrap}
-.cbar-box{width:560px;display:flex;flex-direction:column;justify-content:center;padding:2px 4px}
-.cbar-strip{height:15px;border:1px solid #475569;width:100%}
+.cbar-box{width:560px;display:flex;flex-direction:column;justify-content:flex-start;padding:0;margin:0}
+.cbar-strip{height:16px;border:1px solid #475569;width:100%;box-sizing:border-box}
 .cbar-ticks{display:flex;justify-content:space-between;font-size:11.5px;margin-top:3px;padding:0 12px}
 .cbar-title{text-align:center;font-weight:bold;font-size:12.5px;margin-top:3px}
-table.dyn-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px}
-table.dyn-tbl th{background:#eef3f8;border:1px solid #9eb0c2;padding:7px;text-align:center}
-table.dyn-tbl td{border:1px solid #cbd5e1;padding:5px 8px;text-align:center;vertical-align:middle}
+.tbl-wrap{max-height:715px;overflow-y:auto;border:1px solid #9eb0c2;position:relative;margin-bottom:8px}
+.sticky-hdr{position:sticky;top:0;z-index:20;background:#fff;text-align:center;font-size:17px;font-weight:bold;padding:8px 10px;border-bottom:1px solid #9eb0c2;line-height:1.25}
+table.dyn-tbl{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:13px}
+table.dyn-tbl th{position:sticky;top:37px;z-index:15;background:#eef3f8;border-bottom:1px solid #9eb0c2;border-right:1px solid #9eb0c2;padding:7px 4px;text-align:center}
+table.dyn-tbl td{border-bottom:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:5px 8px;text-align:center;vertical-align:middle;word-wrap:break-word}
 table.dyn-tbl td.mo-name{text-align:left}
 </style></head><body><div class="toolbar">
 <select id="selMode"><option value="single">Одиночная карта (срез)</option><option value="grid">Сетка динамики (2019–2024)</option><option value="table">Таблица динамики МО (2019–2024)</option></select>

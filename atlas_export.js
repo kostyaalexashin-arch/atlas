@@ -13,7 +13,6 @@ async function exportFullSheetPng(){
     const mapW=hasRightList?2460:3160,mapH=1680;
     const imgData=await Plotly.toImage(mapEl,{format:"png",width:mapW,height:mapH});
 
-    // Фиксированный шаг строки 24 px и шрифт 18 px для одноколоночного списка МО справа
     const xList=2485,yTop=95,LINE_STEP=24,FONT_SIZE=18;
     const listBottom=hasRightList?(yTop+18+regFeats.length*LINE_STEP+16):mapH;
     const contentH=Math.max(mapH,listBottom);
@@ -36,7 +35,7 @@ async function exportFullSheetPng(){
       });
     }
 
-    // Нижний блок: в точности повторяет рамку легенды и шкалу со страницы
+    // Нижний блок: верхняя граница шкалы закреплена строго на одном уровне footY с верхней границей легенды
     const hasCbar=!!document.querySelector("#sheetBox .cbar-strip");
     const legW=hasCbar?1920:3080,footY=contentH+14,footH=155;
     ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(40,footY,legW,footH);
@@ -64,13 +63,14 @@ async function exportFullSheetPng(){
       const xBar=2000,wBar=1120;
       const grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
       actCol.forEach((c,i)=>grd.addColorStop(i/(actCol.length-1),c));
-      ctx.fillStyle=grd;ctx.fillRect(xBar,footY+22,wBar,26);
-      ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+22,wBar,26);
+      ctx.fillStyle=grd;ctx.fillRect(xBar,footY,wBar,26);
+      ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY,wBar,26);
       ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";ctx.textAlign="center";
       const tks=Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).map(s=>s.textContent);
-      tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.08+i*0.21)),footY+74));
+      tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.08+i*0.21)),footY+54));
       ctx.font="bold 22px 'Times New Roman'";
-      ctx.fillText(document.querySelector("#sheetBox .cbar-title")?.textContent||"",xBar+wBar/2,footY+110);
+      const cTitle=document.querySelector("#sheetBox .cbar-title")?.textContent||"";
+      ctx.fillText(cTitle.length>78?cTitle.slice(0,77)+"…":cTitle,xBar+wBar/2,footY+92);
       ctx.textAlign="left";
     }
     const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=canvas.toDataURL("image/png");a.click();
