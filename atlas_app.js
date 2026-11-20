@@ -231,10 +231,21 @@ function render(){
       const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.locations&&t.locations.length===regList.length);
       regList.forEach((f,i)=>{
         const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;
-        it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));};
+        it.onmouseenter=()=>{
+          if(mainTrIdx===-1)return;
+          const orig=mapEl.data.at(mainTrIdx);
+          if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}
+          const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));
+          const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);
+          Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));
+        };
         pnl.appendChild(it);
       });
-      pnl.onmouseleave=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ),colorscale:Array.of(orig._origCs)},Array.of(mainTrIdx));};
+      pnl.onmouseleave=()=>{
+        if(mainTrIdx===-1)return;
+        const orig=mapEl.data.at(mainTrIdx);
+        if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ),colorscale:Array.of(orig._origCs)},Array.of(mainTrIdx));
+      };
       stage.appendChild(pnl);
     }
   }
