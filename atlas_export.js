@@ -14,6 +14,7 @@ async function buildSheetCanvas(){
   }
   try{
     const mapW=hasRightList?2460:3160,mapH=1680;
+    mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.setAttribute("stroke","#ffffff");t.setAttribute("stroke-width","3.2");t.setAttribute("paint-order","stroke");t.setAttribute("font-weight","bold");});
     const imgData=await Plotly.toImage(mapEl,{format:"png",width:Math.round(mapW/2),height:Math.round(mapH/2),scale:2});
 
     const xList=2485,yTop=95,LINE_STEP=24,FONT_SIZE=18;

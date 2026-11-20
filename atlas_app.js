@@ -73,7 +73,7 @@ function stepSelect(selId,dir){
 }
 const getJson=u=>fetch(u+"?v="+Date.now()).then(r=>{if(!r.ok)throw new Error(u+": HTTP "+r.status);return r.json();});
 Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJson("metrics_data.json"))).then(res=>{try{
-  GEO=res.at(0);REGS=res.at(1);DATA=res.at(2);GEO.features.forEach(f=>{f.properties._cent=getCenter(f.geometry);});
+  GEO=res.at(0);REGS=res.at(1);DATA=res.at(2);GEO.features.forEach(f=>{f.properties._cent=(f.properties._cx!==undefined)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);});
   const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric");
   DATA.fos.forEach(f=>sFO.add(new Option(f+" ФО",f)));const gm={};
   DATA.metrics.forEach(m=>{if(!gm[m.group]){gm[m.group]=document.createElement("optgroup");gm[m.group].label=m.group;sMet.add(gm[m.group]);}gm[m.group].appendChild(new Option(m.id+" — "+m.title,m.id));});
