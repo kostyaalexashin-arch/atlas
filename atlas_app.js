@@ -97,14 +97,13 @@ function buildFooterHtml(isCat,scObj,legItems){
 function applyZatoHatch(mapEl){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
   let defs=svg.querySelector("defs");if(!defs){defs=document.createElementNS("http://w3.org","defs");svg.insertBefore(defs,svg.firstChild);}
-  if(!defs.querySelector("#zatoHatch")){
-    const pat=document.createElementNS("http://w3.org","pattern");
-    pat.setAttribute("id","zatoHatch");pat.setAttribute("width","7");pat.setAttribute("height","7");pat.setAttribute("patternUnits","userSpaceOnUse");pat.setAttribute("patternTransform","rotate(45)");
-    const bg=document.createElementNS("http://w3.org","rect");bg.setAttribute("width","7");bg.setAttribute("height","7");bg.setAttribute("fill","#e2e8f0");
-    const ln=document.createElementNS("http://w3.org","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","7");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","2");
-    pat.append(bg,ln);defs.appendChild(pat);
-  }
-  svg.querySelectorAll(".geolayer .choropleth path").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl==="rgb(203,213,225)"||fl==="#cbd5e1")p.style.fill="url(#zatoHatch)";});
+  const oldP=defs.querySelector("#zatoHatch");if(oldP)oldP.remove();
+  const pat=document.createElementNS("http://w3.org","pattern");
+  pat.setAttribute("id","zatoHatch");pat.setAttribute("width","11");pat.setAttribute("height","11");pat.setAttribute("patternUnits","userSpaceOnUse");pat.setAttribute("patternTransform","rotate(45)");
+  const bg=document.createElementNS("http://w3.org","rect");bg.setAttribute("width","11");bg.setAttribute("height","11");bg.setAttribute("fill","#e2e8f0");
+  const ln=document.createElementNS("http://w3.org","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","11");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","3.2");
+  pat.append(bg,ln);defs.appendChild(pat);
+  svg.querySelectorAll(".geolayer .scatterlayer path.js-fill").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl==="rgb(203,213,225)"||fl==="#cbd5e1"){p.style.fill="url(#zatoHatch)";p.setAttribute("fill","url(#zatoHatch)");}});
 }
 function addCoreBadges(mapEl,isRegLevel){
   if(mapEl._badgeBusy)return window._badgesReady||Promise.resolve();
@@ -206,7 +205,7 @@ function render(){
   const addGeoLayers=(fList,gKey)=>{
     const subG={type:"FeatureCollection",features:fList},outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО");
     if(outF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:outF.map(f=>f.properties.join_key),z:outF.map(()=>0),text:outF.map(f=>f.properties._lbl+" ("+f.properties.region+") — Вне выборки"),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f0f0f0"),Array.of(1,"#f0f0f0")),showscale:false,marker:{line:{color:"#9aa2ae",width:0.35}}});
-    if(zatoF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:zatoF.map(f=>f.properties.join_key),z:zatoF.map(()=>0),text:zatoF.map(f=>f.properties._lbl+" ("+f.properties.region+") — ЗАТО"),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#cbd5e1"),Array.of(1,"#cbd5e1")),showscale:false,marker:{line:{color:"#475569",width:0.7}}});
+    if(zatoF.length>0){const zLon=Array.of(),zLat=Array.of(),addRing=r=>{r.forEach(pt=>{zLon.push(pt.at(0));zLat.push(pt.at(1));});zLon.push(null);zLat.push(null);};zatoF.forEach(f=>{const g=f.geometry;if(!g)return;if(g.type==="Polygon")g.coordinates.forEach(addRing);else if(g.type==="MultiPolygon")g.coordinates.forEach(p=>p.forEach(addRing));});traces.push({type:"scattergeo",geo:gKey,mode:"lines",lon:zLon,lat:zLat,fill:"toself",fillcolor:"#cbd5e1",line:{color:"#475569",width:0.8},hoverinfo:"skip",showlegend:false});}
     const inF=fList.filter(f=>f.properties._map_status==="В_выборке"&&(base==="all"||f.properties.coh));
     if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1),cf=inF.filter(f=>valMap[f.properties.join_key]===cn);if(cf.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cf.map(f=>f.properties.join_key),z:cf.map(()=>1),text:cf.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>"+cn),hoverinfo:"text",colorscale:Array.of(Array.of(0,ch),Array.of(1,ch)),showscale:false,marker:{line:{color:"#64748b",width:0.35}}});});}
     else{traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:inF.map(f=>f.properties.join_key),z:inF.map(f=>{const v=Number(valMap[f.properties.join_key]);if(isNaN(v))return null;return Math.pow(Math.max(0,Math.min(1,(v-scObj.vmin)/Math.max(1e-9,scObj.vmax-scObj.vmin))),scObj.gamma);}),zmin:0,zmax:1,zauto:false,text:inF.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>Значение: <b>"+fmtNum(valMap[f.properties.join_key],mMeta.dec)+"</b>"),hoverinfo:"text",colorscale:scObj.plScale,showscale:false,marker:{line:{color:"#64748b",width:0.35}}});}
@@ -221,7 +220,7 @@ function render(){
     if(reg==="ALL"){traces.push({type:"scattergeo",geo:"geo",mode:"markers",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});}
     else{traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:3.5}}});legIt.push({col:CORE,kind:"line",icon:'<span style="display:inline-block;width:18px;height:3px;background:'+CORE+';"></span>',txt:"Ядро региона (макс. население)"});}
   }
-  if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"hatch",icon:'<span style="display:inline-block;width:18px;height:13px;background:repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0 3px,#475569 3px,#475569 4.5px);border:1px solid #475569;"></span>',txt:"ЗАТО"});
+  if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"hatch",icon:'<span style="display:inline-block;width:18px;height:13px;background:repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0 5px,#475569 5px,#475569 7.5px);border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
   const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.01,0.99)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:740};
