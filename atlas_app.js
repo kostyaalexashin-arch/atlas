@@ -25,7 +25,6 @@ function getCenter(g){
 }
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100},parallels:Array.of(52,68)};
-  if(reg==="ALL")return{type:"conic equal area",rotation:{lon:fo==="Дальневосточный"?142:(fo==="Сибирский"?96:(fo==="Уральский"?68:45))},parallels:Array.of(50,68)};
   if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область"||reg==="Сахалинская область"||reg==="Приморский край"||reg==="Хабаровский край")return{type:"mercator",rotation:{lon:152}};
   return{type:"mercator"};
 }
@@ -35,16 +34,15 @@ function wideGeoCfg(feats,projObj,domX,domY){
   feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
   if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
   if(projObj.type==="conic equal area"){
-    const cLon=rotLon+(x0+x1)/2,pCfg={type:"conic equal area",rotation:{lon:cLon},parallels:Array.of(Math.max(42,y0+3),Math.min(74,y1-3))};
-    return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,showframe:false,projection:pCfg};
+    return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(rotLon+x0-2,rotLon+x1+2)},lataxis:{range:Array.of(Math.max(40,y0-1.5),Math.min(82.5,y1+1.5))}};
   }
   const mEl=document.getElementById("mapDiv"),W=(mEl&&mEl.clientWidth>200)?mEl.clientWidth:1540,H=(mEl&&mEl.clientHeight>200)?mEl.clientHeight:740;
   const boxW=W*(domX.at(1)-domX.at(0)),boxH=H*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
   const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-84,Math.min(84,lat))*Math.PI/360))*180/Math.PI;
   const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
-  const pad=1.08,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
+  const pad=1.06,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
-  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
+  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(rotLon+cx-dx/2,rotLon+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
@@ -204,7 +202,7 @@ function render(){
 
   addGeoLayers(mainFeats,"geo");if(zfiFeats.length>0)addGeoLayers(zfiFeats,"geo2");if(nzFeats.length>0)addGeoLayers(nzFeats,"geo3");
   if(kalFeats.length>0){addGeoLayers(kalFeats,"geo4");const kCore=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");if(kCore.length>0)traces.push({type:"scattergeo",geo:"geo4",mode:"markers",lon:kCore.map(f=>f.properties._cent.lon),lat:kCore.map(f=>f.properties._cent.lat),hovertext:kCore.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl),hoverinfo:"text",showlegend:false,marker:{size:8,color:CORE,line:{color:"#ffffff",width:1.1}}});}
-  if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(!hasKal||!f.properties.region.includes("Калининград")));traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
+  if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>fo==="RF"||f.properties.fo===fo);traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
   if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1);if(allFeats.some(f=>valMap[f.properties.join_key]===cn)||fo==="RF")legIt.push({col:ch,kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:'+ch+';border:1px solid #555;"></span>',txt:cn});});}
   const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
@@ -231,21 +229,10 @@ function render(){
       const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.locations&&t.locations.length===regList.length);
       regList.forEach((f,i)=>{
         const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;
-        it.onmouseenter=()=>{
-          if(mainTrIdx===-1)return;
-          const orig=mapEl.data.at(mainTrIdx);
-          if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}
-          const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));
-          const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);
-          Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));
-        };
+        it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ)orig._origZ=orig.z.slice();const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?v:null);Plotly.restyle(mapEl,{z:Array.of(nz)},Array.of(mainTrIdx));};
         pnl.appendChild(it);
       });
-      pnl.onmouseleave=()=>{
-        if(mainTrIdx===-1)return;
-        const orig=mapEl.data.at(mainTrIdx);
-        if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ),colorscale:Array.of(orig._origCs)},Array.of(mainTrIdx));
-      };
+      pnl.onmouseleave=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ)},Array.of(mainTrIdx));};
       stage.appendChild(pnl);
     }
   }
