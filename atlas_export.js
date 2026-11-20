@@ -6,11 +6,20 @@ async function buildSheetCanvas(){
   const hasRightList=regFeats.length>0;
   let numTraceAdded=false,savedAnns=null,coreTrIdx=-1;
   if(hasRightList){
-    savedAnns=(mapEl.layout.annotations||Array.of()).slice();coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
-    const pts=regFeats.map(f=>{const c=(f.properties._cx&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
-    for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.045){pts.at(j).lon-=0.024;pts.at(j).lat+=0.014;pts.at(i).lon+=0.024;pts.at(i).lat-=0.014;}}}}}
-    for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.26){pts.at(j).lon-=0.13;pts.at(i).lon+=0.13;}}}
-    await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:15,color:"#000000"},showlegend:false,hoverinfo:"skip"});
+    savedAnns=(mapEl.layout.annotations||Array.of()).slice();
+    coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");
+    if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));
+    await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
+    const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
+    for(let i=0;i<pts.length;i++){
+      for(let j=0;j<i;j++){
+        if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.045){
+          pts.at(j).lon-=0.024;pts.at(j).lat+=0.014;
+          pts.at(i).lon+=0.024;pts.at(i).lat-=0.014;
+        }
+      }
+    }
+    await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:14,color:"#111111"},showlegend:false,hoverinfo:"skip"});
     numTraceAdded=true;
   }
   try{
@@ -40,7 +49,6 @@ async function buildSheetCanvas(){
       });
     }
 
-    // Нижний блок: верхняя граница шкалы закреплена строго на одном уровне footY с верхней границей легенды
     const hasCbar=!!document.querySelector("#sheetBox .cbar-strip");
     const legW=hasCbar?1920:3080,footY=contentH+14,footH=155;
     ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(40,footY,legW,footH);
@@ -78,6 +86,7 @@ async function buildSheetCanvas(){
       ctx.fillText(cTitle.length>78?cTitle.slice(0,77)+"…":cTitle,xBar+wBar/2,footY+92);
       ctx.textAlign="left";
     }
+
     const sc=Number(document.getElementById("selDpi")?.value||1);
     if(sc<0.99){
       const c2=document.createElement("canvas");
@@ -88,7 +97,11 @@ async function buildSheetCanvas(){
     }
     return canvas;
   }finally{
-    if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    if(numTraceAdded){
+      await Plotly.deleteTraces(mapEl,-1);
+      if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));
+      if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});
+    }
   }
 }
 async function exportFullSheetPng(){
@@ -131,7 +144,8 @@ async function exportBatchPdf(){
       const it=queue.at(i);
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
       sReg.value=it.reg;render();
-      await new Promise(r=>setTimeout(r,420));
+      if(window._plotReady)await window._plotReady;
+      await new Promise(r=>setTimeout(r,220));
       const c=await buildSheetCanvas();if(!c)continue;
       const b64=c.toDataURL("image/jpeg",0.82).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
