@@ -13,9 +13,9 @@ async function buildSheetCanvas(){
     const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{lon:c.lon,lat:c.lat};});
     for(let i=0;i<pts.length;i++){
       for(let j=0;j<i;j++){
-        if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.045){
-          pts.at(j).lon-=0.024;pts.at(j).lat+=0.014;
-          pts.at(i).lon+=0.024;pts.at(i).lat-=0.014;
+        if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.075){
+          pts.at(j).lon-=0.038;pts.at(j).lat+=0.022;
+          pts.at(i).lon+=0.038;pts.at(i).lat-=0.022;
         }
       }
     }
