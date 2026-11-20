@@ -121,17 +121,23 @@ function addCoreBadges(mapEl,isRegLevel){
         const r=pEl.getBoundingClientRect();if(!r||r.width===0)return;
         const px=(r.left+r.width/2-sRect.left)/sRect.width;
         const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
-        const xMin=(f.properties.region.includes("Калининград")&&isNW)?0.01:(isNW||reg.includes("Архангельск")?0.23:0.01);
-        const xMax=(f.properties.region.includes("Калининград")&&isNW)?0.21:0.99;
-        if(px<xMin||px>xMax||py<0.02||py>0.96)return;
-        const dirs=Array.of(Array.of(0,-18),Array.of(0,18),Array.of(38,0),Array.of(-38,0));
-        const d=dirs.at(idx%4);
+        const isK=isNW&&f.properties.region.includes("Калининград");
+        const xMin=isK?0.02:(isNW?0.24:0.03),xMax=isK?0.20:0.97;
+        if(px<xMin||px>xMax||py<0.05||py>0.91)return;
+        const dirs=Array.of(Array.of(0,-22),Array.of(0,24),Array.of(52,0),Array.of(-52,0),Array.of(46,-22),Array.of(-46,24),Array.of(46,24),Array.of(-46,-22));
+        let d=dirs.at(idx%8);
+        for(let k=0;k<dirs.length;k++){
+          const cand=dirs.at((idx+k)%dirs.length);
+          const cx=px*sRect.width+cand.at(0),cy=(1-py)*sRect.height+cand.at(1);
+          const clash=anns.some(a=>a._isCore&&Math.abs((a.x*sRect.width+a.ax)-cx)<86&&Math.abs(((1-a.y)*sRect.height+a.ay)-cy)<28);
+          if(!clash){d=cand;break;}
+        }
         anns.push({
           _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
           text:"<b>"+f.properties._lbl+"</b>",
           showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",
           ax:d.at(0),ay:d.at(1),
-          bgcolor:"rgba(255,255,255,0.95)",bordercolor:"#475569",borderwidth:1,borderpad:3,
+          bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#475569",borderwidth:1,borderpad:3,
           font:{family:"Times New Roman",size:12,color:"#111111"}
         });
       });
@@ -142,14 +148,16 @@ function addCoreBadges(mapEl,isRegLevel){
         const r=lastP.getBoundingClientRect();
         const px=(r.left+r.width/2-sRect.left)/sRect.width;
         const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
-        if(px<0.01||px>0.99||py<0.02||py>0.96)return;
-        anns.push({
-          _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
-          text:"<b>"+mainC.at(0).properties._lbl+"</b>",
-          showarrow:false,
-          bgcolor:"rgba(255,255,255,0.95)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,
-          font:{family:"Times New Roman",size:13,color:"#111111"}
-        });
+        const xMin=reg.includes("Архангельск")?0.24:0.03;
+        if(px>=xMin&&px<=0.97&&py>=0.05&&py<=0.91){
+          anns.push({
+            _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
+            text:"<b>"+mainC.at(0).properties._lbl+"</b>",
+            showarrow:false,
+            bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,
+            font:{family:"Times New Roman",size:13,color:"#111111"}
+          });
+        }
       }
     }
     mapEl._badgeBusy=true;
