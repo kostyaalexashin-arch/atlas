@@ -103,7 +103,7 @@ function applyZatoHatch(mapEl){
   const bg=document.createElementNS("http://w3.org","rect");bg.setAttribute("width","11");bg.setAttribute("height","11");bg.setAttribute("fill","#e2e8f0");
   const ln=document.createElementNS("http://w3.org","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","11");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","3.2");
   pat.append(bg,ln);defs.appendChild(pat);
-  svg.querySelectorAll(".geolayer .scatterlayer path.js-fill").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl==="rgb(203,213,225)"||fl==="#cbd5e1"){p.style.fill="url(#zatoHatch)";p.setAttribute("fill","url(#zatoHatch)");}});
+  svg.querySelectorAll(".geolayer .scatterlayer path.js-fill").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl.includes("203,213,225")||fl.includes("cbd5e1")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
 }
 function addCoreBadges(mapEl,isRegLevel){
   if(mapEl._badgeBusy)return window._badgesReady||Promise.resolve();
@@ -140,7 +140,7 @@ function addCoreBadges(mapEl,isRegLevel){
       if(lastP){
         const r=lastP.getBoundingClientRect(),px=(r.left+r.width/2-sRect.left)/pW,py=1.0-(r.top+r.height/2-sRect.top)/pH;
         const xMax=hasRight?0.76:0.99;
-        if(px>=0.01&&px<=xMax&&py>=0.02&&py<=0.98)anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+mainC.at(0).properties._lbl+"</b>",showarrow:false,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});
+        if(px>=0.01&&px<=xMax&&py>=0.02&&py<=0.98){const dx=(px>0.55?-64:64),dy=(py>0.75?34:-34);anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+mainC.at(0).properties._lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.2,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});}
       }
     }
     mapEl._badgeBusy=true;
