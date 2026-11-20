@@ -145,9 +145,11 @@ function render(){
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0),box=document.getElementById("sheetBox");
   const allFeats=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
   const hasInsets=(reg==="Архангельская область"||(fo==="Северо-Западный"&&reg==="ALL"));
-  const mainFeats=hasInsets?allFeats.filter(f=>!f.properties._inset):allFeats;
+  const hasKal=(fo==="Северо-Западный"&&reg==="ALL");
+  const mainFeats=hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||f.properties.region!=="Калининградская область")):allFeats;
   const nzFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="NZ"):Array.of();
   const zfiFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="ZFI"):Array.of();
+  const kalFeats=hasKal?allFeats.filter(f=>f.properties.region==="Калининградская область"):Array.of();
   const terrTitle=reg!=="ALL"?reg:(fo!=="RF"?fo+" федеральный округ":"Российская Федерация");
   const yrs=Array.of("2019","2020","2021","2022","2023","2024"),actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],CORE="#e6007e";
 
@@ -216,6 +218,11 @@ function render(){
   addGeoLayers(mainFeats,"geo");
   if(nzFeats.length>0)addGeoLayers(nzFeats,"geo2");
   if(zfiFeats.length>0)addGeoLayers(zfiFeats,"geo3");
+  if(kalFeats.length>0){
+    addGeoLayers(kalFeats,"geo4");
+    const kCore=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
+    if(kCore.length>0)traces.push({type:"scattergeo",geo:"geo4",mode:"markers",lon:kCore.map(f=>f.properties._cent.lon),lat:kCore.map(f=>f.properties._cent.lat),hovertext:kCore.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl),hoverinfo:"text",showlegend:false,marker:{size:8,color:CORE,line:{color:"#ffffff",width:1.1}}});
+  }
 
   if(reg==="ALL"&&REGS){
     const rList=REGS.features.filter(f=>fo==="RF"||f.properties.fo===fo);
@@ -239,8 +246,10 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
   const layout={title:hdrSvg,geo:wideGeoCfg(mainFeats,projObj,Array.of(hasInsets?0.23:0.0,1.0),Array.of(0.02,0.97)),annotations:Array.of(),showlegend:false,margin:{l:5,r:5,t:62,b:5},height:810};
-  if(nzFeats.length>0){layout.geo2=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.52,0.92));layout.geo2.showframe=true;layout.geo2.framecolor="#64748b";layout.geo2.framewidth=1;layout.annotations.push({text:"<b>МО «Новая Земля»</b>",x:0.11,y:0.95,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  if(zfiFeats.length>0){layout.geo3=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.04,0.44));layout.geo3.showframe=true;layout.geo3.framecolor="#64748b";layout.geo3.framewidth=1;layout.annotations.push({text:"<b>арх. Земля Франца-Иосифа</b>",x:0.11,y:0.47,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  const yNZ=hasKal?Array.of(0.68,0.93):Array.of(0.52,0.92),yZFI=hasKal?Array.of(0.36,0.61):Array.of(0.04,0.44);
+  if(nzFeats.length>0){layout.geo2=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.01,0.21),yNZ);layout.geo2.showframe=true;layout.geo2.framecolor="#64748b";layout.geo2.framewidth=1;layout.annotations.push({text:"<b>МО «Новая Земля»</b>",x:0.11,y:yNZ.at(1)+0.025,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  if(zfiFeats.length>0){layout.geo3=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.01,0.21),yZFI);layout.geo3.showframe=true;layout.geo3.framecolor="#64748b";layout.geo3.framewidth=1;layout.annotations.push({text:"<b>арх. Земля Франца-Иосифа</b>",x:0.11,y:yZFI.at(1)+0.025,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.04,0.29));layout.geo4.showframe=true;layout.geo4.framecolor="#64748b";layout.geo4.framewidth=1;layout.annotations.push({text:"<b>Калининградская область</b>",x:0.11,y:0.315,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
 
   Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{
     if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");
