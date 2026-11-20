@@ -16,7 +16,7 @@ document.addEventListener("click",()=>menuP.classList.remove("open"));updBtn(cur
 const fmtNum=(v,d)=>(v===null||v===undefined||v===""||isNaN(Number(v)))?"н/д":Number(v).toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d});
 function wrapTitle(s,lim=106){if(s.length<=lim)return s;const idx=s.lastIndexOf(" ",lim);if(idx<=30)return s;const tail=s.slice(idx+1);return tail.length<14?s:(s.slice(0,idx)+"<br>"+tail);}
 function markerSvg(c,f,sz=20){const s="#1e293b",h=sz/2;if(c==="1")return '<svg width="'+sz+'" height="'+sz+'"><rect x="3" y="3" width="'+(sz-6)+'" height="'+(sz-6)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="2")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+h+' '+h+','+(sz-2)+' 2,'+h+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="3")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz-3)+' 2,'+(sz-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="4")return '<svg width="'+sz+'" height="'+sz+'"><circle cx="'+h+'" cy="'+h+'" r="'+(h-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz*0.42)+' '+(sz*0.8)+','+(sz-2)+' '+(sz*0.2)+','+(sz-2)+' 2,'+(sz*0.42)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';}
-function getCenter(g){let sx=0,sy=0,n=0;const w=c=>{if(typeof c.at(0)==="number"){sx+=c.at(0);sy+=c.at(1);n++;}else c.forEach(w);};if(g&&g.coordinates)w(g.coordinates);return n?{lon:sx/n,lat:sy/n}:{lon:0,lat:0};}
+function getCenter(g){if(!g||!g.coordinates)return{lon:0,lat:0};const rings=g.type==="Polygon"?Array.of(g.coordinates.at(0)):g.coordinates.map(p=>p.at(0));let best=rings.at(0),bLen=0;rings.forEach(r=>{if(r.length>bLen){bLen=r.length;best=r;}});let sx=0,sy=0;best.forEach(pt=>{sx+=pt.at(0);sy+=pt.at(1);});return best.length?{lon:sx/best.length,lat:sy/best.length}:{lon:0,lat:0};}
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"albers",rotation:{lon:100},parallels:Array.of(52,64)};
   if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область")return{type:"albers",rotation:{lon:142},parallels:Array.of(50,66)};
@@ -31,7 +31,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   const cx=(x0+x1)/2,cy=(y0+y1)/2,cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
   const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0));
   const spanX=Math.max(0.35,(x1-x0)*cosL),spanY=Math.max(0.25,(y1-y0)*(projObj.type==="albers"?0.88:1.15));
-  const sc=Math.min(boxW/(spanX*2.85),boxH/(spanY*2.85));
+  const sc=Math.min(boxW/(spanX*3.65),boxH/(spanY*3.65));
   const p=Object.assign({},projObj,{scale:Math.max(0.85,sc)});
   return{domain:{x:domX,y:domY},visible:false,projection:p,center:{lon:cx,lat:cy}};
 }
@@ -97,7 +97,7 @@ function addCoreBadges(mapEl,isRegLevel){
     const ns="http://w3.org";
     txtNodes.forEach(tEl=>{
       if(!tEl.textContent||!tEl.textContent.trim())return;
-      const bb=tEl.getBBox();if(!bb||bb.width===0)return;
+      const bb=tEl.getBBox();if(!bb||bb.width===0||bb.y<45)return;
       const rect=document.createElementNS(ns,"rect");
       rect.setAttribute("class","core-badge");
       rect.setAttribute("x",bb.x-4);rect.setAttribute("y",bb.y-2);
@@ -197,11 +197,11 @@ function render(){
   const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
     if(reg==="ALL"){
-      traces.push({type:"scattergeo",geo:"geo",mode:fo==="RF"?"markers":"markers+text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",textposition:coreF.map((f,i)=>{const near=coreF.some((g,j)=>j<i&&Math.hypot(f.properties._cent.lon-g.properties._cent.lon,f.properties._cent.lat-g.properties._cent.lat)<4.2);return near?Array.of("bottom center","middle right","middle left","top center").at(i%4):"top center";}),textfont:{family:"Times New Roman",size:11,color:"#111"},showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});
+      traces.push({type:"scattergeo",geo:"geo",mode:fo==="RF"?"markers":"markers+text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",textposition:coreF.map((f,i)=>{const near=coreF.some((g,j)=>j<i&&Math.hypot(f.properties._cent.lon-g.properties._cent.lon,f.properties._cent.lat-g.properties._cent.lat)<4.2);return near?Array.of("bottom center","middle right","middle left","top center").at(i%4):"top center";}),textfont:{family:"Times New Roman",size:13,color:"#111"},showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});
       legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});
     }else{
       traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:2.8}}});
-      traces.push({type:"scattergeo",geo:"geo",mode:"text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>"<b>"+f.properties._lbl+"</b>"),hoverinfo:"skip",showlegend:false,textfont:{family:"Times New Roman",size:12,color:"#111"}});
+      traces.push({type:"scattergeo",geo:"geo",mode:"text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>"<b>"+f.properties._lbl+"</b>"),hoverinfo:"skip",showlegend:false,textfont:{family:"Times New Roman",size:14,color:"#111"}});
       legIt.push({col:CORE,kind:"line",icon:'<span style="display:inline-block;width:18px;height:3px;background:'+CORE+';"></span>',txt:"Ядро региона (макс. население)"});
     }
   }

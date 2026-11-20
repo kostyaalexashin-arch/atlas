@@ -2,16 +2,16 @@ async function exportFullSheetPng(){
   const mapEl=document.getElementById("mapDiv");
   if(!mapEl)return alert("Переключитесь в режим карты или сетки.");
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
-  const regFeats=(reg!=="ALL")?GEO.features.filter(f=>f.properties.region===reg&&f.properties._map_status==="В_выборке").sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru")):Array.of();
+  const regFeats=(reg!=="ALL")?Array.from(GEO.features.filter(f=>f.properties.region===reg&&f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru")):Array.of();
   const hasRightList=regFeats.length>0;
   let numTraceAdded=false;
   if(hasRightList){
-    await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:regFeats.map(f=>f.properties._cent.lon),lat:regFeats.map(f=>f.properties._cent.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:10,color:"#111"},showlegend:false,hoverinfo:"skip"});
+    await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:regFeats.map(f=>f.properties._cent.lon),lat:regFeats.map(f=>f.properties._cent.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:16,color:"#000000"},showlegend:false,hoverinfo:"skip"});
     numTraceAdded=true;
   }
   try{
     const mapW=hasRightList?2460:3160,mapH=1680;
-    const imgData=await Plotly.toImage(mapEl,{format:"png",width:mapW,height:mapH});
+    const imgData=await Plotly.toImage(mapEl,{format:"png",width:Math.round(mapW/2),height:Math.round(mapH/2),scale:2});
 
     const xList=2485,yTop=95,LINE_STEP=24,FONT_SIZE=18;
     const listBottom=hasRightList?(yTop+18+regFeats.length*LINE_STEP+16):mapH;
