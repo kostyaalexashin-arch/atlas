@@ -92,20 +92,33 @@ function buildFooterHtml(isCat,scObj,mMeta,legItems){
 function addCoreBadges(mapEl,isRegLevel){
   requestAnimationFrame(()=>{
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
-    svg.querySelectorAll(".core-badge").forEach(el=>el.remove());
-    const cSet=new Set(GEO.features.filter(f=>f.properties.is_center).map(f=>f.properties._lbl.trim()));const txtNodes=Array.from(svg.querySelectorAll("text")).filter(t=>cSet.has(t.textContent.trim()));
-    const ns="http://w3.org";
-    txtNodes.forEach(tEl=>{
-      if(!tEl.textContent||!tEl.textContent.trim())return;
-      const bb=tEl.getBBox();if(!bb||bb.width===0||bb.y<45)return;
-      const rect=document.createElementNS(ns,"rect");
-      rect.setAttribute("class","core-badge");
-      rect.setAttribute("x",bb.x-4);rect.setAttribute("y",bb.y-2);
-      rect.setAttribute("width",bb.width+8);rect.setAttribute("height",bb.height+4);
-      rect.setAttribute("rx","2");rect.setAttribute("fill","rgba(255,255,255,0.95)");
-      rect.setAttribute("stroke",isRegLevel?"#e6007e":"#475569");rect.setAttribute("stroke-width","0.9");
-      tEl.parentNode.insertBefore(rect,tEl);
+    const W=mapEl.clientWidth||1560,H=mapEl.clientHeight||810;
+    const sRect=svg.getBoundingClientRect();
+    const pts=Array.from(svg.querySelectorAll(".scatterlayer .trace .point"));
+    const cSet=new Set(GEO.features.filter(f=>f.properties.is_center).map(f=>f.properties._lbl.trim()));
+    const txtEls=Array.from(svg.querySelectorAll(".scatterlayer .trace text")).filter(t=>cSet.has(t.textContent.trim()));
+    const anns=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore);
+    txtEls.forEach((tEl,idx)=>{
+      const pEl=pts.at(idx)||tEl;
+      const r=pEl.getBoundingClientRect();
+      if(!r||r.width===0)return;
+      const px=(r.left+r.width/2-sRect.left)/W;
+      const py=1.0-(r.top+r.height/2-sRect.top)/H;
+      const dirs=Array.of(Array.of(0,-20),Array.of(0,20),Array.of(36,0),Array.of(-36,0));
+      const d=dirs.at(idx%4);
+      anns.push({
+        _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
+        text:"<b>"+tEl.textContent.trim()+"</b>",
+        showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",
+        ax:d.at(0),ay:d.at(1),
+        bgcolor:"rgba(255,255,255,0.94)",
+        bordercolor:isRegLevel?"#e6007e":"#475569",
+        borderwidth:1,borderpad:3,
+        font:{family:"Times New Roman",size:isRegLevel?13:12,color:"#111111"}
+      });
+      tEl.style.opacity="0";
     });
+    Plotly.relayout(mapEl,{annotations:anns});
   });
 }
 
