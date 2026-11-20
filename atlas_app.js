@@ -202,7 +202,7 @@ function render(){
 
   addGeoLayers(mainFeats,"geo");if(zfiFeats.length>0)addGeoLayers(zfiFeats,"geo2");if(nzFeats.length>0)addGeoLayers(nzFeats,"geo3");
   if(kalFeats.length>0){addGeoLayers(kalFeats,"geo4");const kCore=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");if(kCore.length>0)traces.push({type:"scattergeo",geo:"geo4",mode:"markers",lon:kCore.map(f=>f.properties._cent.lon),lat:kCore.map(f=>f.properties._cent.lat),hovertext:kCore.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl),hoverinfo:"text",showlegend:false,marker:{size:8,color:CORE,line:{color:"#ffffff",width:1.1}}});}
-  if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>fo==="RF"||f.properties.fo===fo);traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
+  if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(!hasKal||!f.properties.region.includes("Калининград")));traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
   if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1);if(allFeats.some(f=>valMap[f.properties.join_key]===cn)||fo==="RF")legIt.push({col:ch,kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:'+ch+';border:1px solid #555;"></span>',txt:cn});});}
   const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
@@ -229,10 +229,10 @@ function render(){
       const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.locations&&t.locations.length===regList.length);
       regList.forEach((f,i)=>{
         const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;
-        it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ)orig._origZ=orig.z.slice();const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?v:null);Plotly.restyle(mapEl,{z:Array.of(nz)},Array.of(mainTrIdx));};
+        it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));};
         pnl.appendChild(it);
       });
-      pnl.onmouseleave=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ)},Array.of(mainTrIdx));};
+      pnl.onmouseleave=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ),colorscale:Array.of(orig._origCs)},Array.of(mainTrIdx));};
       stage.appendChild(pnl);
     }
   }
