@@ -14,7 +14,7 @@ async function buildSheetCanvas(){
   }
   try{
     const mapW=hasRightList?2460:3160,mapH=1680;
-    mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.setAttribute("stroke","#ffffff");t.setAttribute("stroke-width","3.2");t.setAttribute("paint-order","stroke");t.setAttribute("font-weight","bold");});
+    mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
     const imgData=await Plotly.toImage(mapEl,{format:"png",width:Math.round(mapW/2),height:Math.round(mapH/2),scale:2});
 
     const xList=2485,yTop=95,LINE_STEP=24,FONT_SIZE=18;
@@ -77,6 +77,14 @@ async function buildSheetCanvas(){
       ctx.fillText(cTitle.length>78?cTitle.slice(0,77)+"…":cTitle,xBar+wBar/2,footY+92);
       ctx.textAlign="left";
     }
+    const sc=Number(document.getElementById("selDpi")?.value||1);
+    if(sc<0.99){
+      const c2=document.createElement("canvas");
+      c2.width=Math.round(canvas.width*sc);c2.height=Math.round(canvas.height*sc);
+      const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";
+      x2.drawImage(canvas,0,0,c2.width,c2.height);
+      return c2;
+    }
     return canvas;
   }finally{
     if(numTraceAdded){await Plotly.deleteTraces(mapEl,-1);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns});}
@@ -124,7 +132,7 @@ async function exportBatchPdf(){
       sReg.value=it.reg;render();
       await new Promise(r=>setTimeout(r,420));
       const c=await buildSheetCanvas();if(!c)continue;
-      const b64=c.toDataURL("image/jpeg",0.90).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+      const b64=c.toDataURL("image/jpeg",0.82).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
       pages.push({w:c.width,h:c.height,jpg:arr});
     }
