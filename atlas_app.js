@@ -34,7 +34,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   if(projObj.type==="mercator"&&projObj.rotation?.lon===105){
     return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(-90,90)},lataxis:{range:Array.of(41,82)}};
   }
-  const sc=Math.min(boxW/(spanX*3.65),boxH/(spanY*3.65));
+  const sc=Math.min(boxW/(spanX*4.05),boxH/(spanY*4.05));
   const p=Object.assign({},projObj,{scale:Math.max(0.85,sc)});
   return{domain:{x:domX,y:domY},visible:false,projection:p,center:{lon:cx,lat:cy}};
 }
