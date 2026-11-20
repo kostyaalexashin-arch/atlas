@@ -98,11 +98,15 @@ function addCoreBadges(mapEl,isRegLevel){
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
     const sRect=svg.getBoundingClientRect();if(!sRect.width||!sRect.height)return;
     const fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value;
-    const coreF=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg)&&!f.properties._inset&&f.properties.is_center&&f.properties._map_status==="В_выборке");
+    const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО")&&reg==="ALL";
+    const allF=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
+    const mainC=allF.filter(f=>!f.properties._inset&&(!isNW||!f.properties.region.includes("Калининград"))&&f.properties.is_center&&f.properties._map_status==="В_выборке");
+    const kalC=isNW?allF.filter(f=>f.properties.region.includes("Калининград")&&f.properties.is_center&&f.properties._map_status==="В_выборке"):Array.of();
+    const coreOrdered=mainC.concat(kalC);
     const anns=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore);
     if(!isRegLevel){
       const pts=Array.from(svg.querySelectorAll(".geolayer .point"));
-      coreF.forEach((f,idx)=>{
+      coreOrdered.forEach((f,idx)=>{
         const pEl=pts.at(idx);if(!pEl)return;
         const r=pEl.getBoundingClientRect();if(!r||r.width===0)return;
         const px=(r.left+r.width/2-sRect.left)/sRect.width;
@@ -118,7 +122,7 @@ function addCoreBadges(mapEl,isRegLevel){
           font:{family:"Times New Roman",size:12,color:"#111111"}
         });
       });
-    }else if(coreF.length>0){
+    }else if(mainC.length>0){
       const paths=Array.from(svg.querySelectorAll(".geolayer .choropleth path"));
       const lastP=paths.at(paths.length-1);
       if(lastP){
@@ -127,7 +131,7 @@ function addCoreBadges(mapEl,isRegLevel){
         const py=1.0-(r.top+r.height/2-sRect.top)/sRect.height;
         anns.push({
           _isCore:true,xref:"paper",yref:"paper",x:px,y:py,
-          text:"<b>"+coreF.at(0).properties._lbl+"</b>",
+          text:"<b>"+mainC.at(0).properties._lbl+"</b>",
           showarrow:false,
           bgcolor:"rgba(255,255,255,0.95)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,
           font:{family:"Times New Roman",size:13,color:"#111111"}
