@@ -144,12 +144,13 @@ function render(){
   const mode=document.getElementById("selMode").value,base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0),box=document.getElementById("sheetBox");
   const allFeats=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
-  const hasInsets=(reg==="Архангельская область"||(fo==="Северо-Западный"&&reg==="ALL"));
-  const hasKal=(fo==="Северо-Западный"&&reg==="ALL");
-  const mainFeats=hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||f.properties.region!=="Калининградская область")):allFeats;
+  const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО");
+  const hasInsets=(reg.includes("Архангельск")||(isNW&&reg==="ALL"));
+  const hasKal=(isNW&&reg==="ALL");
+  const mainFeats=hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||!f.properties.region.includes("Калининград"))):allFeats;
   const nzFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="NZ"):Array.of();
   const zfiFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="ZFI"):Array.of();
-  const kalFeats=hasKal?allFeats.filter(f=>f.properties.region==="Калининградская область"):Array.of();
+  const kalFeats=hasKal?allFeats.filter(f=>f.properties.region.includes("Калининград")):Array.of();
   const terrTitle=reg!=="ALL"?reg:(fo!=="RF"?fo+" федеральный округ":"Российская Федерация");
   const yrs=Array.of("2019","2020","2021","2022","2023","2024"),actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],CORE="#e6007e";
 
