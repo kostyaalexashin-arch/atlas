@@ -24,7 +24,16 @@ function makeProj(fo,reg){
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
-  return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
+  let x0=999,x1=-999,y0=999,y1=-999;
+  const w=c=>{if(typeof c.at(0)==="number"){if(c.at(0)<x0)x0=c.at(0);if(c.at(0)>x1)x1=c.at(0);if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};
+  feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
+  if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
+  const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0));
+  const spanX=Math.max(0.35,(x1-x0)*cosL),spanY=Math.max(0.25,(y1-y0)*(projObj.type==="albers"?0.88:1.15));
+  const sc=Math.min(boxW/(spanX*2.85),boxH/(spanY*2.85));
+  const p=Object.assign({},projObj,{scale:Math.max(0.85,sc)});
+  return{domain:{x:domX,y:domY},visible:false,projection:p,center:{lon:cx,lat:cy}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
@@ -84,7 +93,7 @@ function addCoreBadges(mapEl,isRegLevel){
   requestAnimationFrame(()=>{
     const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
     svg.querySelectorAll(".core-badge").forEach(el=>el.remove());
-    const txtNodes=Array.from(svg.querySelectorAll(".textpoint text"));
+    const txtNodes=Array.from(svg.querySelectorAll(".geolayer text"));
     const ns="http://w3.org";
     txtNodes.forEach(tEl=>{
       if(!tEl.textContent||!tEl.textContent.trim())return;
@@ -149,7 +158,7 @@ function render(){
       const syms=pts.map(f=>{const cc=DATA.panel_cats?.[yK]?.[f.properties.join_key]||"5";presCats.add(cc);return CAT_META[cc].sym;});
       traces.push({type:"scattergeo",geo:gK,lon:pts.map(f=>f.properties._cent.lon),lat:pts.map(f=>f.properties._cent.lat),text:pts.map(f=>"<b>"+f.properties._lbl+"</b> ("+yK+" г.): <b>"+fmtNum(ym[f.properties.join_key],mMeta.dec)+"</b>"),hoverinfo:"text",showlegend:false,marker:{symbol:syms,size:fo==="RF"?7:11,color:pts.map(f=>scObj.getHex(ym[f.properties.join_key])),line:{color:"#1e293b",width:0.7}}});
     });
-    Plotly.newPlot(mapEl,traces,layout,{responsive:true});
+    Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")});
     const sHex=actCol.at(Math.floor(actCol.length*0.75)),legIt=Array.of();
     Object.keys(CAT_META).forEach(k=>{if(presCats.has(k))legIt.push({col:sHex,kind:"box",icon:markerSvg(k,sHex,18),txt:CAT_META[k].lbl});});
     legIt.push({col:"#f3f4f6",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f3f4f6;border:1px solid #94a3b8;"></span>',txt:"Территория субъектов РФ"});
@@ -188,7 +197,7 @@ function render(){
   const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
     if(reg==="ALL"){
-      traces.push({type:"scattergeo",geo:"geo",mode:fo==="RF"?"markers":"markers+text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",textposition:"top center",textfont:{family:"Times New Roman",size:11,color:"#111"},showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});
+      traces.push({type:"scattergeo",geo:"geo",mode:fo==="RF"?"markers":"markers+text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",textposition:coreF.map((f,i)=>{const near=coreF.some((g,j)=>j<i&&Math.hypot(f.properties._cent.lon-g.properties._cent.lon,f.properties._cent.lat-g.properties._cent.lat)<4.2);return near?Array.of("bottom center","middle right","middle left","top center").at(i%4):"top center";}),textfont:{family:"Times New Roman",size:11,color:"#111"},showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});
       legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});
     }else{
       traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:2.8}}});
@@ -203,7 +212,7 @@ function render(){
   if(nzFeats.length>0){layout.geo2=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.52,0.92));layout.geo2.showframe=true;layout.geo2.framecolor="#64748b";layout.geo2.framewidth=1;layout.annotations.push({text:"<b>МО «Новая Земля»</b>",x:0.11,y:0.95,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(zfiFeats.length>0){layout.geo3=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.04,0.44));layout.geo3.showframe=true;layout.geo3.framecolor="#64748b";layout.geo3.framewidth=1;layout.annotations.push({text:"<b>арх. Земля Франца-Иосифа</b>",x:0.11,y:0.47,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
 
-  Plotly.newPlot(mapEl,traces,layout,{responsive:true}).then(()=>{
+  Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{
     if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");
   });
   mapEl.on("plotly_relayout",()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
