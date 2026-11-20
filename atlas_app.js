@@ -24,25 +24,25 @@ function getCenter(g){
   let sx=0,sy=0;best.forEach(pt=>{sx+=pt.at(0);sy+=pt.at(1);});return best.length?{lon:sx/best.length,lat:sy/best.length}:{lon:0,lat:0};
 }
 function makeProj(fo,reg){
-  if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100,lat:58},parallels:[50,68]};
-  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область"||reg==="Сахалинская область")return{type:"mercator",rotation:{lon:155}};
+  if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100},parallels:Array.of(52,68)};
+  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область"||reg==="Сахалинская область"||reg==="Приморский край"||reg==="Хабаровский край")return{type:"mercator",rotation:{lon:152}};
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
-  if(projObj.type==="conic equal area"){
-    return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,showframe:false,projection:projObj};
-  }
   const rotLon=projObj.rotation?.lon||0;let x0=999,x1=-999,y0=999,y1=-999;
-  const w=c=>{if(typeof c.at(0)==="number"){let lx=c.at(0)-rotLon;if(lx<-180)lx+=360;if(lx>180)lx-=360;if(lx<x0)x0=lx;if(lx>x1)x1=lx;if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};
+  const w=c=>{if(typeof c.at(0)==="number"){const lx=((c.at(0)-rotLon+540)%360)-180;if(lx<x0)x0=lx;if(lx>x1)x1=lx;if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};
   feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
   if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
+  if(projObj.type==="conic equal area"){
+    return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(rotLon+x0-2,rotLon+x1+2)},lataxis:{range:Array.of(Math.max(40,y0-1.5),Math.min(82.5,y1+1.5))}};
+  }
   const mEl=document.getElementById("mapDiv"),W=(mEl&&mEl.clientWidth>200)?mEl.clientWidth:1540,H=(mEl&&mEl.clientHeight>200)?mEl.clientHeight:740;
   const boxW=W*(domX.at(1)-domX.at(0)),boxH=H*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
   const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-84,Math.min(84,lat))*Math.PI/360))*180/Math.PI;
   const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
-  const pad=1.08,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
+  const pad=1.06,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
-  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
+  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(rotLon+cx-dx/2,rotLon+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
@@ -145,7 +145,7 @@ function render(){
   const allFeats=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
   const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск");
   const hasInsets=(isArk||(isNW&&reg==="ALL")),hasKal=(isNW&&reg==="ALL");
-  const hasRightCol=hasInsets||(reg!=="ALL"&&Boolean(window._isExportMode));
+  const hasRightCol=hasInsets||(reg!=="ALL");
   const mainFeats=hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||!f.properties.region.includes("Калининград"))):allFeats;
   const nzFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="NZ"):Array.of();
   const zfiFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="ZFI"):Array.of();
@@ -219,5 +219,22 @@ function render(){
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
   mapEl.on("plotly_relayout",()=>{if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
+
+  if(reg!=="ALL"&&mode==="single"){
+    const regList=Array.from(mainFeats.filter(f=>f.properties._map_status==="В_выборке").reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
+    if(regList.length>0){
+      const stage=document.createElement("div");stage.className="map-stage";mapEl.parentNode.insertBefore(stage,mapEl);stage.appendChild(mapEl);
+      const pnl=document.createElement("div");pnl.className="mo-side-panel"+(isArk?" ark":"");
+      pnl.innerHTML='<div class="mo-side-hdr">Муниципальные образования:</div>';
+      const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.locations&&t.locations.length===regList.length);
+      regList.forEach((f,i)=>{
+        const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;
+        it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ)orig._origZ=orig.z.slice();const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?v:null);Plotly.restyle(mapEl,{z:Array.of(nz)},Array.of(mainTrIdx));};
+        pnl.appendChild(it);
+      });
+      pnl.onmouseleave=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ)},Array.of(mainTrIdx));};
+      stage.appendChild(pnl);
+    }
+  }
   box.appendChild(buildFooterHtml(mMeta.cat,scObj,legIt));
 }
