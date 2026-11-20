@@ -41,12 +41,22 @@ function wideGeoCfg(feats,projObj,domX,domY){
   if(projObj.type==="mercator"&&projObj.rotation?.lon===105){
     return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(-90,90)},lataxis:{range:Array.of(41,82)}};
   }
-  const cx=(x0+x1)/2,cy=(y0+y1)/2,cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
-  const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0));
-  const spanX=Math.max(0.35,(x1-x0)*cosL),spanY=Math.max(0.25,(y1-y0)*(projObj.type==="albers"?0.88:1.15));
-  const sc=Math.min(boxW/(spanX*3.85),boxH/(spanY*3.85));
-  const p=Object.assign({},projObj,{scale:Math.max(0.85,sc)});
-  return{domain:{x:domX,y:domY},visible:false,projection:p,center:{lon:cx,lat:cy}};
+  const boxW=1560*(domX.at(1)-domX.at(0)),boxH=745*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
+  const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  if(projObj.type==="albers"){
+    const cosL=Math.max(0.24,Math.cos(cy*Math.PI/180));
+    const spanX=Math.max(0.35,(x1-x0)*cosL),spanY=Math.max(0.25,(y1-y0)*0.88);
+    const sc=Math.min(boxW/(spanX*3.85),boxH/(spanY*3.85));
+    return{domain:{x:domX,y:domY},visible:false,projection:Object.assign({},projObj,{scale:Math.max(0.85,sc)}),center:{lon:cx,lat:cy}};
+  }
+  const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-80,Math.min(80,lat))*Math.PI/360))*180/Math.PI;
+  const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
+  const pad=1.10;
+  let dx=Math.max(0.45,(x1-x0)*pad);
+  let ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
+  if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
+  const latMin=Math.max(-80,fromM(ymc-dym/2)),latMax=Math.min(82,fromM(ymc+dym/2));
+  return{domain:{x:domX,y:domY},visible:false,projection:{type:"mercator"},lonaxis:{range:Array.of(cx-dx/2,cx+dx/2)},lataxis:{range:Array.of(latMin,latMax)}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
