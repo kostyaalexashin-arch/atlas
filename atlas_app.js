@@ -14,16 +14,17 @@ Object.keys(PALETTES).forEach(p=>{const it=document.createElement("div");it.clas
 btnP.onclick=e=>{e.stopPropagation();menuP.classList.toggle("open");};
 document.addEventListener("click",()=>menuP.classList.remove("open"));updBtn(currentPal);
 const fmtNum=(v,d)=>(v===null||v===undefined||v===""||isNaN(Number(v)))?"н/д":Number(v).toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d});
-function wrapTitle(s,lim=86){if(s.length<=lim)return s;const idx=s.lastIndexOf(" ",lim);return idx>25?(s.slice(0,idx)+"<br>"+s.slice(idx+1)):s;}
+function wrapTitle(s,lim=106){if(s.length<=lim)return s;const idx=s.lastIndexOf(" ",lim);if(idx<=30)return s;const tail=s.slice(idx+1);return tail.length<14?s:(s.slice(0,idx)+"<br>"+tail);}
 function markerSvg(c,f,sz=20){const s="#1e293b",h=sz/2;if(c==="1")return '<svg width="'+sz+'" height="'+sz+'"><rect x="3" y="3" width="'+(sz-6)+'" height="'+(sz-6)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="2")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+h+' '+h+','+(sz-2)+' 2,'+h+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="3")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz-3)+' 2,'+(sz-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="4")return '<svg width="'+sz+'" height="'+sz+'"><circle cx="'+h+'" cy="'+h+'" r="'+(h-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz*0.42)+' '+(sz*0.8)+','+(sz-2)+' '+(sz*0.2)+','+(sz-2)+' 2,'+(sz*0.42)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';}
-function getBounds(feats){let x0=999,x1=-999,y0=999,y1=-999;const w=c=>{if(typeof c.at(0)==="number"){if(c.at(0)<x0)x0=c.at(0);if(c.at(0)>x1)x1=c.at(0);if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});return x0<900?{x0,x1,y0,y1}:{x0:20,x1:190,y0:41,y1:82};}
 function getCenter(g){let sx=0,sy=0,n=0;const w=c=>{if(typeof c.at(0)==="number"){sx+=c.at(0);sy+=c.at(1);n++;}else c.forEach(w);};if(g&&g.coordinates)w(g.coordinates);return n?{lon:sx/n,lat:sy/n}:{lon:0,lat:0};}
+function makeProj(fo,reg){
+  if(fo==="RF"&&reg==="ALL")return{type:"albers",rotation:{lon:100},parallels:Array.of(52,64)};
+  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область")return{type:"albers",rotation:{lon:142},parallels:Array.of(50,66)};
+  if(fo==="Сибирский"||fo==="Уральский")return{type:"albers",rotation:{lon:85},parallels:Array.of(52,66)};
+  return{type:"mercator"};
+}
 function wideGeoCfg(feats,projObj,domX,domY){
-  const b=getBounds(feats),rotLon=projObj.rotation?.lon||0,cx=(b.x0+b.x1)/2-rotLon,cy=(b.y0+b.y1)/2,cosLat=Math.max(0.24,Math.cos(cy*Math.PI/180));
-  const aspect=1.65*(domX.at(1)-domX.at(0))/(domY.at(1)-domY.at(0));
-  let dLat=Math.max(0.15,(b.y1-b.y0)*1.08),dLon=Math.max(0.25,(b.x1-b.x0)*1.08);
-  if(dLon*cosLat<dLat*aspect)dLon=(dLat*aspect)/cosLat;else dLat=(dLon*cosLat)/aspect;
-  return{domain:{x:domX,y:domY},visible:false,projection:projObj,lonaxis:{range:Array.of(cx-dLon/2,cx+dLon/2)},lataxis:{range:Array.of(cy-dLat/2,cy+dLat/2)}};
+  return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
@@ -80,21 +81,22 @@ function buildFooterHtml(isCat,scObj,mMeta,legItems){
 }
 
 function addCoreBadges(mapEl,isRegLevel){
-  const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
-  svg.querySelectorAll(".core-badge").forEach(el=>el.remove());
-  const txtNodes=Array.from(svg.querySelectorAll(".geolayer text"));
-  if(txtNodes.length===0)return;
-  const ns="http://w3.org";
-  txtNodes.forEach(tEl=>{
-    if(!tEl.textContent||!tEl.textContent.trim())return;
-    const bb=tEl.getBBox();if(!bb||bb.width===0)return;
-    const rect=document.createElementNS(ns,"rect");
-    rect.setAttribute("class","core-badge");
-    rect.setAttribute("x",bb.x-4);rect.setAttribute("y",bb.y-2);
-    rect.setAttribute("width",bb.width+8);rect.setAttribute("height",bb.height+4);
-    rect.setAttribute("rx","2");rect.setAttribute("fill","rgba(255,255,255,0.94)");
-    rect.setAttribute("stroke",isRegLevel?"#e6007e":"#64748b");rect.setAttribute("stroke-width","0.9");
-    tEl.parentNode.insertBefore(rect,tEl);
+  requestAnimationFrame(()=>{
+    const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
+    svg.querySelectorAll(".core-badge").forEach(el=>el.remove());
+    const txtNodes=Array.from(svg.querySelectorAll(".textpoint text"));
+    const ns="http://w3.org";
+    txtNodes.forEach(tEl=>{
+      if(!tEl.textContent||!tEl.textContent.trim())return;
+      const bb=tEl.getBBox();if(!bb||bb.width===0)return;
+      const rect=document.createElementNS(ns,"rect");
+      rect.setAttribute("class","core-badge");
+      rect.setAttribute("x",bb.x-4);rect.setAttribute("y",bb.y-2);
+      rect.setAttribute("width",bb.width+8);rect.setAttribute("height",bb.height+4);
+      rect.setAttribute("rx","2");rect.setAttribute("fill","rgba(255,255,255,0.95)");
+      rect.setAttribute("stroke",isRegLevel?"#e6007e":"#475569");rect.setAttribute("stroke-width","0.9");
+      tEl.parentNode.insertBefore(rect,tEl);
+    });
   });
 }
 
@@ -130,9 +132,9 @@ function render(){
   }
 
   box.innerHTML='<div id="mapDiv"></div>';const mapEl=document.getElementById("mapDiv");
-  const projObj=(fo==="RF"||fo==="Дальневосточный"||reg==="Амурская область"||reg==="Чукотский автономный округ"||reg==="Камчатский край")?{type:"mercator",rotation:{lon:105}}:{type:"mercator"};
+  const projObj=makeProj(fo,reg);
   const fullTitle=terrTitle+": "+mMeta.title+" ("+(mode==="grid"?"2019–2024 гг.":yr+" г.")+")";
-  const hdrSvg={text:"<b>"+wrapTitle(fullTitle,84)+"</b>",x:0.5,xanchor:"center",y:0.985,font:{family:"Times New Roman",size:17,color:"#111"}};
+  const hdrSvg={text:"<b>"+wrapTitle(fullTitle,106)+"</b>",x:0.5,xanchor:"center",y:0.985,font:{family:"Times New Roman",size:17,color:"#111"}};
 
   if(mode==="grid"){
     const subGeo={type:"FeatureCollection",features:mainFeats},refF=(scMode==="global")?GEO.features:allFeats,allV=Array.of();
@@ -190,16 +192,16 @@ function render(){
       legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});
     }else{
       traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:2.8}}});
-      traces.push({type:"scattergeo",geo:"geo",mode:"text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),hoverinfo:"skip",showlegend:false,textfont:{family:"Times New Roman",size:12,color:"#111"}});
+      traces.push({type:"scattergeo",geo:"geo",mode:"text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>"<b>"+f.properties._lbl+"</b>"),hoverinfo:"skip",showlegend:false,textfont:{family:"Times New Roman",size:12,color:"#111"}});
       legIt.push({col:CORE,kind:"line",icon:'<span style="display:inline-block;width:18px;height:3px;background:'+CORE+';"></span>',txt:"Ядро региона (макс. население)"});
     }
   }
   if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#cbd5e1;border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
-  const layout={title:hdrSvg,geo:wideGeoCfg(mainFeats,projObj,Array.of(hasInsets?0.22:0.0,1.0),Array.of(0.0,1.0)),annotations:Array.of(),showlegend:false,margin:{l:5,r:5,t:62,b:5},height:810};
-  if(nzFeats.length>0){layout.geo2=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.01,0.20),Array.of(0.52,0.92));layout.geo2.showframe=true;layout.geo2.framecolor="#64748b";layout.geo2.framewidth=1;layout.annotations.push({text:"<b>МО «Новая Земля»</b>",x:0.105,y:0.95,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  if(zfiFeats.length>0){layout.geo3=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.01,0.20),Array.of(0.04,0.44));layout.geo3.showframe=true;layout.geo3.framecolor="#64748b";layout.geo3.framewidth=1;layout.annotations.push({text:"<b>арх. Земля Франца-Иосифа</b>",x:0.105,y:0.47,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  const layout={title:hdrSvg,geo:wideGeoCfg(mainFeats,projObj,Array.of(hasInsets?0.23:0.0,1.0),Array.of(0.02,0.97)),annotations:Array.of(),showlegend:false,margin:{l:5,r:5,t:62,b:5},height:810};
+  if(nzFeats.length>0){layout.geo2=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.52,0.92));layout.geo2.showframe=true;layout.geo2.framecolor="#64748b";layout.geo2.framewidth=1;layout.annotations.push({text:"<b>МО «Новая Земля»</b>",x:0.11,y:0.95,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  if(zfiFeats.length>0){layout.geo3=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.01,0.21),Array.of(0.04,0.44));layout.geo3.showframe=true;layout.geo3.framecolor="#64748b";layout.geo3.framewidth=1;layout.annotations.push({text:"<b>арх. Земля Франца-Иосифа</b>",x:0.11,y:0.47,xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
 
   Plotly.newPlot(mapEl,traces,layout,{responsive:true}).then(()=>{
     if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");
