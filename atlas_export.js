@@ -4,9 +4,9 @@ async function buildSheetCanvas(){
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
   const regFeats=(reg!=="ALL")?Array.from(GEO.features.filter(f=>f.properties.region===reg&&f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>a.properties._lbl.localeCompare(b.properties._lbl,"ru")):Array.of();
   const hasRightList=regFeats.length>0;
-  let numTraceAdded=false;
+  let numTraceAdded=false,savedAnns=null,coreTrIdx=-1;
   if(hasRightList){
-    const savedAnns=(mapEl.layout.annotations||Array.of()).slice();const coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
+    savedAnns=(mapEl.layout.annotations||Array.of()).slice();coreTrIdx=mapEl.data.findIndex(t=>t.type==="scattergeo"&&t.mode==="text");if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
     const pts=regFeats.map(f=>({lon:f.properties._cent.lon,lat:f.properties._cent.lat}));
     for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){if(Math.hypot(pts.at(i).lon-pts.at(j).lon,pts.at(i).lat-pts.at(j).lat)<0.26){pts.at(j).lon-=0.13;pts.at(i).lon+=0.13;}}}
     await Plotly.addTraces(mapEl,{type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:15,color:"#000000"},showlegend:false,hoverinfo:"skip"});
@@ -121,7 +121,7 @@ async function exportBatchPdf(){
       const it=queue.at(i);
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
       sReg.value=it.reg;render();
-      await new Promise(r=>setTimeout(r,260));
+      await new Promise(r=>setTimeout(r,420));
       const c=await buildSheetCanvas();if(!c)continue;
       const b64=c.toDataURL("image/jpeg",0.90).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
