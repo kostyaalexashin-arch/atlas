@@ -186,7 +186,7 @@ function render(){
   if(mode==="grid"){
     const subGeo={type:"FeatureCollection",features:mainFeats},refF=(scMode==="global")?GEO.features:allFeats,allV=Array.of();
     yrs.forEach(y=>{const ym=DATA.panel[mId]?.[y]||{};refF.filter(f=>f.properties._map_status==="В_выборке"&&f.properties.coh).forEach(f=>{const v=Number(ym[f.properties.join_key]);if(!isNaN(v))allV.push(v);});});
-    const scObj=Object.assign(computeScale(allV,actCol,mMeta.inv),{dec:mMeta.dec}),traces=Array.of(),layout={margin:{l:0,r:0,t:10,b:0},height:740,annotations:Array.of()},presCats=new Set();
+    const scObj=Object.assign(computeScale(allV,actCol,mMeta.inv),{dec:mMeta.dec}),traces=Array.of(),layout={margin:{l:0,r:0,t:10,b:0},height:Math.max(420,mapEl.clientHeight||640),annotations:Array.of()},presCats=new Set();
     yrs.forEach((yK,idx)=>{
       const gK=idx===0?"geo":"geo"+(idx+1),col=idx%3,row=Math.floor(idx/3),x0=col*0.335,x1=x0+0.325,y1=0.95-row*0.49,y0=y1-0.44;
       layout[gK]=wideGeoCfg(mainFeats,projObj,Array.of(x0,x1),Array.of(y0,y1));
@@ -226,7 +226,7 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"hatch",icon:'<span style="display:inline-block;width:18px;height:13px;background:repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0 5px,#475569 5px,#475569 7.5px);border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
-  const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.02,0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:740};
+  const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.02,0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
   const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
