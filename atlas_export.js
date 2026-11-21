@@ -34,7 +34,7 @@ async function buildSheetCanvas(){
     }else if(window._badgesReady){await window._badgesReady;}
 
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
-    const mapW=3080,mapH=1480,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:740,scale:2});
+    const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>(p.getAttribute("fill")||"").includes("zatoHatch"));hPaths.forEach(p=>{p.style.fill="#cbd5e1";p.setAttribute("fill","#cbd5e1");});const mapW=3080,mapH=1480,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:740,scale:2});hPaths.forEach(p=>{p.style.fill="url(#zatoHatch)";p.setAttribute("fill","url(#zatoHatch)");});
     const canvas=document.createElement("canvas");canvas.width=3160;canvas.height=1820;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3160,1820);
     const terrTitle=reg!=="ALL"?reg:(fo!=="RF"?fo+" федеральный округ":"Российская Федерация");

@@ -136,10 +136,11 @@ function addCoreBadges(mapEl,isRegLevel){
         anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+f.properties._lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",ax:d.at(0),ay:d.at(1),bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#475569",borderwidth:1,borderpad:3,font:{family:"Times New Roman",size:12,color:"#111111"}});
       });
     }else if(mainC.length>0){
-      const allP=Array.from(svg.querySelectorAll(".geolayer .choropleth path")).filter(p=>{const r=p.getBoundingClientRect();return r.width>0&&(r.left-sRect.left)/pW<xMax;});const lastP=allP.at(allP.length-1);
+      const xMax=hasRight?0.76:0.99;
+      const allP=Array.from(svg.querySelectorAll(".geolayer .choropleth path")).filter(p=>{const r=p.getBoundingClientRect();return r.width>0&&(r.left-sRect.left)/pW<xMax;});
+      const lastP=allP.find(p=>{const st=(p.getAttribute("style")||"").replace(/\s/g,"");return st.includes("230,0,126")||st.includes("e6007e");})||allP.at(allP.length-1);
       if(lastP){
         const r=lastP.getBoundingClientRect(),px=(r.left+r.width/2-sRect.left)/pW,py=1.0-(r.top+r.height/2-sRect.top)/pH;
-        const xMax=hasRight?0.76:0.99;
         if(px>=0.01&&px<=xMax&&py>=0.02&&py<=0.98){const dx=(px>0.55?-64:64),dy=(py>0.75?34:-34);anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+mainC.at(0).properties._lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.2,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});}
       }
     }
