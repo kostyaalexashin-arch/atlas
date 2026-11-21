@@ -209,7 +209,7 @@ function render(){
   const addGeoLayers=(fList,gKey,maskFn=null)=>{
     if(maskFn){
       const mF=fList.filter(maskFn);
-      if(mF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:{type:"FeatureCollection",features:mF},featureidkey:"properties.join_key",locations:mF.map(f=>f.properties.join_key),z:mF.map(()=>0),text:mF.map(f=>f.properties._lbl),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f3f4f6"),Array.of(1,"#f3f4f6")),showscale:false,marker:{line:{color:"#94a3b8",width:0.35}}});
+      if(mF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:{type:"FeatureCollection",features:mF},featureidkey:"properties.join_key",locations:mF.map(f=>f.properties.join_key),z:mF.map(()=>0),text:mF.map(f=>f.properties._lbl),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f3f4f6"),Array.of(1,"#f3f4f6")),showscale:false,marker:{line:{color:"rgba(0,0,0,0)",width:0}}});
       fList=fList.filter(f=>!maskFn(f));
     }
     const subG={type:"FeatureCollection",features:fList},outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО");
