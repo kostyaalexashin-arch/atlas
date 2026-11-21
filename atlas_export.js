@@ -34,12 +34,10 @@ async function buildSheetCanvas(){
     }else if(window._badgesReady){await window._badgesReady;}
 
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
-    const svgEl=mapEl.querySelector("svg.main-svg"),sBox=svgEl?svgEl.getBoundingClientRect():{left:0,top:0,width:1540,height:740};
     const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>(p.getAttribute("fill")||"").includes("zatoHatch"));
-    const zatoDraw=hPaths.map(p=>{const g=p.closest("g.trace")||p.parentElement,gr=g?g.getBoundingClientRect():sBox;return{d:p.getAttribute("d")||"",dx:gr.left-sBox.left,dy:gr.top-sBox.top};});
-    hPaths.forEach(p=>{p.style.fill="#e2e8f0";p.setAttribute("fill","#e2e8f0");});
+    hPaths.forEach(p=>{p.style.fill="#e2e8f0";p.style.fillOpacity="1";p.setAttribute("fill","#e2e8f0");});
     const mapW=3080,mapH=1480,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:740,scale:2});
-    hPaths.forEach(p=>{p.style.fill="url(#zatoHatch)";p.setAttribute("fill","url(#zatoHatch)");});
+    hPaths.forEach(p=>{p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");});
     const canvas=document.createElement("canvas");canvas.width=3160;canvas.height=1820;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3160,1820);
     const terrTitle=reg!=="ALL"?reg:(fo!=="RF"?fo+" федеральный округ":"Российская Федерация");
@@ -50,9 +48,10 @@ async function buildSheetCanvas(){
     ctx.font="bold 32px 'Times New Roman'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
-    if(zatoDraw.length>0&&sBox.width>0&&sBox.height>0){
-      const sx=mapW/sBox.width,sy=mapH/sBox.height;
-      zatoDraw.forEach(z=>{if(!z.d)return;ctx.save();ctx.translate(40,155);ctx.scale(sx,sy);const p2=new Path2D(z.d);ctx.clip(p2);ctx.strokeStyle="#475569";ctx.lineWidth=1.8;for(let k=-800;k<2400;k+=8){ctx.beginPath();ctx.moveTo(k,0);ctx.lineTo(k+800,800);ctx.stroke();}ctx.restore();});
+    if(hPaths.length>0){
+      const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
+      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;if(Math.abs(px[k]-226)<=3&&Math.abs(px[k+1]-232)<=3&&Math.abs(px[k+2]-240)<=3&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
+      ctx.putImageData(idt,40,155);
     }
     if(hasList){
       const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.67)):165,lyBot=155+mapH-10;
