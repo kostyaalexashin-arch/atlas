@@ -144,7 +144,7 @@ function addCoreBadges(mapEl,isRegLevel){
       anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.1,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.94)",bordercolor:"#e6007e",borderwidth:1.1,borderpad:2.5,font:{family:"Times New Roman",size:12,color:"#111111"}});
     }
   }
-  window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},60);});
+  window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},350);});
 }
 
 function render(){
@@ -238,7 +238,7 @@ function render(){
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
-  mapEl.on("plotly_relayout",()=>{if(window._inBadgeRelayout)return;applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
+  mapEl.on("plotly_relayout",ev=>{if(window._inBadgeRelayout||(ev&&ev.annotations))return;applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
 
   if(reg!=="ALL"&&mode==="single"){
     const regList=Array.from(allFeats.filter(f=>f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
