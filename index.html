@@ -92,43 +92,12 @@ table.dyn-tbl td.mo-name{text-align:left}
 .bench-row{display:flex;align-items:center;gap:14px;padding:14px 6px 14px 6px;border-bottom:1px solid #e2e8f0}
 .bench-scale-wrap{flex:1;position:relative;height:64px;display:flex;align-items:center}
 .bench-vals-row{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.96);border:1px solid #cbd5e1;border-radius:2px;padding:1px 3px;font-size:10px;line-height:1.15;font-weight:bold;white-space:nowrap;color:#111;z-index:2}
-
-.pass-panel{display:none;flex-direction:column;gap:5px;flex:1;overflow-y:auto}
-.pass-panel input{width:100%;height:28px;padding:2px 7px;border:1px solid #94a3b8;border-radius:3px;font-family:inherit;font-size:12px}
-.pass-view{width:100%;height:100%;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column;gap:8px;font-size:12px}
-.pass-top{display:flex;gap:14px;align-items:stretch}
-.pass-coat{width:96px;flex-shrink:0;border:1.5px solid #475569;border-radius:3px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#475569;padding:4px;background:#f8fafc}
-.pass-intro{flex:1}
-.pass-title{font-size:18px;font-weight:bold;text-align:center;line-height:1.2}
-.pass-sub{font-size:14.5px;font-weight:bold;text-align:center;color:#0f172a;margin:2px 0 4px 0}
-.pass-desc{font-size:11px;font-style:italic;color:#334155;line-height:1.25;text-align:justify}
-.pass-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;border-top:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1;padding:6px 4px}
-.pass-mrow{display:flex;justify-content:space-between;align-items:center;padding:2px 6px}
-.pass-mid{display:flex;gap:14px;align-items:stretch}
-.pass-radar-box{width:46%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:4px;padding:6px;background:#fafbfc}
-.pass-idx-box{flex:1;display:flex;flex-direction:column;gap:2px}
-.pass-irow{display:flex;justify-content:space-between;padding:2px 6px;border-bottom:1px dotted #e2e8f0}
-.pass-irow.main{font-size:13.5px;font-weight:bold;background:#e2e8f0;border-radius:2px;margin-top:2px}
-.pass-irow.sub{font-size:12.5px;font-weight:bold;background:#f1f5f9;margin-top:2px}
-.pass-irow.blk{font-size:11.5px;padding-left:16px}
-.pass-bot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;border-top:1.5px solid #94a3b8;padding-top:6px}
-.pass-col-hdr{font-weight:bold;font-size:12.5px;text-align:center;background:#eef3f8;padding:3px;border-radius:2px;margin-bottom:3px}
-.pass-crow{display:flex;justify-content:space-between;gap:6px;font-size:10.5px;padding:1.5px 3px;border-bottom:1px dotted #e2e8f0}
 </style></head><body><div class="workspace"><div class="sidebar">
-<select id="selMode"><option value="single">Одиночная карта (срез)</option><option value="grid">Сетка динамики (2019–2024)</option><option value="table">Таблица динамики МО (2019–2024)</option><option value="bench">Бенчмаркинг</option><option value="passport">Цифровой паспорт МО</option></select>
+<select id="selMode"><option value="single">Одиночная карта (срез)</option><option value="grid">Сетка динамики (2019–2024)</option><option value="table">Таблица динамики МО (2019–2024)</option><option value="bench">Бенчмаркинг</option></select>
 <select id="selBase"><option value="all">Генеральный срез 2024 (2269 МО)</option><option value="coh">Динамическая когорта (193 МО)</option></select>
 <select id="selYear"><option value="2024">2024 г.</option><option value="2023">2023 г.</option><option value="2022">2022 г.</option><option value="2021">2021 г.</option><option value="2020">2020 г.</option><option value="2019">2019 г.</option></select>
 <div class="nav-grp"><button type="button" class="btn-nav" id="prevFO">◀</button><select id="selFO"><option value="RF">Российская Федерация</option></select><button type="button" class="btn-nav" id="nextFO">▶</button></div>
 <div class="nav-grp"><button type="button" class="btn-nav" id="prevReg">◀</button><select id="selReg"><option value="ALL">Весь округ / РФ</option></select><button type="button" class="btn-nav" id="nextReg">▶</button></div>
-<div class="pass-panel" id="passPanel">
-<div class="bench-hdr-row"><span class="bench-lbl">Выбор МО для паспорта:</span><button type="button" class="btn-rst" id="pRst">Сбросить</button></div>
-<input type="text" id="pCatIn" list="pDlCat" placeholder="🔍 Категория (все)">
-<input type="text" id="pFOIn" list="pDlFO" placeholder="🔍 Федеральный округ (все)">
-<input type="text" id="pRegIn" list="pDlReg" placeholder="🔍 Регион (все)">
-<input type="text" id="pMOIn" list="pDlMO" placeholder="🔍 Название МО (Регион)">
-<select id="pYear" disabled><option value="2024">Год паспорта: 2024 г.</option><option value="2023">2023 г.</option><option value="2022">2022 г.</option><option value="2021">2021 г.</option><option value="2020">2020 г.</option><option value="2019">2019 г.</option></select>
-<datalist id="pDlCat"></datalist><datalist id="pDlFO"></datalist><datalist id="pDlReg"></datalist><datalist id="pDlMO"></datalist>
-</div>
 <div class="bench-panel" id="benchPanel">
 <div class="bench-hdr-row"><span class="bench-lbl">Выбранные МО (до 5):</span><button type="button" class="btn-rst" id="bRstAll">Сбросить</button></div>
 <div class="bench-chips" id="bChips"></div>
@@ -145,11 +114,11 @@ table.dyn-tbl td.mo-name{text-align:left}
 <button type="button" class="btn-main" id="btnBenchRun">Сравнить</button>
 <datalist id="dlCat"></datalist><datalist id="dlFO"></datalist><datalist id="dlReg"></datalist><datalist id="dlMO"></datalist>
 </div>
-<div class="met-box" id="stdMetBox"><div class="side-hdr"><span>Показатели атласа:</span><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.21 23:00 МСК</span></div><div class="side-nav"><button type="button" id="prevMet">◀ Предыдущий</button><button type="button" id="nextMet">Следующий ▶</button></div><select id="selMetric" size="24"></select></div>
+<div class="met-box" id="stdMetBox"><div class="side-hdr"><span>Показатели атласа:</span><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.21 23:02 МСК</span></div><div class="side-nav"><button type="button" id="prevMet">◀ Предыдущий</button><button type="button" id="nextMet">Следующий ▶</button></div><select id="selMetric" size="24"></select></div>
 <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
 <div class="pal-dd"><button type="button" class="pal-btn" id="palBtn"></button><div class="pal-menu" id="palMenu"></div></div>
 <button type="button" class="btn-main" id="btnPng">💾 PNG</button>
 <div class="exp-row"><select id="selDpi"><option value="0.32" selected>72 dpi (эскиз)</option><option value="0.45">96 dpi</option><option value="0.72">150 dpi</option><option value="1.0">300 dpi</option></select><select id="selPdfScope"><option value="fo">РФ + 8 ФО</option><option value="cur_fo">Регионы ФО</option><option value="all">Весь атлас</option></select></div>
 <button type="button" class="btn-main btn-pdf" id="btnPdf">💾 PDF</button>
 </div><div class="sheet" id="sheetBox"><div id="mapDiv" style="padding:40px;font-size:17px;">Загрузка данных атласа...</div></div>
-</div><script src="atlas_passport.js?v=20261121230055"></script><script src="atlas_bench.js?v=20261121230055"></script><script src="atlas_export.js?v=20261121230055"></script><script src="atlas_app.js?v=20261121230055"></script></body></html>
+</div><script src="atlas_bench.js?v=20261121230240"></script><script src="atlas_export\.js?v=20261121224256"></script><script src="atlas_app\.js?v=20261121224256"></script></body></html>

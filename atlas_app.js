@@ -59,13 +59,12 @@ function computeScale(vals,palArr,inv){
 }
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear"),isBench=(sM.value==="bench");
-  const isPass=(sM.value==="passport"),hideStd=isBench||isPass;const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
+  const bp=document.getElementById("benchPanel"),mb=document.getElementById("stdMetBox");
   if(bp)bp.style.display=isBench?"flex":"none";
-  if(pp)pp.style.display=isPass?"flex":"none";
-  if(mb)mb.style.display=hideStd?"none":"flex";
-  Array.of("selBase","selYear","selFO","selReg","prevFO","nextFO","prevReg","nextReg").forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=hideStd?"none":"";});
-  document.querySelectorAll(".nav-grp").forEach(el=>el.style.display=hideStd?"none":"flex");
-  if(hideStd)return;
+  if(mb)mb.style.display=isBench?"none":"flex";
+  Array.of("selBase","selYear","selFO","selReg","prevFO","nextFO","prevReg","nextReg").forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=isBench?"none":"";});
+  document.querySelectorAll(".nav-grp").forEach(el=>el.style.display=isBench?"none":"flex");
+  if(isBench)return;
   if(sM.value==="grid"||sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
   else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
 }
@@ -119,7 +118,7 @@ function drawMapScaleBar(mapEl,feats,xStartPaper){
   const cands=Array.of(5,10,20,25,50,100,200,250,500,1000);
   let bestKm=100;for(const k of cands){if(k*pxPerKm>=55&&k*pxPerKm<=150){bestKm=k;break;}}
   const barPx=Math.round(bestKm*pxPerKm),bx=Math.round(pW*(xStartPaper||0.015)),by=Math.round(pH-14);
-  const ns="http:"+"//"+"www.w3.org/2000/svg",g=document.createElementNS(ns,"g");g.setAttribute("id","mapScaleBarG");
+  const ns="http://w3.org",g=document.createElementNS(ns,"g");g.setAttribute("id","mapScaleBarG");
   const bg=document.createElementNS(ns,"rect");bg.setAttribute("x",String(bx-5));bg.setAttribute("y",String(by-20));bg.setAttribute("width",String(barPx+16));bg.setAttribute("height","25");bg.setAttribute("fill","rgba(255,255,255,0.88)");bg.setAttribute("rx","2");
   const ln=document.createElementNS(ns,"path");ln.setAttribute("d","M"+bx+","+(by-5)+" L"+bx+","+by+" L"+(bx+barPx)+","+by+" L"+(bx+barPx)+","+(by-5));ln.setAttribute("fill","none");ln.setAttribute("stroke","#111111");ln.setAttribute("stroke-width","1.8");
   const tx=document.createElementNS(ns,"text");tx.setAttribute("x",String(bx+barPx/2));tx.setAttribute("y",String(by-5));tx.setAttribute("text-anchor","middle");tx.setAttribute("font-family","Times New Roman");tx.setAttribute("font-size","11.5");tx.setAttribute("font-weight","bold");tx.setAttribute("fill","#111111");tx.textContent=bestKm+" км";
@@ -173,7 +172,7 @@ function addCoreBadges(mapEl,isRegLevel){
 
 function render(){
   if(!GEO||!DATA)return;
-  const mode=document.getElementById("selMode").value;if(mode==="bench"&&typeof renderBenchmark==="function"){renderBenchmark();return;}if(mode==="passport"&&typeof renderPassport==="function"){renderPassport();return;}const base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
+  const mode=document.getElementById("selMode").value;if(mode==="bench"&&typeof renderBenchmark==="function"){renderBenchmark();return;}const base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0),box=document.getElementById("sheetBox");
   const allFeats=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
   const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск"),isKras=reg.includes("Красноярск"),isSFO=(fo==="Сибирский"&&reg==="ALL");const hasLeftInset=isKras||isSFO;
