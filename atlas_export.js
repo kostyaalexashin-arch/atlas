@@ -34,7 +34,7 @@ async function buildSheetCanvas(){
     }else if(window._badgesReady){await window._badgesReady;}
 
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
-    const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>(p.getAttribute("fill")||"").includes("zatoHatch"));
+    const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("zatoHatch")||s.includes("0.987")||s.replace(/\s/g,"").includes("203,213,225");});
     hPaths.forEach(p=>{p.style.fill="#e2e8f0";p.style.fillOpacity="1";p.setAttribute("fill","#e2e8f0");});
     const mapW=3080,mapH=1480,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:740,scale:2});
     hPaths.forEach(p=>{p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");});
@@ -48,7 +48,7 @@ async function buildSheetCanvas(){
     ctx.font="bold 32px 'Times New Roman'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
-    if(hPaths.length>0){
+    {
       const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
       for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;if(Math.abs(px[k]-226)<=3&&Math.abs(px[k+1]-232)<=3&&Math.abs(px[k+2]-240)<=3&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
       ctx.putImageData(idt,40,155);
