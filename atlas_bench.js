@@ -146,7 +146,7 @@ function renderBenchmark(){
     if(gi===0){
       if(yr!=="2024"){const gh0=document.createElement("div");gh0.className="bench-blk-hdr";gh0.textContent="0. Категория МО";view.appendChild(gh0);}
       const crow=document.createElement("div");crow.className="bench-row";
-      crow.innerHTML='<div class="bench-met-name">Категория МО по численности населения ('+yr+' г.)</div>';
+      crow.innerHTML='<div class="bench-met-name">Категория МО по численности населения</div>';
       const cgrid=document.createElement("div");cgrid.className="bench-cat-cells";
       CAT_HOUSES.forEach(ch=>{
         const hits=selMOs.filter(mo=>String(DATA.panel_cats?.[yr]?.[mo.key]||mo.cat||"5")===ch.c);
@@ -222,7 +222,7 @@ function buildBenchCanvases(){
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(50,y+step);ctx.lineTo(W-50,y+step);ctx.stroke();
       const sx=1040,sw=W-1090;
       if(it.kind==="cat"){
-        ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";ctx.fillText("Категория МО по численности населения ("+yr+" г.)",56,y+step/2+6);
+        ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";ctx.fillText("Категория МО по численности населения",56,y+step/2+6);
         const cw=Math.floor(sw/5),ch=Math.min(64,step-10),cy=y+(step-ch)/2;
         CAT_HOUSES.forEach((chObj,ci)=>{
           const cx=sx+ci*cw;ctx.fillStyle="#f8fafc";ctx.fillRect(cx,cy,cw-4,ch);ctx.strokeStyle="#64748b";ctx.strokeRect(cx,cy,cw-4,ch);

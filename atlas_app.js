@@ -59,7 +59,7 @@ function computeScale(vals,palArr,inv){
 }
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear"),isBench=(sM.value==="bench");
-  const isPass=(sM.value==="passport"),hideStd=isBench||isPass;const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
+  const isPass=(sM.value==="passport"),hideStd=isBench||isPass;const shB=document.getElementById("sheetBox");if(shB)shB.classList.toggle("portrait",isPass);const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
   if(bp)bp.style.display=isBench?"flex":"none";
   if(pp)pp.style.display=isPass?"flex":"none";
   if(mb)mb.style.display=hideStd?"none":"flex";
