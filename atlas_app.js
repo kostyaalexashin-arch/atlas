@@ -160,7 +160,7 @@ function render(){
   const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск"),isKras=reg.includes("Красноярск");
   const hasInsets=(isArk||(isNW&&reg==="ALL")),hasKal=(isNW&&reg==="ALL");
   const hasRightCol=hasInsets||(reg!=="ALL");
-  const isKrasNorth=f=>/таймыр|эвенкий|турухан|норильск|северо-енисей/i.test(String(f.properties._lbl||""));
+  const isKrasNorth=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан/i.test(String(f.properties._lbl||""));
   const mainFeats=isKras?allFeats:(hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||!f.properties.region.includes("Калининград"))):allFeats);
   const nzFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="NZ"):Array.of();
   const zfiFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="ZFI"):Array.of();
