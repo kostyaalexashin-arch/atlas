@@ -25,7 +25,7 @@ function getCenter(g){
 }
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100},parallels:Array.of(52,68)};
-  if(fo==="Дальневосточный"||reg==="Чукотский автономный округ"||reg==="Камчатский край"||reg==="Магаданская область"||reg==="Сахалинская область"||reg==="Приморский край"||reg==="Хабаровский край")return{type:"mercator",rotation:{lon:152}};
+  if((fo==="Дальневосточный"&&reg==="ALL")||reg==="Чукотский автономный округ")return{type:"mercator",rotation:{lon:152}};
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
