@@ -201,7 +201,7 @@ function render(){
   }
   const valMap=(base==="all"&&yr==="2024")?(DATA.v2024[mId]||{}):(DATA.panel[mId]?.[yr]||{}),traces=Array.of(),legIt=Array.of();
   const refF=(scMode==="global")?GEO.features:allFeats,allV=refF.filter(f=>f.properties._map_status==="В_выборке"&&(base==="all"||f.properties.coh)).map(f=>Number(valMap[f.properties.join_key])).filter(v=>!isNaN(v));
-  const scObj=mMeta.cat?null:Object.assign(computeScale(allV,actCol,mMeta.inv),{dec:mMeta.dec});
+  const scObj=((mMeta.cat||mMeta.is_cat)||mMeta.is_cat)?null:Object.assign(computeScale(allV,actCol,mMeta.inv),{dec:mMeta.dec});
   const addGeoLayers=(fList,gKey,maskFn=null)=>{
     if(maskFn){
       const mF=fList.filter(maskFn);
@@ -212,7 +212,7 @@ function render(){
     const allIn=fList.filter(f=>f.properties._map_status==="В_выборке"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО"),outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО");
     const inF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v!==null&&v!==undefined&&v!==""&&!isNaN(Number(v));});
     const noDataF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v===null||v===undefined||v===""||isNaN(Number(v));});
-    if(mMeta.cat){
+    if(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat)){
       Object.entries(DATA.cluster_colors).forEach(pair=>{
         const cn=pair.at(0),ch=pair.at(1),cF=allIn.filter(f=>valMap[f.properties.join_key]===cn);
         if(cF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cF.map(f=>f.properties.join_key),z:cF.map(()=>1),zmin:0,zmax:1,zauto:false,text:cF.map(f=>f.properties._lbl+" ("+f.properties.region+"): "+cn),hoverinfo:"text",autocolorscale:false,colorscale:Array.of(Array.of(0,ch),Array.of(1,ch)),showscale:false,marker:{line:{color:"#334155",width:0.65}}});
@@ -229,7 +229,7 @@ function render(){
   if(hasLeftInset&&allFeats.length>0){addGeoLayers(allFeats,"geo2",f=>!isKrasNorth(f));}
   if(kalFeats.length>0){addGeoLayers(kalFeats,"geo4");const kCore=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");if(kCore.length>0)traces.push({type:"scattergeo",geo:"geo4",mode:"markers",lon:kCore.map(f=>f.properties._cent.lon),lat:kCore.map(f=>f.properties._cent.lat),hovertext:kCore.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl),hoverinfo:"text",showlegend:false,marker:{size:8,color:CORE,line:{color:"#ffffff",width:1.1}}});}
   if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(!hasKal||!f.properties.region.includes("Калининград"))&&(!isSFO||!f.properties.region.includes("Красноярск")));traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
-  if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1);if(allFeats.some(f=>valMap[f.properties.join_key]===cn)||fo==="RF")legIt.push({col:ch,kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:'+ch+';border:1px solid #555;"></span>',txt:cn});});}
+  if(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat)){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1);if(allFeats.some(f=>valMap[f.properties.join_key]===cn)||fo==="RF")legIt.push({col:ch,kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:'+ch+';border:1px solid #555;"></span>',txt:cn});});}
   const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
     if(reg==="ALL"){traces.push({type:"scattergeo",geo:"geo",mode:"markers+text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),textfont:{size:1,color:"rgba(0,0,0,0)"},hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});}
@@ -277,5 +277,5 @@ function render(){
       stage.appendChild(pnl);
     }
   }
-  box.appendChild(buildFooterHtml(mMeta.cat,scObj,legIt));
+  box.appendChild(buildFooterHtml(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat),scObj,legIt));
 }
