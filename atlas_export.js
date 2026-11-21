@@ -106,7 +106,7 @@ async function buildSheetCanvas(){
 }
 
 async function exportFullSheetPng(){
-  const c=await buildSheetCanvas();if(!c)return;
+  const isB=(document.getElementById("selMode").value==="bench");const c=isB?buildBenchCanvas():await buildSheetCanvas();if(!c)return;
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
   const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=c.toDataURL("image/png");a.click();
 }
@@ -128,7 +128,7 @@ function buildPdfBlob(pages){
 }
 async function exportBatchPdf(){
   const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
-  if(document.getElementById("selMode").value==="table")return alert("Переключитесь в режим карты или сетки.");
+  const curM=document.getElementById("selMode").value;if(curM==="table")return alert("Переключитесь в режим карты, сетки или бенчмаркинга.");if(curM==="bench"){const c=buildBenchCanvas();if(!c)return;const b64=c.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);const a=document.createElement("a");a.download="Бенчмаркинг_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(Array.of({w:c.width,h:c.height,jpg:arr})));a.click();return;}
   const origFO=sFO.value,origReg=sReg.value,queue=Array.of(),pages=Array.of();
   if(scope==="fo"){queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>queue.push({fo:f,reg:"ALL"}));}
   else if(scope==="cur_fo"){const fl=origFO==="RF"?DATA.fos:Array.of(origFO);fl.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r})));}
