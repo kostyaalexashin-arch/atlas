@@ -74,19 +74,24 @@ table.dyn-tbl td.mo-name{text-align:left}
 .bench-mo-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .b-tok-sel{height:22px !important;width:40px !important;flex-shrink:0;padding:0 1px !important;font-size:14px !important;cursor:pointer;background:#fff}
 .bench-blk-hdr{background:#e2e8f0;font-weight:bold;font-size:13px;padding:5px 10px;border-radius:3px;margin:10px 0 4px 0}
-.bench-row{display:flex;align-items:center;gap:14px;padding:12px 6px 10px 6px;border-bottom:1px solid #e2e8f0}
+
 .bench-met-name{width:45%;font-size:12.5px;line-height:1.3}
-.bench-scale-wrap{flex:1;position:relative;height:52px;display:flex;align-items:center}
+
 .bench-bar{width:100%;height:14px;border:1px solid #475569;border-radius:2px;position:relative}
 .bench-grp{position:absolute;top:-22px;bottom:-20px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:space-between;pointer-events:auto}
 .bench-toks-row{display:flex;gap:1px;background:#fff;border:1.5px solid #1e293b;border-radius:10px;padding:1px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.22);font-size:14px;line-height:1;z-index:3}
 .bench-stem{width:1.5px;flex:1;background:#1e293b}
-.bench-vals-row{display:flex;gap:4px;background:rgba(255,255,255,0.95);border:1px solid #cbd5e1;border-radius:2px;padding:0 3px;font-size:10.5px;font-weight:bold;white-space:nowrap;color:#111;z-index:2}
+
 .bench-clust-cells{flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-height:48px}
 .bench-ccell{border:1px solid #475569;border-radius:3px;padding:3px 2px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-size:12px;text-align:center;font-weight:bold}
 .bench-ccell-toks{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:2px}
 .bench-ctok{background:#fff;border:1px solid #1e293b;border-radius:50%;width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 2px rgba(0,0,0,0.25)}
 .bench-empty{padding:60px 20px;text-align:center;color:#475569;font-size:16px}
+
+.bench-limit-msg{display:none;background:#fef3c7;color:#92400e;border:1px solid #f59e0b;border-radius:3px;padding:4px 6px;font-size:11px;line-height:1.25;font-weight:bold}
+.bench-row{display:flex;align-items:center;gap:14px;padding:14px 6px 14px 6px;border-bottom:1px solid #e2e8f0}
+.bench-scale-wrap{flex:1;position:relative;height:64px;display:flex;align-items:center}
+.bench-vals-row{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.96);border:1px solid #cbd5e1;border-radius:2px;padding:1px 3px;font-size:10px;line-height:1.15;font-weight:bold;white-space:nowrap;color:#111;z-index:2}
 </style></head><body><div class="workspace"><div class="sidebar">
 <select id="selMode"><option value="single">Одиночная карта (срез)</option><option value="grid">Сетка динамики (2019–2024)</option><option value="table">Таблица динамики МО (2019–2024)</option><option value="bench">Бенчмаркинг</option></select>
 <select id="selBase"><option value="all">Генеральный срез 2024 (2269 МО)</option><option value="coh">Динамическая когорта (193 МО)</option></select>
@@ -110,16 +115,18 @@ table.dyn-tbl td.mo-name{text-align:left}
 <select id="bFO2"><option value="ALL">ФО (все)</option></select>
 <select id="bReg2"><option value="ALL">Регион (все)</option></select>
 <select id="bMO2"><option value="">+ Добавить МО...</option></select>
+<div class="bench-limit-msg" id="bLimitMsg">Достигнуто максимальное количество (10 МО). Пожалуйста, удалите одно из МО, чтобы добавить новое.</div>
 </div>
-<select id="bYear"><option value="2024">Год сравнения: 2024 г.</option><option value="2023">2023 г.</option><option value="2022">2022 г.</option><option value="2021">2021 г.</option><option value="2020">2020 г.</option><option value="2019">2019 г.</option></select>
+<select id="bBase"><option value="all">Генеральный срез 2024 (2269 МО)</option><option value="coh">Динамическая когорта (193 МО)</option></select>
+<select id="bYear" disabled><option value="2024">Год сравнения: 2024 г.</option><option value="2023">2023 г.</option><option value="2022">2022 г.</option><option value="2021">2021 г.</option><option value="2020">2020 г.</option><option value="2019">2019 г.</option></select>
 <button type="button" class="btn-main" id="btnBenchRun">Сравнить</button>
 <datalist id="moDatalist"></datalist>
 </div>
-<div class="met-box" id="stdMetBox"><div class="side-hdr"><span>Показатели атласа:</span><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.21 13:50 МСК</span></div><div class="side-nav"><button type="button" id="prevMet">◀ Предыдущий</button><button type="button" id="nextMet">Следующий ▶</button></div><select id="selMetric" size="24"></select></div>
+<div class="met-box" id="stdMetBox"><div class="side-hdr"><span>Показатели атласа:</span><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.21 14:03 МСК</span></div><div class="side-nav"><button type="button" id="prevMet">◀ Предыдущий</button><button type="button" id="nextMet">Следующий ▶</button></div><select id="selMetric" size="24"></select></div>
 <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
 <div class="pal-dd"><button type="button" class="pal-btn" id="palBtn"></button><div class="pal-menu" id="palMenu"></div></div>
 <button type="button" class="btn-main" id="btnPng">💾 PNG</button>
 <div class="exp-row"><select id="selDpi"><option value="0.32" selected>72 dpi (эскиз)</option><option value="0.45">96 dpi</option><option value="0.72">150 dpi</option><option value="1.0">300 dpi</option></select><select id="selPdfScope"><option value="fo">РФ + 8 ФО</option><option value="cur_fo">Регионы ФО</option><option value="all">Весь атлас</option></select></div>
 <button type="button" class="btn-main btn-pdf" id="btnPdf">💾 PDF</button>
 </div><div class="sheet" id="sheetBox"><div id="mapDiv" style="padding:40px;font-size:17px;">Загрузка данных атласа...</div></div>
-</div><script src="atlas_bench.js?v=20261121135025"></script><script src="atlas_export.js?v=20261121135025"></script><script src="atlas_app.js?v=20261121135025"></script></body></html>
+</div><script src="atlas_bench.js?v=20261121140358"></script><script src="atlas_export.js?v=20261121135025"></script><script src="atlas_app.js?v=20261121135025"></script></body></html>
