@@ -46,53 +46,65 @@ function syncBenchBase(){
   if(bBase.value==="all"){bYear.value="2024";bYear.disabled=true;}else{bYear.disabled=false;}
 }
 
+const CAT_NAMES={"1":"Крупнейшие (> 1 млн)","2":"Крупные (250 тыс. – 1 млн)","3":"Большие (100 – 250 тыс.)","4":"Средние (50 – 100 тыс.)","5":"Малые (≤ 50 тыс.)"};
 function initBenchControls(){
   if(BENCH_STATE.inited||!GEO||!DATA)return;
-  BENCH_STATE.inited=true;const syncers=Array.of();
-  const bindFilter=(suf,isMain)=>{
-    const cEl=document.getElementById("bCat"+suf),fEl=document.getElementById("bFO"+suf),rEl=document.getElementById("bReg"+suf),mEl=document.getElementById("bMO"+suf),sEl=document.getElementById("bSearch"+suf),rstBtn=document.getElementById("bRst"+suf);
-    const syncDropdowns=()=>{
-      const availMOs=getBenchMOs(),chosen=new Set(Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean));
-      const freeMOs=availMOs.filter(m=>!chosen.has(m.key));
-      if(isMain){const dl=document.getElementById("moDatalist");dl.innerHTML="";freeMOs.forEach(m=>{const o=document.createElement("option");o.value=m.full;dl.appendChild(o);});}
-      const vC=cEl.value,vF=fEl.value,vR=rEl.value;
-      const validCats=new Set(freeMOs.filter(m=>(vF==="ALL"||m.fo===vF)&&(vR==="ALL"||m.reg===vR)).map(m=>m.cat));
-      Array.from(cEl.options).forEach(o=>{if(o.value!=="ALL")o.hidden=!validCats.has(o.value);});
-      const validFOs=Array.from(new Set(freeMOs.filter(m=>(vC==="ALL"||m.cat===vC)&&(vR==="ALL"||m.reg===vR)).map(m=>m.fo))).sort((a,b)=>a.localeCompare(b,"ru"));
-      fEl.innerHTML='<option value="ALL">ФО (все)</option>';validFOs.forEach(f=>fEl.add(new Option(f+" ФО",f)));if(validFOs.includes(vF))fEl.value=vF;
-      const validRegs=Array.from(new Set(freeMOs.filter(m=>(vC==="ALL"||m.cat===vC)&&(fEl.value==="ALL"||m.fo===fEl.value)).map(m=>m.reg))).sort((a,b)=>a.localeCompare(b,"ru"));
-      rEl.innerHTML='<option value="ALL">Регион (все)</option>';validRegs.forEach(r=>rEl.add(new Option(r,r)));if(validRegs.includes(vR))rEl.value=vR;
-      const list=freeMOs.filter(m=>(cEl.value==="ALL"||m.cat===cEl.value)&&(fEl.value==="ALL"||m.fo===fEl.value)&&(rEl.value==="ALL"||m.reg===rEl.value));
-      mEl.innerHTML=isMain?'<option value="">Выберите МО ('+list.length+')...</option>':'<option value="">+ Добавить МО ('+list.length+')...</option>';
-      list.forEach(m=>mEl.add(new Option(m.full,m.key)));
-      if(!isMain){const atMax=chosen.size>=10;Array.of(sEl,cEl,fEl,rEl,mEl).forEach(el=>el.disabled=atMax);const lm=document.getElementById("bLimitMsg");if(lm)lm.style.display=atMax?"block":"none";}
-    };
-    syncers.push(syncDropdowns);
-    const clearFilters=()=>{cEl.value="ALL";fEl.value="ALL";rEl.value="ALL";sEl.value="";syncDropdowns();};
-    cEl.onchange=syncDropdowns;fEl.onchange=syncDropdowns;rEl.onchange=syncDropdowns;
-    if(rstBtn)rstBtn.onclick=()=>{clearFilters();if(isMain){BENCH_STATE.mainKey=null;refreshAll();renderBenchmark();}};
-    const pickKey=k=>{
-      if(!k)return;assignRandomToken(k);
-      if(isMain){BENCH_STATE.mainKey=k;BENCH_STATE.compKeys=BENCH_STATE.compKeys.filter(x=>x!==k);}
-      else if(k!==BENCH_STATE.mainKey&&!BENCH_STATE.compKeys.includes(k)&&BENCH_STATE.compKeys.length<9){BENCH_STATE.compKeys.push(k);}
-      clearFilters();refreshAll();renderBenchmark();
-    };
-    mEl.onchange=()=>pickKey(mEl.value);
-    sEl.onchange=()=>{const hit=getBenchMOs().find(m=>m.full.toLowerCase()===sEl.value.trim().toLowerCase());if(hit)pickKey(hit.key);};
+  BENCH_STATE.inited=true;
+  const cIn=document.getElementById("bCatIn"),fIn=document.getElementById("bFOIn"),rIn=document.getElementById("bRegIn"),mIn=document.getElementById("bMOIn"),rst=document.getElementById("bRstAll");
+  const fillDL=(id,arr)=>{const dl=document.getElementById(id);dl.innerHTML="";arr.forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o);});};
+  const syncAll=()=>{
+    const avail=getBenchMOs(),chosen=new Set(Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean));
+    const free=avail.filter(m=>!chosen.has(m.key));
+    const selCat=Object.entries(CAT_NAMES).find(p=>p.at(1).toLowerCase()===cIn.value.trim().toLowerCase())?.at(0)||"ALL";
+    const selFO=fIn.value.trim()||"ALL",selReg=rIn.value.trim()||"ALL";
+    const fCat=free.filter(m=>(selFO==="ALL"||m.fo===selFO)&&(selReg==="ALL"||m.reg===selReg));
+    fillDL("dlCat",Array.from(new Set(fCat.map(m=>CAT_NAMES[m.cat]))).filter(Boolean));
+    const fFO=free.filter(m=>(selCat==="ALL"||m.cat===selCat)&&(selReg==="ALL"||m.reg===selReg));
+    fillDL("dlFO",Array.from(new Set(fFO.map(m=>m.fo))).sort((a,b)=>a.localeCompare(b,"ru")));
+    const fReg=free.filter(m=>(selCat==="ALL"||m.cat===selCat)&&(selFO==="ALL"||m.fo===selFO));
+    fillDL("dlReg",Array.from(new Set(fReg.map(m=>m.reg))).sort((a,b)=>a.localeCompare(b,"ru")));
+    const fMO=free.filter(m=>(selCat==="ALL"||m.cat===selCat)&&(selFO==="ALL"||m.fo===selFO)&&(selReg==="ALL"||m.reg===selReg));
+    fillDL("dlMO",fMO.map(m=>m.full));
+    const atMax=chosen.size>=5;
+    Array.of(cIn,fIn,rIn,mIn).forEach(el=>el.disabled=atMax);
+    const lm=document.getElementById("bLimitMsg");if(lm)lm.style.display=atMax?"block":"none";
+    renderBenchChips();
   };
-  const refreshAll=()=>{syncers.forEach(fn=>fn());renderBenchChips();};
-  BENCH_STATE.refreshFn=refreshAll;bindFilter("1",true);bindFilter("2",false);
-  document.getElementById("bBase").onchange=()=>{syncBenchBase();const validSet=new Set(getBenchMOs().map(m=>m.key));if(BENCH_STATE.mainKey&&!validSet.has(BENCH_STATE.mainKey))BENCH_STATE.mainKey=null;BENCH_STATE.compKeys=BENCH_STATE.compKeys.filter(k=>validSet.has(k));refreshAll();renderBenchmark();};
+  BENCH_STATE.refreshFn=syncAll;
+  const clearInputs=()=>{cIn.value="";fIn.value="";rIn.value="";mIn.value="";syncAll();};
+  Array.of(cIn,fIn,rIn).forEach(el=>{el.oninput=syncAll;el.onchange=syncAll;});
+  mIn.onchange=()=>{
+    const avail=getBenchMOs(),hit=avail.find(m=>m.full.toLowerCase()===mIn.value.trim().toLowerCase());
+    if(!hit)return;
+    const allSel=Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean);
+    if(allSel.includes(hit.key)||allSel.length>=5)return;
+    assignRandomToken(hit.key);
+    if(!BENCH_STATE.mainKey)BENCH_STATE.mainKey=hit.key;else BENCH_STATE.compKeys.push(hit.key);
+    clearInputs();renderBenchmark();
+  };
+  rst.onclick=()=>{BENCH_STATE.mainKey=null;BENCH_STATE.compKeys=Array.of();clearInputs();renderBenchmark();};
+  document.getElementById("bBase").onchange=()=>{
+    syncBenchBase();const validSet=new Set(getBenchMOs().map(m=>m.key));
+    if(BENCH_STATE.mainKey&&!validSet.has(BENCH_STATE.mainKey))BENCH_STATE.mainKey=null;
+    BENCH_STATE.compKeys=BENCH_STATE.compKeys.filter(k=>validSet.has(k));
+    if(!BENCH_STATE.mainKey&&BENCH_STATE.compKeys.length>0)BENCH_STATE.mainKey=BENCH_STATE.compKeys.shift();
+    syncAll();renderBenchmark();
+  };
   document.getElementById("btnBenchRun").onclick=renderBenchmark;document.getElementById("bYear").onchange=renderBenchmark;
-  syncBenchBase();refreshAll();
+  syncBenchBase();syncAll();
 }
 function renderBenchChips(){
-  const box=document.getElementById("bChips"),availMOs=getBenchMOs();box.innerHTML="";
-  BENCH_STATE.compKeys.forEach(k=>{
-    const m=availMOs.find(x=>x.key===k);if(!m)return;
+  const box=document.getElementById("bChips"),avail=getBenchMOs(),allKeys=Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean);
+  box.innerHTML="";
+  allKeys.forEach(k=>{
+    const m=avail.find(x=>x.key===k);if(!m)return;
     const d=document.createElement("div");d.className="bench-chip";
     d.innerHTML='<span>'+(BENCH_STATE.tokens[k]||"🎩")+' '+m.full+'</span><button type="button" title="Удалить">×</button>';
-    d.querySelector("button").onclick=()=>{BENCH_STATE.compKeys=BENCH_STATE.compKeys.filter(x=>x!==k);if(BENCH_STATE.refreshFn)BENCH_STATE.refreshFn();renderBenchmark();};
+    d.querySelector("button").onclick=()=>{
+      if(BENCH_STATE.mainKey===k)BENCH_STATE.mainKey=BENCH_STATE.compKeys.shift()||null;
+      else BENCH_STATE.compKeys=BENCH_STATE.compKeys.filter(x=>x!==k);
+      if(BENCH_STATE.refreshFn)BENCH_STATE.refreshFn();renderBenchmark();
+    };
     box.appendChild(d);
   });
 }
@@ -100,7 +112,7 @@ function renderBenchmark(){
   initBenchControls();syncBenchBase();
   const box=document.getElementById("sheetBox"),yr=document.getElementById("bYear").value,isCoh=(document.getElementById("bBase").value==="coh"),actCol=PALETTES[currentPal]||PALETTES["RdYlGn"];
   const availMOs=getBenchMOs(),selKeys=Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean),selMOs=selKeys.map(k=>availMOs.find(m=>m.key===k)).filter(Boolean);
-  if(selMOs.length===0){box.innerHTML='<div class="bench-empty"><b>Режим бенчмаркинга муниципальных образований</b><br><br>Выберите основное МО и до 9 МО для сравнения в панели слева ('+(isCoh?'Динамическая когорта — 193 МО':'Генеральный срез 2024 — 2269 МО')+').</div>';return;}
+  if(selMOs.length===0){box.innerHTML='<div class="bench-empty"><b>Режим бенчмаркинга муниципальных образований</b><br><br>Выберите основное МО и до 5 МО для сравнения в панели слева ('+(isCoh?'Динамическая когорта — 193 МО':'Генеральный срез 2024 — 2269 МО')+').</div>';return;}
   const view=document.createElement("div");view.className="bench-view";
   const stickyTop=document.createElement("div");stickyTop.className="bench-sticky-top";
   const hdr=document.createElement("div");hdr.className="bench-hdr-grid";hdr.style.gridTemplateColumns="repeat("+Math.min(5,Math.max(2,Math.ceil(selMOs.length/2)))+",1fr)";
@@ -158,9 +170,9 @@ function buildBenchCanvas(){
   const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
   ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 34px 'Times New Roman'";
   ctx.fillText("Бенчмаркинг муниципальных образований ("+yr+" г., "+(isCoh?"когорта 193 МО":"срез 2269 МО")+")",W/2,54);ctx.textAlign="left";
-  const colsH=5,colWH=Math.floor((W-80)/colsH),hdrY=76;ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(40,hdrY,W-80,96);
+  const colsH=Math.max(1,selMOs.length),colWH=Math.floor((W-80)/colsH),hdrY=76;ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(40,hdrY,W-80,58);
   selMOs.forEach((m,idx)=>{
-    const c=Math.floor(idx/2),r=idx%2,x=52+c*colWH,y=hdrY+34+r*44;ctx.font="24px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[m.key]||"🎩",x,y);
+    const x=52+idx*colWH,y=hdrY+38;ctx.font="24px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[m.key]||"🎩",x,y);
     ctx.font="bold 19px 'Times New Roman'";const lbl=m.full;ctx.fillText(lbl.length>35?lbl.slice(0,34)+"…":lbl,x+34,y);
   });
   const colX=Array.of(40,1600),colW=1520,topY=194,botY=2200;ctx.strokeStyle="#94a3b8";ctx.setLineDash(Array.of(8,6));ctx.beginPath();ctx.moveTo(1580,topY);ctx.lineTo(1580,botY);ctx.stroke();ctx.setLineDash(Array.of());

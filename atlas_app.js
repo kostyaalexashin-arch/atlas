@@ -34,14 +34,14 @@ function wideGeoCfg(feats,projObj,domX,domY){
   feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
   if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
   if(projObj.type==="conic equal area"){
-    return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(rotLon+x0-2,rotLon+x1+2)},lataxis:{range:Array.of(Math.max(40,y0-1.5),Math.min(82.5,y1+1.5))}};
+    return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(22,188)},lataxis:{range:Array.of(41.2,81.8)}};
   }
   const mEl=document.getElementById("mapDiv"),W=(mEl&&mEl.clientWidth>200)?mEl.clientWidth:1540,H=(mEl&&mEl.clientHeight>200)?mEl.clientHeight:740;
   const boxW=W*(domX.at(1)-domX.at(0)),boxH=H*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
   const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-84,Math.min(84,lat))*Math.PI/360))*180/Math.PI;
   const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
-  const cx=(x0+x1)/2,ym0=toM(y0),ym1=toM(y1),spanM=Math.max(0.45,ym1-ym0),padY=spanM*0.045;
-  let ymBot=ym0-padY,ymTop=ym1+padY,dym=ymTop-ymBot,dx=Math.max(0.45,(x1-x0)*1.08);
+  const cx=(x0+x1)/2,ym0=toM(y0),ym1=toM(y1),spanM=Math.max(0.45,ym1-ym0),padY=spanM*0.015;
+  let ymBot=ym0-padY,ymTop=ym1+padY,dym=ymTop-ymBot,dx=Math.max(0.45,(x1-x0)*1.02);
   if(dx/dym<aspect){dx=dym*aspect;}else{const extra=(dx/aspect-dym)/2;ymBot-=extra;ymTop+=extra;}
   const baseLon=(projObj.rotation?.lon===175)?0:rotLon;
   return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(baseLon+cx-dx/2,baseLon+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymBot)),Math.min(84.5,fromM(ymTop)))}};
@@ -149,7 +149,8 @@ function addCoreBadges(mapEl,isRegLevel){
       const lastP=allP.find(p=>{const st=(p.getAttribute("style")||"").replace(/\s/g,"");return st.includes("230,0,126")||st.includes("e6007e");})||allP.at(allP.length-1);
       if(lastP){
         const r=lastP.getBoundingClientRect(),px=(r.left+r.width/2-sRect.left)/pW,py=1.0-(r.top+r.height/2-sRect.top)/pH;
-        if(px>=0.01&&px<=xMax&&py>=0.02&&py<=0.98){const dx=(px>0.55?-64:64),dy=(py>0.75?34:-34);anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+mainC.at(0).properties._lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.2,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});}
+        const gBox=svg.querySelector(".geolayer")?.getBoundingClientRect()||sRect;const inFrame=(r.left+r.width*0.5)>=gBox.left&&(r.left+r.width*0.5)<=Math.min(gBox.right,sRect.left+pW*xMax)&&(r.top+r.height*0.5)>=gBox.top&&(r.top+r.height*0.5)<=gBox.bottom;
+        if(inFrame&&px>=0.01&&px<=xMax&&py>=0.02&&py<=0.98){const dx=(px>0.55?-64:64),dy=(py>0.75?34:-34);anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+mainC.at(0).properties._lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.2,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});}
       }
     }
     mapEl._badgeBusy=true;
@@ -218,12 +219,14 @@ function render(){
       if(mF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:{type:"FeatureCollection",features:mF},featureidkey:"properties.join_key",locations:mF.map(f=>f.properties.join_key),z:mF.map(()=>0),text:mF.map(f=>f.properties._lbl),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f3f4f6"),Array.of(1,"#f3f4f6")),showscale:false,marker:{line:{color:"rgba(0,0,0,0)",width:0}}});
       fList=fList.filter(f=>!maskFn(f));
     }
-    const subG={type:"FeatureCollection",features:fList},outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО");
-    if(outF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:outF.map(f=>f.properties.join_key),z:outF.map(()=>0),text:outF.map(f=>f.properties._lbl+" ("+f.properties.region+") — Вне выборки"),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f0f0f0"),Array.of(1,"#f0f0f0")),showscale:false,marker:{line:{color:"#9aa2ae",width:0.35}}});
+    const subG={type:"FeatureCollection",features:fList};
+    const allIn=fList.filter(f=>f.properties._map_status==="В_выборке"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО"),outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО");
+    const inF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v!==null&&v!==undefined&&v!==""&&!isNaN(Number(v));});
+    const noDataF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v===null||v===undefined||v===""||isNaN(Number(v));});
+    if(inF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:inF.map(f=>f.properties.join_key),z:inF.map(f=>{const v=Number(valMap[f.properties.join_key]);return scObj.vmax<=scObj.vmin?0.5:Math.pow(Math.max(0,Math.min(1,(v-scObj.vmin)/(scObj.vmax-scObj.vmin))),scObj.gamma);}),zmin:0,zmax:1,text:inF.map(f=>{const v=valMap[f.properties.join_key];return f.properties._lbl+" ("+f.properties.region+"): "+fmtNum(v,mMeta.dec);}),hoverinfo:"text",colorscale:scObj.cs,showscale:false,marker:{line:{color:"#334155",width:0.65}}});
+    if(noDataF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:noDataF.map(f=>f.properties.join_key),z:noDataF.map(()=>0),text:noDataF.map(f=>f.properties._lbl+" ("+f.properties.region+") — Нет данных"),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#ffffff"),Array.of(1,"#ffffff")),showscale:false,marker:{line:{color:"#64748b",width:0.65}}});
     if(zatoF.length>0){const zLon=Array.of(),zLat=Array.of(),addRing=r=>{r.forEach(pt=>{zLon.push(pt.at(0));zLat.push(pt.at(1));});zLon.push(null);zLat.push(null);};zatoF.forEach(f=>{const g=f.geometry;if(!g)return;if(g.type==="Polygon")g.coordinates.forEach(addRing);else if(g.type==="MultiPolygon")g.coordinates.forEach(p=>p.forEach(addRing));});traces.push({type:"scattergeo",geo:gKey,mode:"lines",lon:zLon,lat:zLat,fill:"toself",fillcolor:"rgba(203,213,225,0.987)",line:{color:"#475569",width:0.8},hoverinfo:"skip",showlegend:false});}
-    const inF=fList.filter(f=>f.properties._map_status==="В_выборке"&&(base==="all"||f.properties.coh));
-    if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1),cf=inF.filter(f=>valMap[f.properties.join_key]===cn);if(cf.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cf.map(f=>f.properties.join_key),z:cf.map(()=>1),text:cf.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>"+cn),hoverinfo:"text",colorscale:Array.of(Array.of(0,ch),Array.of(1,ch)),showscale:false,marker:{line:{color:"#64748b",width:0.35}}});});}
-    else{traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:inF.map(f=>f.properties.join_key),z:inF.map(f=>{const v=Number(valMap[f.properties.join_key]);if(isNaN(v))return null;return Math.pow(Math.max(0,Math.min(1,(v-scObj.vmin)/Math.max(1e-9,scObj.vmax-scObj.vmin))),scObj.gamma);}),zmin:0,zmax:1,zauto:false,text:inF.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>Значение: <b>"+fmtNum(valMap[f.properties.join_key],mMeta.dec)+"</b>"),hoverinfo:"text",colorscale:scObj.plScale,showscale:false,marker:{line:{color:"#64748b",width:0.35}}});}
+    if(outF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:outF.map(f=>f.properties.join_key),z:outF.map(()=>0),text:outF.map(f=>f.properties._lbl+" ("+f.properties.region+") — Вне выборки"),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f0f0f0"),Array.of(1,"#f0f0f0")),showscale:false,marker:{line:{color:"#64748b",width:0.65}}});
   };
 
   addGeoLayers(mainFeats,"geo",hasLeftInset?isKrasNorth:null);if(zfiFeats.length>0)addGeoLayers(zfiFeats,"geo2");if(nzFeats.length>0)addGeoLayers(nzFeats,"geo3");
