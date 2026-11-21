@@ -103,7 +103,7 @@ function applyZatoHatch(mapEl){
   const bg=document.createElementNS("http://www.w3.org/2000/svg","rect");bg.setAttribute("width","11");bg.setAttribute("height","11");bg.setAttribute("fill","#e2e8f0");
   const ln=document.createElementNS("http://www.w3.org/2000/svg","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","11");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","3.2");
   pat.append(bg,ln);defs.appendChild(pat);
-  svg.querySelectorAll("path.js-fill").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl.includes("203,213,225")||fl.includes("cbd5e1")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
+  svg.querySelectorAll("path").forEach(p=>{const st=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");if(st.includes("0.987")||st.replace(/\s/g,"").includes("203,213,225")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
 }
 function addCoreBadges(mapEl,isRegLevel){
   if(mapEl._badgeBusy)return window._badgesReady||Promise.resolve();
@@ -136,7 +136,7 @@ function addCoreBadges(mapEl,isRegLevel){
         anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+f.properties._lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:"#475569",ax:d.at(0),ay:d.at(1),bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#475569",borderwidth:1,borderpad:3,font:{family:"Times New Roman",size:12,color:"#111111"}});
       });
     }else if(mainC.length>0){
-      const paths=Array.from(svg.querySelectorAll(".geolayer .choropleth path")),lastP=paths.at(paths.length-1);
+      const allP=Array.from(svg.querySelectorAll(".geolayer .choropleth path")).filter(p=>{const r=p.getBoundingClientRect();return r.width>0&&(r.left-sRect.left)/pW<xMax;});const lastP=allP.at(allP.length-1);
       if(lastP){
         const r=lastP.getBoundingClientRect(),px=(r.left+r.width/2-sRect.left)/pW,py=1.0-(r.top+r.height/2-sRect.top)/pH;
         const xMax=hasRight?0.76:0.99;
@@ -205,7 +205,7 @@ function render(){
   const addGeoLayers=(fList,gKey)=>{
     const subG={type:"FeatureCollection",features:fList},outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО");
     if(outF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:outF.map(f=>f.properties.join_key),z:outF.map(()=>0),text:outF.map(f=>f.properties._lbl+" ("+f.properties.region+") — Вне выборки"),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f0f0f0"),Array.of(1,"#f0f0f0")),showscale:false,marker:{line:{color:"#9aa2ae",width:0.35}}});
-    if(zatoF.length>0){const zLon=Array.of(),zLat=Array.of(),addRing=r=>{r.forEach(pt=>{zLon.push(pt.at(0));zLat.push(pt.at(1));});zLon.push(null);zLat.push(null);};zatoF.forEach(f=>{const g=f.geometry;if(!g)return;if(g.type==="Polygon")g.coordinates.forEach(addRing);else if(g.type==="MultiPolygon")g.coordinates.forEach(p=>p.forEach(addRing));});traces.push({type:"scattergeo",geo:gKey,mode:"lines",lon:zLon,lat:zLat,fill:"toself",fillcolor:"#cbd5e1",line:{color:"#475569",width:0.8},hoverinfo:"skip",showlegend:false});}
+    if(zatoF.length>0){const zLon=Array.of(),zLat=Array.of(),addRing=r=>{r.forEach(pt=>{zLon.push(pt.at(0));zLat.push(pt.at(1));});zLon.push(null);zLat.push(null);};zatoF.forEach(f=>{const g=f.geometry;if(!g)return;if(g.type==="Polygon")g.coordinates.forEach(addRing);else if(g.type==="MultiPolygon")g.coordinates.forEach(p=>p.forEach(addRing));});traces.push({type:"scattergeo",geo:gKey,mode:"lines",lon:zLon,lat:zLat,fill:"toself",fillcolor:"rgba(203,213,225,0.987)",line:{color:"#475569",width:0.8},hoverinfo:"skip",showlegend:false});}
     const inF=fList.filter(f=>f.properties._map_status==="В_выборке"&&(base==="all"||f.properties.coh));
     if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1),cf=inF.filter(f=>valMap[f.properties.join_key]===cn);if(cf.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cf.map(f=>f.properties.join_key),z:cf.map(()=>1),text:cf.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>"+cn),hoverinfo:"text",colorscale:Array.of(Array.of(0,ch),Array.of(1,ch)),showscale:false,marker:{line:{color:"#64748b",width:0.35}}});});}
     else{traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:inF.map(f=>f.properties.join_key),z:inF.map(f=>{const v=Number(valMap[f.properties.join_key]);if(isNaN(v))return null;return Math.pow(Math.max(0,Math.min(1,(v-scObj.vmin)/Math.max(1e-9,scObj.vmax-scObj.vmin))),scObj.gamma);}),zmin:0,zmax:1,zauto:false,text:inF.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>Значение: <b>"+fmtNum(valMap[f.properties.join_key],mMeta.dec)+"</b>"),hoverinfo:"text",colorscale:scObj.plScale,showscale:false,marker:{line:{color:"#64748b",width:0.35}}});}
