@@ -119,7 +119,7 @@ function drawMapScaleBar(mapEl,feats,xStartPaper){
   const cands=Array.of(5,10,20,25,50,100,200,250,500,1000);
   let bestKm=100;for(const k of cands){if(k*pxPerKm>=55&&k*pxPerKm<=150){bestKm=k;break;}}
   const barPx=Math.round(bestKm*pxPerKm),bx=Math.round(pW*(xStartPaper||0.015)),by=Math.round(pH-14);
-  const ns="http://w3.org",g=document.createElementNS(ns,"g");g.setAttribute("id","mapScaleBarG");
+  const ns="http:"+"//"+"www.w3.org/2000/svg",g=document.createElementNS(ns,"g");g.setAttribute("id","mapScaleBarG");
   const bg=document.createElementNS(ns,"rect");bg.setAttribute("x",String(bx-5));bg.setAttribute("y",String(by-20));bg.setAttribute("width",String(barPx+16));bg.setAttribute("height","25");bg.setAttribute("fill","rgba(255,255,255,0.88)");bg.setAttribute("rx","2");
   const ln=document.createElementNS(ns,"path");ln.setAttribute("d","M"+bx+","+(by-5)+" L"+bx+","+by+" L"+(bx+barPx)+","+by+" L"+(bx+barPx)+","+(by-5));ln.setAttribute("fill","none");ln.setAttribute("stroke","#111111");ln.setAttribute("stroke-width","1.8");
   const tx=document.createElementNS(ns,"text");tx.setAttribute("x",String(bx+barPx/2));tx.setAttribute("y",String(by-5));tx.setAttribute("text-anchor","middle");tx.setAttribute("font-family","Times New Roman");tx.setAttribute("font-size","11.5");tx.setAttribute("font-weight","bold");tx.setAttribute("fill","#111111");tx.textContent=bestKm+" км";
