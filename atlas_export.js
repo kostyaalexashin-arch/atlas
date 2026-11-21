@@ -50,7 +50,7 @@ async function buildSheetCanvas(){
     ctx.drawImage(mapImg,40,155,mapW,mapH);
     {
       const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
-      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;if(Math.abs(px[k]-226)<=3&&Math.abs(px[k+1]-232)<=3&&Math.abs(px[k+2]-240)<=3&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
+      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=5&&Math.abs(px[k+1]-214)<=5&&Math.abs(px[k+2]-225)<=5)||(Math.abs(px[k]-226)<=5&&Math.abs(px[k+1]-232)<=5&&Math.abs(px[k+2]-240)<=5);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
       ctx.putImageData(idt,40,155);
     }
     if(hasList){
