@@ -78,7 +78,7 @@ async function buildSheetCanvas(){
         ctx.font=(f.properties.is_center?"bold ":"")+fs+"px 'Times New Roman'";ctx.fillText(txt.length>maxCh?txt.slice(0,maxCh-1)+"…":txt,lx+c*colW,lyTop+44+r*step);
       });
     }
-    const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),footY=1660,legW=hasCbar?1900:3080;
+    const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),footY=2125,legW=hasCbar?1900:3080;
     const items=Array.from(document.querySelectorAll("#sheetBox .leg-item")),cols=hasCbar?3:5,colW=Math.floor(legW/cols);
     ctx.font="21px 'Times New Roman'";
     items.forEach((el,idx)=>{
