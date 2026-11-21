@@ -25,11 +25,19 @@ async function buildSheetCanvas(){
       pts.forEach(p=>{if(p.small){const a=Math.atan2(p.oy-cy0,p.ox-cx0);p.lon=p.ox+Math.cos(a)*thrX*1.35;p.lat=p.oy+Math.sin(a)*thrY*1.35;}});
       for(let pass=0;pass<24;pass++){for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){const dx=(pts.at(i).lon-pts.at(j).lon)/thrX,dy=(pts.at(i).lat-pts.at(j).lat)/thrY,d=Math.hypot(dx,dy);if(d<1.0){const a=d>0.01?Math.atan2(dy,dx):(i*1.2),k=(1.05-d)*0.55;pts.at(i).lon+=Math.cos(a)*thrX*k;pts.at(i).lat+=Math.sin(a)*thrY*k;pts.at(j).lon-=Math.cos(a)*thrX*k;pts.at(j).lat-=Math.sin(a)*thrY*k;}}}}
       const lLon=Array.of(),lLat=Array.of();pts.forEach(p=>{if(p.small||Math.hypot((p.lon-p.ox)/thrX,(p.lat-p.oy)/thrY)>0.45){lLon.push(p.ox,p.lon,null);lLat.push(p.oy,p.lat,null);}});
+      const isKras=reg.includes("Красноярск"),isKN=f=>/таймыр|эвенкий|турухан|норильск|северо-енисей/i.test(String(f.properties._lbl||""));
+      const mIdx=Array.of(),nIdx=Array.of();
+      regFeats.forEach((f,i)=>{if(isKras&&isKN(f))nIdx.push(i);else mIdx.push(i);});
+      const nTr=nIdx.length>0?Array.of(
+        {type:"scattergeo",geo:"geo2",mode:"markers",lon:nIdx.map(i=>pts.at(i).ox),lat:nIdx.map(i=>pts.at(i).oy),marker:{size:16,color:"rgba(255,255,255,0.8)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",geo:"geo2",mode:"text",lon:nIdx.map(i=>pts.at(i).ox),lat:nIdx.map(i=>pts.at(i).oy),text:nIdx.map(i=>String(i+1)),textfont:{family:"Times New Roman",size:11,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+      ):Array.of();
       await Plotly.addTraces(mapEl,Array.of(
         {type:"scattergeo",mode:"lines",lon:lLon,lat:lLat,line:{color:"#1e293b",width:1.2},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",mode:"markers",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),marker:{size:16,color:"rgba(255,255,255,0.75)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",mode:"text",lon:pts.map(p=>p.lon),lat:pts.map(p=>p.lat),text:regFeats.map((_,i)=>String(i+1)),textfont:{family:"Times New Roman",size:11,color:"#111111"},showlegend:false,hoverinfo:"skip"}
-      ));
+        {type:"scattergeo",mode:"markers",lon:mIdx.map(i=>pts.at(i).lon),lat:mIdx.map(i=>pts.at(i).lat),marker:{size:16,color:"rgba(255,255,255,0.75)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",mode:"text",lon:mIdx.map(i=>pts.at(i).lon),lat:mIdx.map(i=>pts.at(i).lat),text:mIdx.map(i=>String(i+1)),textfont:{family:"Times New Roman",size:11,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+      ).concat(nTr));
+      window._numTrCnt=3+nTr.length;
       numTraceAdded=true;
     }else if(window._badgesReady){await window._badgesReady;}
 
@@ -86,7 +94,7 @@ async function buildSheetCanvas(){
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(2234*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
     return canvas;
   }finally{
-    if(numTraceAdded){await Plotly.deleteTraces(mapEl,Array.of(-3,-2,-1));if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    if(numTraceAdded){const delArr=window._numTrCnt===5?Array.of(-5,-4,-3,-2,-1):Array.of(-3,-2,-1);await Plotly.deleteTraces(mapEl,delArr);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
     window._isExportMode=prevExp;if(reg!=="ALL"&&!prevExp)render();
   }
 }
