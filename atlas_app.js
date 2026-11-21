@@ -59,12 +59,13 @@ function computeScale(vals,palArr,inv){
 }
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear"),isBench=(sM.value==="bench");
-  const bp=document.getElementById("benchPanel"),mb=document.getElementById("stdMetBox");
+  const isPass=(sM.value==="passport"),hideStd=isBench||isPass;const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
   if(bp)bp.style.display=isBench?"flex":"none";
-  if(mb)mb.style.display=isBench?"none":"flex";
-  Array.of("selBase","selYear","selFO","selReg","prevFO","nextFO","prevReg","nextReg").forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=isBench?"none":"";});
-  document.querySelectorAll(".nav-grp").forEach(el=>el.style.display=isBench?"none":"flex");
-  if(isBench)return;
+  if(pp)pp.style.display=isPass?"flex":"none";
+  if(mb)mb.style.display=hideStd?"none":"flex";
+  Array.of("selBase","selYear","selFO","selReg","prevFO","nextFO","prevReg","nextReg").forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=hideStd?"none":"";});
+  document.querySelectorAll(".nav-grp").forEach(el=>el.style.display=hideStd?"none":"flex");
+  if(hideStd)return;
   if(sM.value==="grid"||sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
   else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
 }
@@ -172,7 +173,7 @@ function addCoreBadges(mapEl,isRegLevel){
 
 function render(){
   if(!GEO||!DATA)return;
-  const mode=document.getElementById("selMode").value;if(mode==="bench"&&typeof renderBenchmark==="function"){renderBenchmark();return;}const base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
+  const mode=document.getElementById("selMode").value;if(mode==="bench"&&typeof renderBenchmark==="function"){renderBenchmark();return;}if(mode==="passport"&&typeof renderPassport==="function"){renderPassport();return;}const base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0),box=document.getElementById("sheetBox");
   const allFeats=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
   const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск"),isKras=reg.includes("Красноярск"),isSFO=(fo==="Сибирский"&&reg==="ALL");const hasLeftInset=isKras||isSFO;
