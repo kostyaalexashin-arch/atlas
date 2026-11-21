@@ -214,7 +214,7 @@ function render(){
     const noDataF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v===null||v===undefined||v===""||isNaN(Number(v));});
     if(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat)){
       Object.entries(DATA.cluster_colors).forEach(pair=>{
-        const cn=pair.at(0),ch=pair.at(1),cF=allIn.filter(f=>valMap[f.properties.join_key]===cn);
+        const cn=pair.at(0),ch=pair.at(1),cF=allIn.filter(f=>String(valMap[f.properties.join_key]||"").trim().charAt(0)===cn.trim().charAt(0));
         if(cF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cF.map(f=>f.properties.join_key),z:cF.map(()=>1),zmin:0,zmax:1,zauto:false,text:cF.map(f=>f.properties._lbl+" ("+f.properties.region+"): "+cn),hoverinfo:"text",autocolorscale:false,colorscale:Array.of(Array.of(0,ch),Array.of(1,ch)),showscale:false,marker:{line:{color:"#334155",width:0.65}}});
       });
     }else if(inF.length>0){
