@@ -102,6 +102,29 @@ function buildFooterHtml(isCat,scObj,legItems){
   }
   return f;
 }
+
+function drawMapScaleBar(mapEl,feats,xStartPaper){
+  const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
+  const oldS=svg.querySelector("#mapScaleBarG");if(oldS)oldS.remove();
+  let x0=999,x1=-999,y0=999,y1=-999;
+  const w=c=>{if(typeof c.at(0)==="number"){if(c.at(0)<x0)x0=c.at(0);if(c.at(0)>x1)x1=c.at(0);if(c.at(1)<y0)y0=c.at(1);if(c.at(1)>y1)y1=c.at(1);}else c.forEach(w);};
+  feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
+  if(x0>900)return;
+  const sRect=svg.getBoundingClientRect(),pW=sRect.width,pH=sRect.height;if(pW<200||pH<200)return;
+  const gEl=svg.querySelector(".geolayer .geo path");if(!gEl)return;
+  const gBox=gEl.getBoundingClientRect();
+  const latMid=(y0+y1)/2,kmPerDeg=111.32*Math.cos(latMid*Math.PI/180);
+  const spanDeg=Math.max(0.2,x1-x0),pxPerKm=Math.max(40,gBox.width)/(spanDeg*Math.max(10,kmPerDeg));
+  const cands=Array.of(5,10,20,25,50,100,200,250,500,1000);
+  let bestKm=100;for(const k of cands){if(k*pxPerKm>=55&&k*pxPerKm<=150){bestKm=k;break;}}
+  const barPx=Math.round(bestKm*pxPerKm),bx=Math.round(pW*(xStartPaper||0.015)),by=Math.round(pH-14);
+  const ns="http://w3.org",g=document.createElementNS(ns,"g");g.setAttribute("id","mapScaleBarG");
+  const bg=document.createElementNS(ns,"rect");bg.setAttribute("x",String(bx-5));bg.setAttribute("y",String(by-20));bg.setAttribute("width",String(barPx+16));bg.setAttribute("height","25");bg.setAttribute("fill","rgba(255,255,255,0.88)");bg.setAttribute("rx","2");
+  const ln=document.createElementNS(ns,"path");ln.setAttribute("d","M"+bx+","+(by-5)+" L"+bx+","+by+" L"+(bx+barPx)+","+by+" L"+(bx+barPx)+","+(by-5));ln.setAttribute("fill","none");ln.setAttribute("stroke","#111111");ln.setAttribute("stroke-width","1.8");
+  const tx=document.createElementNS(ns,"text");tx.setAttribute("x",String(bx+barPx/2));tx.setAttribute("y",String(by-5));tx.setAttribute("text-anchor","middle");tx.setAttribute("font-family","Times New Roman");tx.setAttribute("font-size","11.5");tx.setAttribute("font-weight","bold");tx.setAttribute("fill","#111111");tx.textContent=bestKm+" км";
+  g.append(bg,ln,tx);svg.appendChild(g);
+}
+
 function applyZatoHatch(mapEl){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
   let defs=svg.querySelector("defs");if(!defs){defs=document.createElementNS("http://www.w3.org/2000/svg","defs");svg.insertBefore(defs,svg.firstChild);}
@@ -234,11 +257,11 @@ function render(){
   const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(hasLeftInset?0.23:0.005,hasRightCol?0.765:0.995),Array.of(hasLeftInset?0.005:0.02,hasLeftInset?0.985:0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
   const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
   if(hasLeftInset&&allFeats.length>0){layout.geo2=wideGeoCfg(allFeats,{type:"mercator"},Array.of(0.005,0.215),Array.of(0.07,0.94));layout.annotations.push({text:"<b>Карта северных территорий</b>",x:0.11,y:0.055,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
-  mapEl.on("plotly_relayout",ev=>{if(window._inBadgeRelayout||(ev&&ev.annotations))return;applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
+  if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,xanchor:"center",y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,xanchor:"center",y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,xanchor:"center",y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);drawMapScaleBar(mapEl,zoomFeats,hasLeftInset?0.235:0.012);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
+  mapEl.on("plotly_relayout",ev=>{if(window._inBadgeRelayout||(ev&&ev.annotations))return;applyZatoHatch(mapEl);drawMapScaleBar(mapEl,zoomFeats,hasLeftInset?0.235:0.012);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
 
   if(reg!=="ALL"&&mode==="single"){
     const regList=Array.from(allFeats.filter(f=>f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru"));

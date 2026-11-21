@@ -67,6 +67,18 @@ async function buildSheetCanvas(){
       for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=4&&Math.abs(px[k+1]-214)<=4&&Math.abs(px[k+2]-225)<=4);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
       ctx.putImageData(idt,40,155);
     }
+    const sbEl=mapEl.querySelector("#mapScaleBarG");
+    if(sbEl){
+      const tEl=sbEl.querySelector("text"),pEl=sbEl.querySelector("path"),dAttr=pEl?pEl.getAttribute("d"):"";
+      const mPts=dAttr.match(/M([0-9.]+),[0-9.]+ L[0-9.]+,[0-9.]+ L([0-9.]+),/);
+      if(tEl&&mPts){
+        const wPx=Math.round((Number(mPts.at(2))-Number(mPts.at(1)))*2),isKr=reg.includes("Красноярск")||(fo==="Сибирский"&&reg==="ALL");
+        const sx0=isKr?760:64,sy0=155+mapH-26;
+        ctx.fillStyle="rgba(255,255,255,0.9)";ctx.fillRect(sx0-8,sy0-34,wPx+24,42);
+        ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx0,sy0-10);ctx.lineTo(sx0,sy0);ctx.lineTo(sx0+wPx,sy0);ctx.lineTo(sx0+wPx,sy0-10);ctx.stroke();
+        ctx.fillStyle="#111111";ctx.font="bold 21px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(tEl.textContent,sx0+wPx/2,sy0-10);ctx.textAlign="left";
+      }
+    }
     if(hasList){
       const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.67)):165,lyBot=155+mapH-8;
       const step=23,fs=18,maxRows=Math.max(6,Math.floor((lyBot-lyTop-34)/step)),twoCols=regFeats.length>maxRows;
