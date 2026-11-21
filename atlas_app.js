@@ -249,13 +249,26 @@ function render(){
       const stage=document.createElement("div");stage.className="map-stage";mapEl.parentNode.insertBefore(stage,mapEl);stage.appendChild(mapEl);
       const pnl=document.createElement("div");pnl.className="mo-side-panel"+(isArk?" ark":"");
       pnl.innerHTML='<div class="mo-side-hdr">Муниципальные образования:</div>';
-      const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.colorscale&&t.colorscale.length>2);
+      const actTrIdxs=traces.map((t,idx)=>(t.type==="choropleth"&&(t.geo==="geo"||t.geo==="geo2")&&t.colorscale&&t.colorscale.length>2)?idx:-1).filter(idx=>idx!==-1);
       regList.forEach((f,i)=>{
         const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;if(f.properties.is_center)it.style.fontWeight="bold";
-        it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));};
+        it.onmouseenter=()=>{
+          actTrIdxs.forEach(tIdx=>{
+            const orig=mapEl.data.at(tIdx);
+            if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}
+            const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));
+            const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);
+            Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(tIdx));
+          });
+        };
         pnl.appendChild(it);
       });
-      pnl.onmouseleave=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ),colorscale:Array.of(orig._origCs)},Array.of(mainTrIdx));};
+      pnl.onmouseleave=()=>{
+        actTrIdxs.forEach(tIdx=>{
+          const orig=mapEl.data.at(tIdx);
+          if(orig._origZ)Plotly.restyle(mapEl,{z:Array.of(orig._origZ),colorscale:Array.of(orig._origCs)},Array.of(tIdx));
+        });
+      };
       stage.appendChild(pnl);
     }
   }

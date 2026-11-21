@@ -50,7 +50,7 @@ async function buildSheetCanvas(){
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
     const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("zatoHatch")||s.includes("0.987")||s.replace(/\s/g,"").includes("203,213,225");});
     hPaths.forEach(p=>{p.style.fill="#e2e8f0";p.style.fillOpacity="1";p.setAttribute("fill","#e2e8f0");});
-    const mapW=3080,mapH=1880,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:940,scale:2});
+    const allAnns=(mapEl.layout.annotations||Array.of()).slice(),hasNorthLbl=allAnns.some(a=>String(a.text||"").includes("Карта северных территорий"));if(hasNorthLbl)await Plotly.relayout(mapEl,{annotations:allAnns.filter(a=>!String(a.text||"").includes("Карта северных территорий"))});const mapW=3080,mapH=1810,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:905,scale:2});if(hasNorthLbl)await Plotly.relayout(mapEl,{annotations:allAnns});
     hPaths.forEach(p=>{p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");});
     const canvas=document.createElement("canvas");canvas.width=3160;canvas.height=2234;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3160,2234);
