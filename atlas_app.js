@@ -25,7 +25,7 @@ function getCenter(g){
 }
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100},parallels:Array.of(52,68)};
-  if((fo==="Дальневосточный"&&reg==="ALL")||reg==="Чукотский автономный округ")return{type:"mercator",rotation:{lon:152}};
+  if(fo==="Дальневосточный"&&reg==="ALL")return{type:"mercator",rotation:{lon:152}};if(reg==="Чукотский автономный округ")return{type:"mercator",rotation:{lon:175}};
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
@@ -42,7 +42,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
   const pad=1.06,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
   if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
-  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(rotLon+cx-dx/2,rotLon+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
+  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of((rotLon===175?0:rotLon)+cx-dx/2,(rotLon===175?0:rotLon)+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
@@ -224,7 +224,7 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"hatch",icon:'<span style="display:inline-block;width:18px;height:13px;background:repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0 5px,#475569 5px,#475569 7.5px);border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
-  const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.01,0.99)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:740};
+  const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.02,0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:740};
   const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
