@@ -96,12 +96,12 @@ function buildFooterHtml(isCat,scObj,legItems){
 }
 function applyZatoHatch(mapEl){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
-  let defs=svg.querySelector("defs");if(!defs){defs=document.createElementNS("http://w3.org","defs");svg.insertBefore(defs,svg.firstChild);}
+  let defs=svg.querySelector("defs");if(!defs){defs=document.createElementNS("http://www.w3.org/2000/svg","defs");svg.insertBefore(defs,svg.firstChild);}
   const oldP=defs.querySelector("#zatoHatch");if(oldP)oldP.remove();
-  const pat=document.createElementNS("http://w3.org","pattern");
+  const pat=document.createElementNS("http://www.w3.org/2000/svg","pattern");
   pat.setAttribute("id","zatoHatch");pat.setAttribute("width","11");pat.setAttribute("height","11");pat.setAttribute("patternUnits","userSpaceOnUse");pat.setAttribute("patternTransform","rotate(45)");
-  const bg=document.createElementNS("http://w3.org","rect");bg.setAttribute("width","11");bg.setAttribute("height","11");bg.setAttribute("fill","#e2e8f0");
-  const ln=document.createElementNS("http://w3.org","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","11");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","3.2");
+  const bg=document.createElementNS("http://www.w3.org/2000/svg","rect");bg.setAttribute("width","11");bg.setAttribute("height","11");bg.setAttribute("fill","#e2e8f0");
+  const ln=document.createElementNS("http://www.w3.org/2000/svg","line");ln.setAttribute("x1","0");ln.setAttribute("y1","0");ln.setAttribute("x2","0");ln.setAttribute("y2","11");ln.setAttribute("stroke","#475569");ln.setAttribute("stroke-width","3.2");
   pat.append(bg,ln);defs.appendChild(pat);
   svg.querySelectorAll("path.js-fill").forEach(p=>{const fl=(p.style.fill||p.getAttribute("fill")||"").replace(/\s/g,"");if(fl.includes("203,213,225")||fl.includes("cbd5e1")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
 }
@@ -224,14 +224,14 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
   const layout={geo:wideGeoCfg(mainFeats,projObj,Array.of(0.005,hasRightCol?0.765:0.995),Array.of(0.01,0.99)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:740};
-  const shrinkTop=hasKal||(isArk&&Boolean(window._isExportMode));const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
+  const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
   mapEl.on("plotly_relayout",()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
 
-  if(reg!=="ALL"&&!isArk&&mode==="single"){
+  if(reg!=="ALL"&&mode==="single"){
     const regList=Array.from(mainFeats.filter(f=>f.properties._map_status==="В_выборке").reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
     if(regList.length>0){
       const stage=document.createElement("div");stage.className="map-stage";mapEl.parentNode.insertBefore(stage,mapEl);stage.appendChild(mapEl);
