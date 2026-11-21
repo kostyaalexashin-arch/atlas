@@ -157,11 +157,11 @@ function render(){
   const mode=document.getElementById("selMode").value,base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0),box=document.getElementById("sheetBox");
   const allFeats=GEO.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(reg==="ALL"||f.properties.region===reg));
-  const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск"),isKras=reg.includes("Красноярск");
+  const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск"),isKras=reg.includes("Красноярск"),isSFO=(fo==="Сибирский"&&reg==="ALL");const hasLeftInset=isKras||isSFO;
   const hasInsets=(isArk||(isNW&&reg==="ALL")),hasKal=(isNW&&reg==="ALL");
   const hasRightCol=hasInsets||(reg!=="ALL");
   const isKrasNorth=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан|кежемск/i.test(String(f.properties._lbl||""));
-  const mainFeats=isKras?allFeats:(hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||!f.properties.region.includes("Калининград"))):allFeats);
+  const mainFeats=hasLeftInset?allFeats:(hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||!f.properties.region.includes("Калининград"))):allFeats);
   const nzFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="NZ"):Array.of();
   const zfiFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="ZFI"):Array.of();
   const kalFeats=hasKal?allFeats.filter(f=>f.properties.region.includes("Калининград")):Array.of();
@@ -209,7 +209,7 @@ function render(){
   const addGeoLayers=(fList,gKey,maskFn=null)=>{
     if(maskFn){
       const mF=fList.filter(maskFn);
-      if(mF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:{type:"FeatureCollection",features:mF},featureidkey:"properties.join_key",locations:mF.map(f=>f.properties.join_key),z:mF.map(()=>0),text:mF.map(f=>f.properties._lbl),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#e2e8f0"),Array.of(1,"#e2e8f0")),showscale:false,marker:{line:{color:"#94a3b8",width:0.35}}});
+      if(mF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:{type:"FeatureCollection",features:mF},featureidkey:"properties.join_key",locations:mF.map(f=>f.properties.join_key),z:mF.map(()=>0),text:mF.map(f=>f.properties._lbl),hoverinfo:"text",colorscale:Array.of(Array.of(0,"#f3f4f6"),Array.of(1,"#f3f4f6")),showscale:false,marker:{line:{color:"#94a3b8",width:0.35}}});
       fList=fList.filter(f=>!maskFn(f));
     }
     const subG={type:"FeatureCollection",features:fList},outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО");
@@ -220,10 +220,10 @@ function render(){
     else{traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:inF.map(f=>f.properties.join_key),z:inF.map(f=>{const v=Number(valMap[f.properties.join_key]);if(isNaN(v))return null;return Math.pow(Math.max(0,Math.min(1,(v-scObj.vmin)/Math.max(1e-9,scObj.vmax-scObj.vmin))),scObj.gamma);}),zmin:0,zmax:1,zauto:false,text:inF.map(f=>"<b>"+f.properties._lbl+"</b><br>"+f.properties.region+"<br>Значение: <b>"+fmtNum(valMap[f.properties.join_key],mMeta.dec)+"</b>"),hoverinfo:"text",colorscale:scObj.plScale,showscale:false,marker:{line:{color:"#64748b",width:0.35}}});}
   };
 
-  addGeoLayers(mainFeats,"geo",isKras?isKrasNorth:null);if(zfiFeats.length>0)addGeoLayers(zfiFeats,"geo2");if(nzFeats.length>0)addGeoLayers(nzFeats,"geo3");
-  if(isKras&&allFeats.length>0){addGeoLayers(allFeats,"geo2",f=>!isKrasNorth(f));}
+  addGeoLayers(mainFeats,"geo",hasLeftInset?isKrasNorth:null);if(zfiFeats.length>0)addGeoLayers(zfiFeats,"geo2");if(nzFeats.length>0)addGeoLayers(nzFeats,"geo3");
+  if(hasLeftInset&&allFeats.length>0){addGeoLayers(allFeats,"geo2",f=>!isKrasNorth(f));}
   if(kalFeats.length>0){addGeoLayers(kalFeats,"geo4");const kCore=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");if(kCore.length>0)traces.push({type:"scattergeo",geo:"geo4",mode:"markers",lon:kCore.map(f=>f.properties._cent.lon),lat:kCore.map(f=>f.properties._cent.lat),hovertext:kCore.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl),hoverinfo:"text",showlegend:false,marker:{size:8,color:CORE,line:{color:"#ffffff",width:1.1}}});}
-  if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(!hasKal||!f.properties.region.includes("Калининград")));traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
+  if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(!hasKal||!f.properties.region.includes("Калининград"))&&(!isSFO||!f.properties.region.includes("Красноярск")));traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
   if(mMeta.cat){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1);if(allFeats.some(f=>valMap[f.properties.join_key]===cn)||fo==="RF")legIt.push({col:ch,kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:'+ch+';border:1px solid #555;"></span>',txt:cn});});}
   const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
@@ -233,10 +233,10 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status==="ЗАТО"))legIt.push({col:"#cbd5e1",kind:"hatch",icon:'<span style="display:inline-block;width:18px;height:13px;background:repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0 5px,#475569 5px,#475569 7.5px);border:1px solid #475569;"></span>',txt:"ЗАТО"});
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
-  const zoomFeats=isKras?mainFeats.filter(f=>!isKrasNorth(f)):mainFeats;
-  const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(isKras?0.23:0.005,hasRightCol?0.765:0.995),Array.of(isKras?0.002:0.02,isKras?0.995:0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
+  const zoomFeats=hasLeftInset?mainFeats.filter(f=>!isKrasNorth(f)):mainFeats;
+  const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(hasLeftInset?0.23:0.005,hasRightCol?0.765:0.995),Array.of(hasLeftInset?0.005:0.02,hasLeftInset?0.985:0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
   const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
-  if(isKras&&allFeats.length>0){layout.geo2=wideGeoCfg(allFeats,{type:"mercator"},Array.of(0.005,0.215),Array.of(0.07,0.94));layout.annotations.push({text:"<b>Карта северных территорий</b>",x:0.11,y:0.055,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
+  if(hasLeftInset&&allFeats.length>0){layout.geo2=wideGeoCfg(allFeats,{type:"mercator"},Array.of(0.005,0.215),Array.of(0.07,0.94));layout.annotations.push({text:"<b>Карта северных территорий</b>",x:0.11,y:0.055,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
@@ -249,7 +249,7 @@ function render(){
       const stage=document.createElement("div");stage.className="map-stage";mapEl.parentNode.insertBefore(stage,mapEl);stage.appendChild(mapEl);
       const pnl=document.createElement("div");pnl.className="mo-side-panel"+(isArk?" ark":"");
       pnl.innerHTML='<div class="mo-side-hdr">Муниципальные образования:</div>';
-      const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.locations&&t.locations.length===regList.length);
+      const mainTrIdx=traces.findIndex(t=>t.type==="choropleth"&&t.geo==="geo"&&t.colorscale&&t.colorscale.length>2);
       regList.forEach((f,i)=>{
         const it=document.createElement("div");it.className="mo-side-item";it.textContent=(i+1)+". "+f.properties._lbl;if(f.properties.is_center)it.style.fontWeight="bold";
         it.onmouseenter=()=>{if(mainTrIdx===-1)return;const orig=mapEl.data.at(mainTrIdx);if(!orig._origZ){orig._origZ=orig.z.slice();orig._origCs=orig.colorscale;}const csDim=Array.of(Array.of(0,"#e2e8f0"),Array.of(0.001,"#e2e8f0")).concat(orig._origCs.map(p=>Array.of(0.002+p.at(0)*0.998,p.at(1))));const nz=orig._origZ.map((v,k)=>orig.locations.at(k)===f.properties.join_key?(0.002+Number(v)*0.998):0);Plotly.restyle(mapEl,{z:Array.of(nz),colorscale:Array.of(csDim)},Array.of(mainTrIdx));};

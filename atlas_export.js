@@ -19,23 +19,29 @@ async function buildSheetCanvas(){
       if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:false},Array.of(coreTrIdx));
       await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
       const polyArea=g=>{let a=0;const w=c=>{if(Array.isArray(c)&&c.length>2&&typeof c.at(0).at(0)==="number"){for(let i=0;i<c.length-1;i++)a+=c.at(i).at(0)*c.at(i+1).at(1)-c.at(i+1).at(0)*c.at(i).at(1);}else if(Array.isArray(c))c.forEach(w);};if(g&&g.coordinates)w(g.coordinates);return Math.abs(a)/2;};
-      const pts=regFeats.map(f=>{const c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{ox:c.lon,oy:c.lat,lon:c.lon,lat:c.lat,small:polyArea(f.geometry)<0.09};});
-      const bds=pts.reduce((a,p)=>({x0:Math.min(a.x0,p.ox),x1:Math.max(a.x1,p.ox),y0:Math.min(a.y0,p.oy),y1:Math.max(a.y1,p.oy)}),{x0:999,x1:-999,y0:999,y1:-999});
-      const cx0=(bds.x0+bds.x1)/2,cy0=(bds.y0+bds.y1)/2,thrX=Math.max(0.25,(bds.x1-bds.x0)*0.075),thrY=Math.max(0.15,(bds.y1-bds.y0)*0.075);
-      pts.forEach(p=>{if(p.small){const a=Math.atan2(p.oy-cy0,p.ox-cx0);p.lon=p.ox+Math.cos(a)*thrX*1.35;p.lat=p.oy+Math.sin(a)*thrY*1.35;}});
-      for(let pass=0;pass<24;pass++){for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){const dx=(pts.at(i).lon-pts.at(j).lon)/thrX,dy=(pts.at(i).lat-pts.at(j).lat)/thrY,d=Math.hypot(dx,dy);if(d<1.0){const a=d>0.01?Math.atan2(dy,dx):(i*1.2),k=(1.05-d)*0.55;pts.at(i).lon+=Math.cos(a)*thrX*k;pts.at(i).lat+=Math.sin(a)*thrY*k;pts.at(j).lon-=Math.cos(a)*thrX*k;pts.at(j).lat-=Math.sin(a)*thrY*k;}}}}
-      const lLon=Array.of(),lLat=Array.of();pts.forEach(p=>{if(p.small||Math.hypot((p.lon-p.ox)/thrX,(p.lat-p.oy)/thrY)>0.45){lLon.push(p.ox,p.lon,null);lLat.push(p.oy,p.lat,null);}});
       const isKras=reg.includes("Красноярск"),isKN=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан|кежемск/i.test(String(f.properties._lbl||""));
       const mIdx=Array.of(),nIdx=Array.of();
       regFeats.forEach((f,i)=>{if(isKras&&isKN(f))nIdx.push(i);else mIdx.push(i);});
-      const nTr=nIdx.length>0?Array.of(
-        {type:"scattergeo",geo:"geo2",mode:"markers",lon:nIdx.map(i=>pts.at(i).ox),lat:nIdx.map(i=>pts.at(i).oy),marker:{size:16,color:"rgba(255,255,255,0.8)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",geo:"geo2",mode:"text",lon:nIdx.map(i=>pts.at(i).ox),lat:nIdx.map(i=>pts.at(i).oy),text:nIdx.map(i=>String(i+1)),textfont:{family:"Times New Roman",size:11,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+      const packPts=(idxs,spScale,lThr)=>{
+        const arr=idxs.map(i=>{const f=regFeats.at(i),c=(f.properties._cx!==undefined&&f.properties._cx!==0)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);return{idx:i,ox:c.lon,oy:c.lat,lon:c.lon,lat:c.lat,small:polyArea(f.geometry)<0.055};});
+        if(!arr.length)return{arr,lLon:Array.of(),lLat:Array.of()};
+        const b=arr.reduce((a,p)=>({x0:Math.min(a.x0,p.ox),x1:Math.max(a.x1,p.ox),y0:Math.min(a.y0,p.oy),y1:Math.max(a.y1,p.oy)}),{x0:999,x1:-999,y0:999,y1:-999});
+        const cx0=(b.x0+b.x1)/2,cy0=(b.y0+b.y1)/2,tx=Math.max(0.22,(b.x1-b.x0)*spScale),ty=Math.max(0.14,(b.y1-b.y0)*spScale);
+        arr.forEach(p=>{if(p.small){const a=Math.atan2(p.oy-cy0,p.ox-cx0);p.lon=p.ox+Math.cos(a)*tx*1.15;p.lat=p.oy+Math.sin(a)*ty*1.15;}});
+        for(let pass=0;pass<20;pass++){for(let i=0;i<arr.length;i++){for(let j=0;j<i;j++){const dx=(arr.at(i).lon-arr.at(j).lon)/tx,dy=(arr.at(i).lat-arr.at(j).lat)/ty,d=Math.hypot(dx,dy);if(d<1.0){const a=d>0.01?Math.atan2(dy,dx):(i*1.2),k=(1.04-d)*0.5;arr.at(i).lon+=Math.cos(a)*tx*k;arr.at(i).lat+=Math.sin(a)*ty*k;arr.at(j).lon-=Math.cos(a)*tx*k;arr.at(j).lat-=Math.sin(a)*ty*k;}}}}
+        const lLon=Array.of(),lLat=Array.of();arr.forEach(p=>{if(Math.hypot((p.lon-p.ox)/tx,(p.lat-p.oy)/ty)>lThr){lLon.push(p.ox,p.lon,null);lLat.push(p.oy,p.lat,null);}});
+        return{arr,lLon,lLat};
+      };
+      const mPack=packPts(mIdx,isKras?0.044:0.068,0.72),nPack=packPts(nIdx,0.085,0.65);
+      const nTr=nPack.arr.length>0?Array.of(
+        {type:"scattergeo",geo:"geo2",mode:"lines",lon:nPack.lLon,lat:nPack.lLat,line:{color:"#1e293b",width:1.1},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",geo:"geo2",mode:"markers",lon:nPack.arr.map(p=>p.lon),lat:nPack.arr.map(p=>p.lat),marker:{size:15,color:"rgba(255,255,255,0.85)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",geo:"geo2",mode:"text",lon:nPack.arr.map(p=>p.lon),lat:nPack.arr.map(p=>p.lat),text:nPack.arr.map(p=>String(p.idx+1)),textfont:{family:"Times New Roman",size:10.5,color:"#111111"},showlegend:false,hoverinfo:"skip"}
       ):Array.of();
       await Plotly.addTraces(mapEl,Array.of(
-        {type:"scattergeo",mode:"lines",lon:lLon,lat:lLat,line:{color:"#1e293b",width:1.2},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",mode:"markers",lon:mIdx.map(i=>pts.at(i).lon),lat:mIdx.map(i=>pts.at(i).lat),marker:{size:16,color:"rgba(255,255,255,0.75)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",mode:"text",lon:mIdx.map(i=>pts.at(i).lon),lat:mIdx.map(i=>pts.at(i).lat),text:mIdx.map(i=>String(i+1)),textfont:{family:"Times New Roman",size:11,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+        {type:"scattergeo",mode:"lines",lon:mPack.lLon,lat:mPack.lLat,line:{color:"#1e293b",width:1.1},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",mode:"markers",lon:mPack.arr.map(p=>p.lon),lat:mPack.arr.map(p=>p.lat),marker:{size:15,color:"rgba(255,255,255,0.8)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
+        {type:"scattergeo",mode:"text",lon:mPack.arr.map(p=>p.lon),lat:mPack.arr.map(p=>p.lat),text:mPack.arr.map(p=>String(p.idx+1)),textfont:{family:"Times New Roman",size:10.5,color:"#111111"},showlegend:false,hoverinfo:"skip"}
       ).concat(nTr));
       window._numTrCnt=3+nTr.length;
       numTraceAdded=true;
@@ -58,7 +64,7 @@ async function buildSheetCanvas(){
     ctx.drawImage(mapImg,40,155,mapW,mapH);
     {
       const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
-      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=5&&Math.abs(px[k+1]-214)<=5&&Math.abs(px[k+2]-225)<=5)||(Math.abs(px[k]-226)<=5&&Math.abs(px[k+1]-232)<=5&&Math.abs(px[k+2]-240)<=5);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
+      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=4&&Math.abs(px[k+1]-214)<=4&&Math.abs(px[k+2]-225)<=4);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
       ctx.putImageData(idt,40,155);
     }
     if(hasList){
@@ -94,7 +100,7 @@ async function buildSheetCanvas(){
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(2234*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
     return canvas;
   }finally{
-    if(numTraceAdded){const delArr=window._numTrCnt===5?Array.of(-5,-4,-3,-2,-1):Array.of(-3,-2,-1);await Plotly.deleteTraces(mapEl,delArr);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
+    if(numTraceAdded){const delArr=window._numTrCnt===6?Array.of(-6,-5,-4,-3,-2,-1):Array.of(-3,-2,-1);await Plotly.deleteTraces(mapEl,delArr);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
     window._isExportMode=prevExp;if(reg!=="ALL"&&!prevExp)render();
   }
 }
