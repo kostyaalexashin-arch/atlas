@@ -61,18 +61,18 @@ function initBenchControls(){
   if(BENCH_STATE.inited||!GEO||!DATA)return;
   BENCH_STATE.inited=true;
   const cIn=document.getElementById("bCatIn"),fIn=document.getElementById("bFOIn"),rIn=document.getElementById("bRegIn"),mIn=document.getElementById("bMOIn"),rst=document.getElementById("bRstAll");
-  const fillDL=(id,arr)=>{const dl=document.getElementById(id);dl.innerHTML="";arr.forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o);});};
+  const fillDL=(id,arr,curV="")=>{const dl=document.getElementById(id);dl.innerHTML="";if(curV&&arr.length===1&&arr.at(0).toLowerCase()===curV.trim().toLowerCase())return;arr.forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o);});};
   const syncAll=()=>{
     const avail=getBenchMOs(),chosen=new Set(Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean));
     const free=avail.filter(m=>!chosen.has(m.key));
     const selCat=Object.entries(CAT_NAMES).find(p=>p.at(1).toLowerCase()===cIn.value.trim().toLowerCase())?.at(0)||"ALL";
     const selFO=fIn.value.trim()||"ALL",selReg=rIn.value.trim()||"ALL";
     const fCat=free.filter(m=>(selFO==="ALL"||m.fo===selFO)&&(selReg==="ALL"||m.reg===selReg));
-    fillDL("dlCat",Array.from(new Set(fCat.map(m=>CAT_NAMES[m.cat]))).filter(Boolean));
+    fillDL("dlCat",Array.from(new Set(fCat.map(m=>CAT_NAMES[m.cat]))).filter(Boolean),cIn.value);
     const fFO=free.filter(m=>(selCat==="ALL"||m.cat===selCat)&&(selReg==="ALL"||m.reg===selReg));
-    fillDL("dlFO",Array.from(new Set(fFO.map(m=>m.fo))).sort((a,b)=>a.localeCompare(b,"ru")));
+    fillDL("dlFO",Array.from(new Set(fFO.map(m=>m.fo))).sort((a,b)=>a.localeCompare(b,"ru")),fIn.value);
     const fReg=free.filter(m=>(selCat==="ALL"||m.cat===selCat)&&(selFO==="ALL"||m.fo===selFO));
-    fillDL("dlReg",Array.from(new Set(fReg.map(m=>m.reg))).sort((a,b)=>a.localeCompare(b,"ru")));
+    fillDL("dlReg",Array.from(new Set(fReg.map(m=>m.reg))).sort((a,b)=>a.localeCompare(b,"ru")),rIn.value);
     const fMO=free.filter(m=>(selCat==="ALL"||m.cat===selCat)&&(selFO==="ALL"||m.fo===selFO)&&(selReg==="ALL"||m.reg===selReg));
     fillDL("dlMO",fMO.map(m=>m.full));
     const atMax=chosen.size>=5;
@@ -145,7 +145,6 @@ function renderBenchmark(){
   groups.forEach((g,gi)=>{
     if(gi===0){
       if(yr!=="2024"){const gh0=document.createElement("div");gh0.className="bench-blk-hdr";gh0.textContent="0. Категория МО";view.appendChild(gh0);}
-      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
       const crow=document.createElement("div");crow.className="bench-row";
       crow.innerHTML='<div class="bench-met-name">Категория МО по численности населения ('+yr+' г.)</div>';
       const cgrid=document.createElement("div");cgrid.className="bench-cat-cells";
@@ -156,6 +155,7 @@ function renderBenchmark(){
         cgrid.appendChild(cell);
       });
       crow.appendChild(cgrid);view.appendChild(crow);
+      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
     }else{
       const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
     }
@@ -201,9 +201,8 @@ function buildBenchCanvases(){
   const groups=Array.of();DATA.metrics.forEach(m=>{if((m.cat||m.is_cat)&&yr!=="2024")return;let g=groups.find(x=>x.name===m.group);if(!g){g={name:m.group,items:Array.of()};groups.push(g);}g.items.push(m);});
   const rows=Array.of();
   groups.forEach((g,gi)=>{
-    if(gi===0&&yr!=="2024")rows.push({kind:"blk",txt:"0. Категория МО"});
+    if(gi===0){if(yr!=="2024")rows.push({kind:"blk",txt:"0. Категория МО"});rows.push({kind:"cat"});}
     rows.push({kind:"blk",txt:g.name});
-    if(gi===0)rows.push({kind:"cat"});
     g.items.forEach(m=>rows.push({kind:"met",m}));
   });
   const splitIdx=Math.ceil(rows.length/2),pagesRows=Array.of(rows.slice(0,splitIdx),rows.slice(splitIdx));
