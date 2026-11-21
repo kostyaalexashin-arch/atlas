@@ -212,11 +212,11 @@ function render(){
     const allIn=fList.filter(f=>f.properties._map_status==="В_выборке"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО"),outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО");
     const inF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v!==null&&v!==undefined&&v!==""&&!isNaN(Number(v));});
     const noDataF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v===null||v===undefined||v===""||isNaN(Number(v));});
-    if(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat)){
-      Object.entries(DATA.cluster_colors).forEach(pair=>{
-        const cn=pair.at(0),ch=pair.at(1),cF=allIn.filter(f=>String(valMap[f.properties.join_key]||"").trim().charAt(0)===cn.trim().charAt(0));
-        if(cF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cF.map(f=>f.properties.join_key),z:cF.map(()=>0.5),zmin:0,zmax:1,zauto:false,text:cF.map(f=>f.properties._lbl+" ("+f.properties.region+"): "+cn),hoverinfo:"text",autocolorscale:false,colorscale:Array.of(Array.of(0,ch),Array.of(0.5,ch),Array.of(1,ch)),showscale:false,marker:{line:{color:"#334155",width:0.65}}});
-      });
+    if(mMeta.cat||mMeta.is_cat){
+      const clPairs=Object.entries(DATA.cluster_colors),nCl=Math.max(1,clPairs.length-1);
+      const clScale=clPairs.map((p,i)=>Array.of(i/nCl,p.at(1)));
+      const cF=allIn.filter(f=>clPairs.some(p=>String(valMap[f.properties.join_key]||"").trim().charAt(0)===p.at(0).trim().charAt(0)));
+      if(cF.length>0)traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:cF.map(f=>f.properties.join_key),z:cF.map(f=>clPairs.findIndex(p=>String(valMap[f.properties.join_key]||"").trim().charAt(0)===p.at(0).trim().charAt(0))),zmin:0,zmax:nCl,zauto:false,text:cF.map(f=>f.properties._lbl+" ("+f.properties.region+"): "+valMap[f.properties.join_key]),hoverinfo:"text",autocolorscale:false,colorscale:clScale,showscale:false,marker:{line:{color:"#334155",width:0.65}}});
     }else if(inF.length>0){
       traces.push({type:"choropleth",geo:gKey,geojson:subG,featureidkey:"properties.join_key",locations:inF.map(f=>f.properties.join_key),z:inF.map(f=>{const v=Number(valMap[f.properties.join_key]);return scObj.vmax<=scObj.vmin?0.5:Math.pow(Math.max(0,Math.min(1,(v-scObj.vmin)/(scObj.vmax-scObj.vmin))),scObj.gamma);}),zmin:0,zmax:1,zauto:false,text:inF.map(f=>{const v=valMap[f.properties.join_key];return f.properties._lbl+" ("+f.properties.region+"): "+fmtNum(v,mMeta.dec);}),hoverinfo:"text",autocolorscale:false,colorscale:scObj.plScale,showscale:false,marker:{line:{color:"#334155",width:0.65}}});
     }
