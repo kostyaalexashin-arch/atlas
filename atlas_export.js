@@ -5,10 +5,10 @@ function buildZipBlob(files){
   const parts=Array.of(),cds=Array.of();let off=0;
   files.forEach(f=>{
     const nb=enc.encode(f.name),crc=crc32(f.data),lh=new Uint8Array(30+nb.length),dv=new DataView(lh.buffer);
-    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint32(14,crc,true);dv.setUint32(18,f.data.length,true);dv.setUint32(22,f.data.length,true);dv.setUint16(26,nb.length,true);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,0x0800,true);dv.setUint32(14,crc,true);dv.setUint32(18,f.data.length,true);dv.setUint32(22,f.data.length,true);dv.setUint16(26,nb.length,true);
     lh.set(nb,30);parts.push(lh,f.data);
     const cd=new Uint8Array(46+nb.length),cv=new DataView(cd.buffer);
-    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint32(16,crc,true);cv.setUint32(20,f.data.length,true);cv.setUint32(24,f.data.length,true);cv.setUint16(28,nb.length,true);cv.setUint32(42,off,true);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint32(16,crc,true);cv.setUint32(20,f.data.length,true);cv.setUint32(24,f.data.length,true);cv.setUint16(28,nb.length,true);cv.setUint32(42,off,true);
     cd.set(nb,46);cds.push(cd);off+=lh.length+f.data.length;
   });
   const cdSz=cds.reduce((s,b)=>s+b.length,0),eocd=new Uint8Array(22),ev=new DataView(eocd.buffer);
@@ -41,11 +41,19 @@ function buildTableCanvases(){
   if(!sorted.length){alert("Нет строк для отображения в выбранной территории.");return Array.of();}
   const items=Array.of();let lastFO=null;
   sorted.forEach(f=>{if(grpFO&&f.properties.fo!==lastFO){lastFO=f.properties.fo;items.push({isFO:true,title:lastFO+" федеральный округ"});}items.push({isFO:false,f});});
-  const perPage=24,totalPages=Math.ceil(items.length/perPage),W=3160,H=2234,sc=Number(document.getElementById("selDpi")?.value||1);
+  const pagesArr=Array.of();let curPg=Array.of(),activeFO="";
+  items.forEach(it=>{
+    if(it.isFO)activeFO=it.title;
+    if(curPg.length===0&&!it.isFO&&grpFO&&activeFO)curPg.push({isFO:true,title:activeFO+" (продолжение)"});
+    curPg.push(it);
+    if(curPg.length>=24){pagesArr.push(curPg);curPg=Array.of();}
+  });
+  if(curPg.length>0)pagesArr.push(curPg);
+  const totalPages=pagesArr.length,W=3160,H=2234,sc=Number(document.getElementById("selDpi")?.value||1);
   const catsLeg=Array.of({c:"1",t:"Крупнейшие (> 1 млн чел.)"},{c:"2",t:"Крупные (250 тыс. – 1 млн)"},{c:"3",t:"Большие (100 – 250 тыс.)"},{c:"4",t:"Средние (50 – 100 тыс.)"},{c:"5",t:"Малые (≤ 50 тыс. чел.)"});
   const out=Array.of();
   for(let pg=0;pg<totalPages;pg++){
-    const sub=items.slice(pg*perPage,(pg+1)*perPage),canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
+    const sub=pagesArr.at(pg),canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 34px 'Times New Roman'";ctx.fillText(mMeta.title+" (2019–2024 гг.)",W/2,56);
     ctx.font="bold 26px 'Times New Roman'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,96);ctx.textAlign="left";
