@@ -1,4 +1,4 @@
-const MONOPOLY_TOKENS=Array.of("🎩","🚗","🐕","🚢","👢","🐈","🦆","🦖","🐧","🎲");
+const MONOPOLY_TOKENS=Array.of("🔵","🟥","🔺","💠","⭐","🟢","🟣","🔶","⬛","🩷");
 const CAT_HOUSES=Array.of(
   {c:"1",ico:"🏙️",lbl:"Крупнейшие"},{c:"2",ico:"🏢",lbl:"Крупные"},
   {c:"3",ico:"🏬",lbl:"Большие"},{c:"4",ico:"🏘️",lbl:"Средние"},{c:"5",ico:"🏡",lbl:"Малые"}
@@ -77,7 +77,7 @@ function initBenchControls(){
     fillDL("dlMO",fMO.map(m=>m.full));
     const atMax=chosen.size>=5;
     Array.of(cIn,fIn,rIn,mIn).forEach(el=>el.disabled=atMax);
-    const lm=document.getElementById("bLimitMsg");if(lm)lm.style.display=atMax?"block":"none";
+    const lm=document.getElementById("bLimitMsg");if(lm)lm.style.visibility=atMax?"visible":"hidden";
     renderBenchChips();
   };
   BENCH_STATE.refreshFn=syncAll;
@@ -143,21 +143,24 @@ function renderBenchmark(){
   });
   const clEntries=Object.entries(DATA.cluster_colors||{});
   groups.forEach((g,gi)=>{
-    const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=(gi===0&&yr!=="2024")?"0. Категория МО":g.name;view.appendChild(gh);
     if(gi===0){
+      if(yr!=="2024"){const gh0=document.createElement("div");gh0.className="bench-blk-hdr";gh0.textContent="0. Категория МО";view.appendChild(gh0);}
+      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
       const crow=document.createElement("div");crow.className="bench-row";
       crow.innerHTML='<div class="bench-met-name">Категория МО по численности населения ('+yr+' г.)</div>';
       const cgrid=document.createElement("div");cgrid.className="bench-cat-cells";
       CAT_HOUSES.forEach(ch=>{
         const hits=selMOs.filter(mo=>String(DATA.panel_cats?.[yr]?.[mo.key]||mo.cat||"5")===ch.c);
         const cell=document.createElement("div");cell.className="bench-catcell";
-        cell.innerHTML='<div class="bench-cat-ico">'+ch.ico+'</div><div>'+ch.lbl+'</div><div class="bench-ccell-toks">'+hits.map(mo=>'<span class="bench-ctok" title="'+mo.full+'">'+(BENCH_STATE.tokens[mo.key]||"🎩")+'</span>').join("")+'</div>';
+        cell.innerHTML='<div class="bench-cat-ico">'+ch.ico+'</div><div>'+ch.lbl+'</div><div class="bench-ccell-toks">'+hits.map(mo=>'<span class="bench-ctok" title="'+mo.full+'">'+(BENCH_STATE.tokens[mo.key]||"🔵")+'</span>').join("")+'</div>';
         cgrid.appendChild(cell);
       });
       crow.appendChild(cgrid);view.appendChild(crow);
+    }else{
+      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
     }
     g.items.forEach(m=>{
-      const valMap=(!isCoh&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
+      const valMap=((m.cat||m.is_cat||!isCoh)&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
       const row=document.createElement("div");row.className="bench-row";const nm=document.createElement("div");nm.className="bench-met-name";nm.textContent=m.id+" — "+m.title;row.appendChild(nm);
       if(m.cat||m.is_cat){
         const grid=document.createElement("div");grid.className="bench-clust-cells";
@@ -198,7 +201,8 @@ function buildBenchCanvases(){
   const groups=Array.of();DATA.metrics.forEach(m=>{if((m.cat||m.is_cat)&&yr!=="2024")return;let g=groups.find(x=>x.name===m.group);if(!g){g={name:m.group,items:Array.of()};groups.push(g);}g.items.push(m);});
   const rows=Array.of();
   groups.forEach((g,gi)=>{
-    rows.push({kind:"blk",txt:(gi===0&&yr!=="2024")?"0. Категория МО":g.name});
+    if(gi===0&&yr!=="2024")rows.push({kind:"blk",txt:"0. Категория МО"});
+    rows.push({kind:"blk",txt:g.name});
     if(gi===0)rows.push({kind:"cat"});
     g.items.forEach(m=>rows.push({kind:"met",m}));
   });
@@ -208,7 +212,7 @@ function buildBenchCanvases(){
   pagesRows.forEach((sub,pgIdx)=>{
     const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 36px 'Times New Roman'";
-    ctx.fillText("Бенчмаркинг муниципальных образований ("+yr+" г., "+(isCoh?"когорта 193 МО":"срез 2269 МО")+") — Лист "+(pgIdx+1)+" из 2",W/2,58);ctx.textAlign="left";
+    ctx.fillText("Бенчмаркинг муниципальных образований ("+yr+" г.) — Лист "+(pgIdx+1)+" из 2",W/2,58);ctx.textAlign="left";
     const colsH=Math.max(1,selMOs.length),colWH=Math.floor((W-100)/colsH),hdrY=82;
     ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(50,hdrY,W-100,64);
     selMOs.forEach((m,idx)=>{const x=62+idx*colWH,y=hdrY+42;ctx.font="26px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[m.key]||"🎩",x,y);ctx.font="bold 20px 'Times New Roman'";const lbl=m.full;ctx.fillText(lbl.length>32?lbl.slice(0,31)+"…":lbl,x+36,y);});
@@ -240,7 +244,7 @@ function buildBenchCanvases(){
           const cname=pair.at(0),chex=pair.at(1),cx=sx+ci*cw;ctx.fillStyle=chex;ctx.fillRect(cx,cy,cw-4,ch);ctx.strokeStyle="#475569";ctx.strokeRect(cx,cy,cw-4,ch);
           ctx.fillStyle=isDarkHex(chex)?"#ffffff":"#111111";ctx.font="bold 17px 'Times New Roman'";ctx.textAlign="center";
           const ltr=cname.split(" ").at(0).replace(/\.+$/,""),hits=selMOs.filter(mo=>valMap[mo.key]===cname);
-          ctx.fillText(ltr,cx+(cw-4)/2,cy+(hits.length?18:ch/2+6));
+          ctx.fillText(ltr,cx+(cw-4)/2,cy+19);
           if(hits.length){const rC=12,gC=26,bx0=cx+(cw-4)/2-(hits.length-1)*gC/2,byC=cy+ch-15;hits.forEach((mo,hi)=>{const bx=bx0+hi*gC;ctx.fillStyle="#ffffff";ctx.beginPath();ctx.arc(bx,byC,rC,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#1e293b";ctx.stroke();ctx.fillStyle="#111111";ctx.font="16px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[mo.key]||"🎩",bx,byC+5);});}
           ctx.textAlign="left";
         });
