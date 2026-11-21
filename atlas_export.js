@@ -25,7 +25,7 @@ async function buildSheetCanvas(){
       pts.forEach(p=>{if(p.small){const a=Math.atan2(p.oy-cy0,p.ox-cx0);p.lon=p.ox+Math.cos(a)*thrX*1.35;p.lat=p.oy+Math.sin(a)*thrY*1.35;}});
       for(let pass=0;pass<24;pass++){for(let i=0;i<pts.length;i++){for(let j=0;j<i;j++){const dx=(pts.at(i).lon-pts.at(j).lon)/thrX,dy=(pts.at(i).lat-pts.at(j).lat)/thrY,d=Math.hypot(dx,dy);if(d<1.0){const a=d>0.01?Math.atan2(dy,dx):(i*1.2),k=(1.05-d)*0.55;pts.at(i).lon+=Math.cos(a)*thrX*k;pts.at(i).lat+=Math.sin(a)*thrY*k;pts.at(j).lon-=Math.cos(a)*thrX*k;pts.at(j).lat-=Math.sin(a)*thrY*k;}}}}
       const lLon=Array.of(),lLat=Array.of();pts.forEach(p=>{if(p.small||Math.hypot((p.lon-p.ox)/thrX,(p.lat-p.oy)/thrY)>0.45){lLon.push(p.ox,p.lon,null);lLat.push(p.oy,p.lat,null);}});
-      const isKras=reg.includes("Красноярск"),isKN=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан/i.test(String(f.properties._lbl||""));
+      const isKras=reg.includes("Красноярск"),isKN=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан|кежемск/i.test(String(f.properties._lbl||""));
       const mIdx=Array.of(),nIdx=Array.of();
       regFeats.forEach((f,i)=>{if(isKras&&isKN(f))nIdx.push(i);else mIdx.push(i);});
       const nTr=nIdx.length>0?Array.of(

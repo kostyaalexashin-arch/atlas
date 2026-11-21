@@ -160,7 +160,7 @@ function render(){
   const isNW=(fo.includes("Северо-Запад")||fo==="СЗФО"),isArk=reg.includes("Архангельск"),isKras=reg.includes("Красноярск");
   const hasInsets=(isArk||(isNW&&reg==="ALL")),hasKal=(isNW&&reg==="ALL");
   const hasRightCol=hasInsets||(reg!=="ALL");
-  const isKrasNorth=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан/i.test(String(f.properties._lbl||""));
+  const isKrasNorth=f=>/таймыр|эвенкий|норильск|турухан|енисейск|лесосибирск|мотыгин|богучан|кежемск/i.test(String(f.properties._lbl||""));
   const mainFeats=isKras?allFeats:(hasInsets?allFeats.filter(f=>!f.properties._inset&&(!hasKal||!f.properties.region.includes("Калининград"))):allFeats);
   const nzFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="NZ"):Array.of();
   const zfiFeats=hasInsets?allFeats.filter(f=>f.properties._inset==="ZFI"):Array.of();
@@ -234,7 +234,7 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
   const zoomFeats=isKras?mainFeats.filter(f=>!isKrasNorth(f)):mainFeats;
-  const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(isKras?0.23:0.005,hasRightCol?0.765:0.995),Array.of(0.02,0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
+  const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(isKras?0.23:0.005,hasRightCol?0.765:0.995),Array.of(isKras?0.002:0.02,isKras?0.995:0.95)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
   const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
   if(isKras&&allFeats.length>0){layout.geo2=wideGeoCfg(allFeats,{type:"mercator"},Array.of(0.005,0.215),Array.of(0.07,0.94));layout.annotations.push({text:"<b>Карта северных территорий</b>",x:0.11,y:0.055,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
