@@ -50,7 +50,7 @@ async function buildSheetCanvas(){
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
     const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("zatoHatch")||s.includes("0.987")||s.replace(/\s/g,"").includes("203,213,225");});
     hPaths.forEach(p=>{p.style.fill="#e2e8f0";p.style.fillOpacity="1";p.setAttribute("fill","#e2e8f0");});
-    const allAnns=(mapEl.layout.annotations||Array.of()).slice(),hasNorthLbl=allAnns.some(a=>String(a.text||"").includes("Карта северных территорий"));if(hasNorthLbl)await Plotly.relayout(mapEl,{annotations:allAnns.filter(a=>!String(a.text||"").includes("Карта северных территорий"))});const mapW=3080,mapH=1810,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:905,scale:2});if(hasNorthLbl)await Plotly.relayout(mapEl,{annotations:allAnns});
+    const allAnns=(mapEl.layout.annotations||Array.of()).slice(),hasNorthLbl=allAnns.some(a=>String(a.text||"").includes("Карта северных территорий"));if(hasNorthLbl)await Plotly.relayout(mapEl,{annotations:allAnns.filter(a=>!String(a.text||"").includes("Карта северных территорий"))});const mapW=3080,mapH=1945,imgData=await Plotly.toImage(mapEl,{format:"png",width:1540,height:972,scale:2});if(hasNorthLbl)await Plotly.relayout(mapEl,{annotations:allAnns});
     hPaths.forEach(p=>{p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");});
     const canvas=document.createElement("canvas");canvas.width=3160;canvas.height=2234;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3160,2234);
@@ -68,7 +68,7 @@ async function buildSheetCanvas(){
       ctx.putImageData(idt,40,155);
     }
     if(hasList){
-      const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.67)):165,lyBot=155+mapH-10;
+      const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.67)):165,lyBot=155+mapH-8;
       const step=23,fs=18,maxRows=Math.max(6,Math.floor((lyBot-lyTop-34)/step)),twoCols=regFeats.length>maxRows;
       ctx.fillStyle="#111111";ctx.font="bold 20px 'Times New Roman'";ctx.fillText("Муниципальные образования:",lx,lyTop+18);
       ctx.font=fs+"px 'Times New Roman'";
@@ -82,7 +82,7 @@ async function buildSheetCanvas(){
     const items=Array.from(document.querySelectorAll("#sheetBox .leg-item")),cols=hasCbar?3:5,colW=Math.floor(legW/cols);
     ctx.font="21px 'Times New Roman'";
     items.forEach((el,idx)=>{
-      const c=Math.floor(idx/2),r=idx%2,ix=46+c*colW,iy=footY+36+r*48,colHex=el.dataset.color||"#94a3b8",kind=el.dataset.kind||"box";
+      const c=Math.floor(idx/2),r=idx%2,ix=46+c*colW,iy=footY+28+r*42,colHex=el.dataset.color||"#94a3b8",kind=el.dataset.kind||"box";
       if(kind==="dot"){ctx.fillStyle=colHex;ctx.beginPath();ctx.arc(ix+10,iy-6,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.stroke();}
       else if(kind==="line"){ctx.strokeStyle=colHex;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ix,iy-6);ctx.lineTo(ix+24,iy-6);ctx.stroke();}
       else if(kind==="hatch"){ctx.fillStyle="#e2e8f0";ctx.fillRect(ix,iy-16,24,17);ctx.save();ctx.beginPath();ctx.rect(ix,iy-16,24,17);ctx.clip();ctx.strokeStyle="#475569";ctx.lineWidth=2.3;for(let d=-18;d<32;d+=8){ctx.beginPath();ctx.moveTo(ix+d,iy+1);ctx.lineTo(ix+d+17,iy-16);ctx.stroke();}ctx.restore();ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(ix,iy-16,24,17);}else{ctx.fillStyle=colHex;ctx.fillRect(ix,iy-16,24,17);ctx.strokeStyle="#555555";ctx.lineWidth=1;ctx.strokeRect(ix,iy-16,24,17);}
@@ -91,10 +91,10 @@ async function buildSheetCanvas(){
     if(hasCbar){
       const actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],xBar=2050,wBar=1070,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
       actCol.forEach((c,i)=>grd.addColorStop(i/(actCol.length-1),c));
-      ctx.fillStyle=grd;ctx.fillRect(xBar,footY+12,wBar,34);ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+12,wBar,34);
+      ctx.fillStyle=grd;ctx.fillRect(xBar,footY+8,wBar,32);ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+8,wBar,32);
       ctx.fillStyle="#111111";ctx.font="bold 21px 'Times New Roman'";ctx.textAlign="center";
       const tks=Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).map(s=>s.textContent);
-      tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.06+i*0.22)),footY+78));ctx.textAlign="left";
+      tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.06+i*0.22)),footY+68));ctx.textAlign="left";
     }
     const sc=Number(document.getElementById("selDpi")?.value||1);
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(2234*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
