@@ -25,7 +25,7 @@ function getCenter(g){
 }
 function makeProj(fo,reg){
   if(fo==="RF"&&reg==="ALL")return{type:"conic equal area",rotation:{lon:100},parallels:Array.of(52,68)};
-  if(fo==="Дальневосточный"&&reg==="ALL")return{type:"mercator",rotation:{lon:152}};if(reg==="Чукотский автономный округ")return{type:"mercator",rotation:{lon:175}};
+  if(fo==="Дальневосточный"&&reg==="ALL")return{type:"mercator",rotation:{lon:152}};if(reg==="Чукотский автономный округ")return{type:"mercator",rotation:{lon:174}};
   return{type:"mercator"};
 }
 function wideGeoCfg(feats,projObj,domX,domY){
@@ -40,9 +40,11 @@ function wideGeoCfg(feats,projObj,domX,domY){
   const boxW=W*(domX.at(1)-domX.at(0)),boxH=H*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
   const toM=lat=>Math.log(Math.tan(Math.PI/4+Math.max(-84,Math.min(84,lat))*Math.PI/360))*180/Math.PI;
   const fromM=ym=>(2*Math.atan(Math.exp(ym*Math.PI/180))-Math.PI/2)*180/Math.PI;
-  const pad=1.06,cx=(x0+x1)/2;let dx=Math.max(0.45,(x1-x0)*pad),ym0=toM(y0),ym1=toM(y1),ymc=(ym0+ym1)/2,dym=Math.max(0.45,(ym1-ym0)*pad);
-  if(dx/dym<aspect){dx=dym*aspect;}else{dym=dx/aspect;}
-  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of((rotLon===175?0:rotLon)+cx-dx/2,(rotLon===175?0:rotLon)+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymc-dym/2)),Math.min(84.5,fromM(ymc+dym/2)))}};
+  const cx=(x0+x1)/2,ym0=toM(y0),ym1=toM(y1),spanM=Math.max(0.45,ym1-ym0),padY=spanM*0.045;
+  let ymBot=ym0-padY,ymTop=ym1+padY,dym=ymTop-ymBot,dx=Math.max(0.45,(x1-x0)*1.08);
+  if(dx/dym<aspect){dx=dym*aspect;}else{const extra=(dx/aspect-dym)/2;ymBot-=extra;ymTop+=extra;}
+  const baseLon=(projObj.rotation?.lon===175)?0:rotLon;
+  return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(baseLon+cx-dx/2,baseLon+cx+dx/2)},lataxis:{range:Array.of(Math.max(-84,fromM(ymBot)),Math.min(84.5,fromM(ymTop)))}};
 }
 function niceRound(v){if(v===0)return 0;const s=v<0?-1:1,a=Math.abs(v),p=Math.pow(10,Math.floor(Math.log10(a))),n=a/p;let r=1;if(n>=7.5)r=10;else if(n>=3.5)r=5;else if(n>=1.5)r=2;return s*r*p;}
 function computeScale(vals,palArr,inv){
