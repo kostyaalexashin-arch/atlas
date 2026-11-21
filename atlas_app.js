@@ -210,8 +210,9 @@ function render(){
     }
     const subG={type:"FeatureCollection",features:fList};
     const allIn=fList.filter(f=>f.properties._map_status==="В_выборке"),zatoF=fList.filter(f=>f.properties._map_status==="ЗАТО"),outF=fList.filter(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО");
-    const inF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v!==null&&v!==undefined&&v!==""&&!isNaN(Number(v));});
-    const noDataF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v===null||v===undefined||v===""||isNaN(Number(v));});
+    const isCatM=Boolean(mMeta.cat||mMeta.is_cat);
+    const inF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v!==null&&v!==undefined&&v!==""&&(isCatM||!isNaN(Number(v)));});
+    const noDataF=allIn.filter(f=>{const v=valMap[f.properties.join_key];return v===null||v===undefined||v===""||(!isCatM&&isNaN(Number(v)));});
     if(mMeta.cat||mMeta.is_cat){
       const clPairs=Object.entries(DATA.cluster_colors),nCl=Math.max(1,clPairs.length-1);
       const clScale=clPairs.map((p,i)=>Array.of(i/nCl,p.at(1)));
