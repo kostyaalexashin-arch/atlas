@@ -9,7 +9,7 @@ async function buildSheetCanvas(){
   const hasList=regFeats.length>0,hasRightCol=hasInsets||hasList;
   const prevExp=Boolean(window._isExportMode);
   window._isExportMode=true;
-  if(reg!=="ALL"&&!isArk){render();if(window._plotReady)await window._plotReady;await new Promise(r=>setTimeout(r,180));}
+  if(reg!=="ALL"){render();if(window._plotReady)await window._plotReady;await new Promise(r=>setTimeout(r,260));}
   const mapEl=document.getElementById("mapDiv");
   let numTraceAdded=false,savedAnns=null,coreTrIdx=-1;
   try{
@@ -46,7 +46,7 @@ async function buildSheetCanvas(){
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
     if(hasList){
-      const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.56)):165,lyBot=155+mapH-10;
+      const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.67)):165,lyBot=155+mapH-10;
       const step=23,fs=18,maxRows=Math.max(6,Math.floor((lyBot-lyTop-34)/step)),twoCols=regFeats.length>maxRows;
       ctx.fillStyle="#111111";ctx.font="bold 20px 'Times New Roman'";ctx.fillText("Муниципальные образования:",lx,lyTop+18);
       ctx.font=fs+"px 'Times New Roman'";
@@ -79,7 +79,7 @@ async function buildSheetCanvas(){
     return canvas;
   }finally{
     if(numTraceAdded){await Plotly.deleteTraces(mapEl,Array.of(-3,-2,-1));if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
-    window._isExportMode=prevExp;if(reg!=="ALL"&&!isArk&&!prevExp)render();
+    window._isExportMode=prevExp;if(reg!=="ALL"&&!prevExp)render();
   }
 }
 
