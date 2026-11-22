@@ -386,7 +386,7 @@ async function buildSheetCanvas(){
       ptsOnCanvas.sort((a,b)=>a.cy-b.cy);
       ctx.save();
       ctx.font="bold 24px 'Times New Roman', serif";
-      const dirs=[[0,-1],,[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],,[-1,0],[0,-1.65],[0,1.65],[1.45,-1.1],[-1.45,-1.1],[1.45,1.1],[-1.45,1.1]];
+      const dirs=Array.of(Array.of(0,-1),Array.of(1,-0.75),Array.of(-1,-0.75),Array.of(1,0.75),Array.of(-1,0.75),Array.of(-1,0),Array.of(0,-1.65),Array.of(0,1.65),Array.of(1.45,-1.1),Array.of(-1.45,-1.1),Array.of(1.45,1.1),Array.of(-1.45,1.1));
       ptsOnCanvas.forEach(pt=>{
         if(!pt.lbl)return;
         const tw=ctx.measureText(pt.lbl).width,bw=tw+16,bh=34;
