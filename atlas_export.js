@@ -518,8 +518,9 @@ async function exportBatchPdf(){
         const cv=await buildPassportCanvas(list.at(i));if(!cv)continue;
         const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
         for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:cv.width,h:cv.height,jpg:arr});
+      }
       if(pages.length>0){const a=document.createElement("a");a.download="Цифровые_паспорта_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
-    }}finally{btn.disabled=false;btn.textContent="💾 PDF";}
+    }finally{btn.disabled=false;btn.textContent="💾 PDF";}
     return;
   }
   if(curM==="bench"){
@@ -542,8 +543,9 @@ async function exportBatchPdf(){
       const c=await buildSheetCanvas();if(!c)continue;
       const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:(scDpi>2.5?0.78:0.86))),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
+    }
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
-  }}finally{
+  }finally{
     window._isExportMode=false;setKeepAlive(false);sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
     document.getElementById("selMetric").value=mId;sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
   }
@@ -566,10 +568,11 @@ async function runCustomBatchExport(fmt){
           if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+"_Лист_"+(ci+1)+".png",data:arr});}
           else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
         });
+      }
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
-    }}finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
+    }finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
     return;
   }
   if(mode==="passport"){
@@ -621,12 +624,13 @@ async function runCustomBatchExport(fmt){
           const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
           for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
           pdfPages.push({w:cv.width,h:cv.height,jpg:arr});
+        }
       }
     }
     if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Пакет_Атлас_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
     if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Пакет_Атлас.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
     modal.classList.remove("open");
-  }}finally{
+  }finally{
     window._isExportMode=false;setKeepAlive(false);sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
     sReg.value=origReg;sMet.value=origMet;sYr.value=origYr;if(mode!=="table")render();
     btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";
