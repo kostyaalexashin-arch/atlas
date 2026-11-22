@@ -100,7 +100,7 @@ Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJ
   DATA.metrics.forEach(m=>{if(!gm[m.group]){gm[m.group]=document.createElement("optgroup");gm[m.group].label=m.group;sMet.add(gm[m.group]);}gm[m.group].appendChild(new Option(m.id+" — "+m.title,m.id));});
   const cGF=document.getElementById("chkGroupFO");if(cGF)cGF.onchange=render;
   sFO.onchange=()=>{syncControls();sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(sFO.value!=="RF")(DATA.fo_to_regs[sFO.value]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));render();};
-  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();syncControls();render();});
+  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();bindSafeMetArrows();syncControls();render();});
   document.getElementById("prevMet").onclick=()=>stepSelect("selMetric",-1);document.getElementById("nextMet").onclick=()=>stepSelect("selMetric",1);
   document.getElementById("prevFO").onclick=()=>stepSelect("selFO",-1);document.getElementById("nextFO").onclick=()=>stepSelect("selFO",1);
   document.getElementById("prevReg").onclick=()=>stepSelect("selReg",-1);document.getElementById("nextReg").onclick=()=>stepSelect("selReg",1);
@@ -321,9 +321,9 @@ function render(){
 function addSubBlockSeparators(){
   const s=document.getElementById("selMetric");if(!s||s.dataset.hasSeps==="1")return;
   const defs=Array.of(
-    {id:"ЭК-01",lbl:"  ▸ Экологический блок (ЭК-01 — ЭК-13)"},
-    {id:"СЦ-01",lbl:"  ▸ Социальный блок (СЦ-01 — СЦ-13)"},
-    {id:"УЭ-01",lbl:"  ▸ Управленческо-экономический блок (УЭ-01 — УЭ-13)"}
+    {id:"ЭК-01",lbl:"  ▸ Экологический блок"},
+    {id:"СЦ-01",lbl:"  ▸ Социальный блок"},
+    {id:"УЭ-01",lbl:"  ▸ Управленческо-экономический блок"}
   );
   defs.forEach(d=>{
     const target=s.querySelector('option[value="'+d.id+'"]');
@@ -334,4 +334,15 @@ function addSubBlockSeparators(){
     }
   });
   s.dataset.hasSeps="1";
+}
+
+function bindSafeMetArrows(){
+  const s=document.getElementById("selMetric"),pB=document.getElementById("prevMet"),nB=document.getElementById("nextMet");
+  if(!s||!pB||!nB)return;
+  const move=d=>{
+    const valid=Array.from(s.options).filter(o=>!o.disabled&&o.style.display!=="none");
+    const idx=valid.findIndex(o=>o.value===s.value);
+    if(idx>=0){s.value=valid.at((idx+d+valid.length)%valid.length).value;render();}
+  };
+  pB.onclick=()=>move(-1);nB.onclick=()=>move(1);
 }

@@ -32,9 +32,11 @@ function buildMergedTableCanvases(terrs,silent=false){
   for(let pg=0;pg<pages;pg++){
     const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3508,2480);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(18,18,3472,2444);
-    ctx.fillStyle="#111111";ctx.font="bold 44px 'Times New Roman'";ctx.textAlign="center";
-    ctx.fillText(mObj.id+" — "+mObj.title,1754,76);
-    ctx.font="italic 31px 'Times New Roman'";ctx.fillStyle="#334155";
+    ctx.fillStyle="#111111";ctx.font="bold 38px 'Times New Roman'";ctx.textAlign="center";
+    const fullT=mObj.id+" — "+mObj.title;
+    if(fullT.length<=92){ctx.fillText(fullT,1754,68);}
+    else{const sp=fullT.lastIndexOf(" ",92)>30?fullT.lastIndexOf(" ",92):92;ctx.fillText(fullT.slice(0,sp),1754,54);ctx.fillText(fullT.slice(sp).trim(),1754,94);}
+    ctx.font="italic 28px 'Times New Roman'";ctx.fillStyle="#334155";
     ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,122);
     const cols=Array.of({x:40,w:980,t:"Муниципальное образование (Регион)"},{x:1020,w:380,t:"Категория МО"},{x:1400,w:330,t:"2019"},{x:1730,w:330,t:"2020"},{x:2060,w:330,t:"2021"},{x:2390,w:330,t:"2022"},{x:2720,w:330,t:"2023"},{x:3050,w:418,t:"2024"});
     ctx.fillStyle="#eef3f8";ctx.fillRect(40,150,3428,48);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,150,3428,48);

@@ -98,7 +98,7 @@ function renderPassport(){
   initPassportControls();
   const box=document.getElementById("sheetBox"),yr=document.getElementById("pYear").value,all=getPassMOs(),mo=all.find(m=>m.key===PASS_STATE.key);
   if(!mo){box.innerHTML='<div class="bench-empty"><b>Цифровой паспорт устойчивости муниципального образования</b><br><br>Выберите муниципальное образование в панели слева для формирования паспорта.<br><span style="font-size:13px;color:#64748b;">Для 193 МО динамической когорты доступен выбор года (2019–2024 гг.).</span></div>';return;}
-  const pd=getPassportData(mo,yr),bRow=(lbl,val,cls="")=>'<div class="pass-irow '+cls+'"><span>'+lbl+'</span><b>'+val+'</b></div>';
+  const pd=getPassportData(mo,yr),bRow=(lbl,val,cls="")=>'<div class="pass-mid" style="display:grid;grid-template-columns:255px 1fr 255px;gap:8px;align-items:center;border:1px solid #cbd5e1;border-radius:4px;padding:6px;background:#fafbfc;"><span>'+lbl+'</span><b>'+val+'</b></div>';
   const sec1Html=bRow("Интегральный индекс устойчивого развития",pd.idxMain,"main")+pd.topSubs.map(s=>bRow(s.name,s.txt,"sub")).join("");
   const sec2Html=pd.subBlocks.map(b=>bRow(b.name,b.txt,"blk")).join("");
   const colHtml=(title,arr)=>'<div><div class="pass-col-hdr">'+title+'</div>'+arr.map(x=>'<div class="pass-crow"><span><b>'+x.id+'</b> — '+x.title+'</span><b>'+x.val+'</b></div>').join("")+'</div>';
@@ -139,7 +139,7 @@ function buildPassportCanvas(overrideMO=null){
   ctx.font="bold 25px 'Times New Roman'";ctx.fillStyle="#111111";
   ctx.fillText("Кластер (2024 г.): "+pd.clVal,75,282);ctx.fillText("Категория: "+pd.catTxt,1150,282);
   ctx.fillText("Площадь, га: "+pd.area,75,330);ctx.fillText("Численность, чел.: "+pd.pop,1150,330);
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,375,2134,660);
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,370,2134,515);
   ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",440,442);ctx.textAlign="left";
   drawCanvasRadar(ctx,pd.topSubs,440,745,220,"rgba(225,29,72,0.24)","#e11d48");
   let iy1=520;const ix=840,iw=1320;
@@ -151,7 +151,7 @@ function buildPassportCanvas(overrideMO=null){
   let iy2=1145;
   pd.subBlocks.forEach(b=>{ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(ix,iy2+14);ctx.lineTo(ix+iw,iy2+14);ctx.stroke();ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";ctx.fillText(b.name,ix+14,iy2);ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(b.txt,ix+iw-14,iy2);ctx.textAlign="left";iy2+=64;});
   const cols=Array.of({t:"Экологический блок",a:pd.ekList},{t:"Социальный блок",a:pd.scList},{t:"Управленческо-экономический блок",a:pd.ueList});
-  const cw=690,by0=1760,rowStep=102;
+  const cw=700,by0=910,rowStep=160;
   cols.forEach((col,ci)=>{
     const cx0=50+ci*722,valColX=cx0+cw-115;
     ctx.fillStyle="#eef3f8";ctx.fillRect(cx0,by0,cw,48);ctx.strokeStyle="#94a3b8";ctx.strokeRect(cx0,by0,cw,48);

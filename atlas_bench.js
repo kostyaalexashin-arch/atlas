@@ -1,7 +1,7 @@
 function getSubBlockDivider(mId){
-  if(mId==="ЭК-01")return"Экологический блок (ЭК-01 — ЭК-13)";
-  if(mId==="СЦ-01")return"Социальный блок (СЦ-01 — СЦ-13)";
-  if(mId==="УЭ-01")return"Управленческо-экономический блок (УЭ-01 — УЭ-13)";
+  if(mId==="ЭК-01")return"Экологический блок";
+  if(mId==="СЦ-01")return"Социальный блок";
+  if(mId==="УЭ-01")return"Управленческо-экономический блок";
   return null;
 }
 const TOKEN_COLORS={"🔵":"#1d4ed8","🟥":"#dc2626","🟢":"#15803d","⭐":"#d97706","🟣":"#7e22ce","🔶":"#ea580c","⬛":"#0f172a"};
@@ -18,7 +18,7 @@ function getBenchRadarSeries(selMOs,yr,isCoh){
   };
 }
 function buildMultiRadarSvg(labels,series,keyField){
-  const W=330,H=225,cx=W/2,cy=H/2+4,R=80,n=labels.length;
+  const W=340,H=240,cx=W/2,cy=H/2+14,R=74,n=labels.length;
   let s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
   Array.of(0.25,0.5,0.75,1.0).forEach(lv=>{
     const pts=labels.map((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;return(cx+Math.cos(a)*R*lv).toFixed(1)+","+(cy+Math.sin(a)*R*lv).toFixed(1);}).join(" ");
@@ -285,7 +285,7 @@ function buildBenchCanvases(){
     let curY=topY;
     sub.forEach((it,ri)=>{
       const y=curY,rowH=it.kind==="radars"?step*5:step;curY+=rowH;
-      if(it.kind==="radars"){const rData=getBenchRadarSeries(selMOs,yr,isCoh);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,y+6,W-100,rowH-12);ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости (4)",610,y+34);ctx.fillText("Подблоки показателей (9)",1620,y+34);ctx.textAlign="left";const radR=Math.min(145,Math.floor((rowH-90)/2));drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,y+rowH/2+14,radR);drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,y+rowH/2+14,radR);return;}
+      if(it.kind==="radars"){const rData=getBenchRadarSeries(selMOs,yr,isCoh);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,y+6,W-100,rowH-12);ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости (4)",610,y+30);ctx.fillText("Подблоки показателей (9)",1620,y+30);ctx.textAlign="left";const radR=Math.min(125,Math.floor((rowH-130)/2));drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,y+rowH/2+26,radR);drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,y+rowH/2+26,radR);return;}
       if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,64,y+step/2+7);return;}
       if(it.kind==="subblk"){ctx.fillStyle="#f1f5f9";ctx.fillRect(50,y+6,W-100,step-12);ctx.fillStyle="#0369a1";ctx.fillRect(50,y+6,8,step-12);ctx.fillStyle="#0f172a";ctx.font="bold 20px 'Times New Roman'";ctx.fillText(it.txt,70,y+step/2+6);return;}
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(50,y+step);ctx.lineTo(W-50,y+step);ctx.stroke();
@@ -303,7 +303,7 @@ function buildBenchCanvases(){
         return;
       }
       const m=it.m,valMap=(!isCoh&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
-      ctx.fillStyle="#111111";ctx.font="19.5px 'Times New Roman'";const tLines=wrapBenchTitle(ctx,cleanBenchMetName(m),960),lH=22,stY=y+(step-(tLines.length-1)*lH)/2+6;
+      ctx.fillStyle="#111111";ctx.font="19.5px 'Times New Roman'";const tLines=wrapBenchTitle(ctx,cleanBenchMetName(m),1215),lH=22,stY=y+(step-(tLines.length-1)*lH)/2+6;
       tLines.forEach((ln,li)=>ctx.fillText(ln,56,stY+li*lH));
       if(m.cat||m.is_cat){
         const cw=Math.floor(sw/7),ch=Math.min(62,step-10),cy=y+(step-ch)/2;
