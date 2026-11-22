@@ -1,4 +1,10 @@
-const TOKEN_COLORS={"🔵":"#2563eb","🟥":"#dc2626","🔺":"#e11d48","💠":"#0284c7","⭐":"#d97706","🟢":"#16a34a","🟣":"#7c3aed","🔶":"#ea580c","⬛":"#1e293b","🩷":"#db2777"};
+function getSubBlockDivider(mId){
+  if(mId==="ЭК-01")return"Экологический блок (ЭК-01 — ЭК-13)";
+  if(mId==="СЦ-01")return"Социальный блок (СЦ-01 — СЦ-13)";
+  if(mId==="УЭ-01")return"Управленческо-экономический блок (УЭ-01 — УЭ-13)";
+  return null;
+}
+const TOKEN_COLORS={"🔵":"#1d4ed8","🟥":"#dc2626","🟢":"#15803d","⭐":"#d97706","🟣":"#7e22ce","🔶":"#ea580c","⬛":"#0f172a"};
 function hexToRgba(hex,a){const h=String(hex||"#2563eb").replace("#","");return"rgba("+parseInt(h.slice(0,2),16)+","+parseInt(h.slice(2,4),16)+","+parseInt(h.slice(4,6),16)+","+a+")";}
 function getBenchRadarSeries(selMOs,yr,isCoh){
   const findM=pat=>DATA.metrics.find(m=>m.id===pat||m.title.includes(pat));
@@ -49,7 +55,7 @@ function cleanBenchMetName(m){
   if(/^(ЭК|СЦ|УЭ)-\d+/.test(id))return id+" — "+t;
   return t;
 }
-const MONOPOLY_TOKENS=Array.of("🔵","🟥","🔺","💠","⭐","🟢","🟣","🔶","⬛","🩷");
+const MONOPOLY_TOKENS=Array.of("🔵","🟥","🟢","⭐","🟣","🔶","⬛");
 const CAT_HOUSES=Array.of({c:"1",lbl:"Крупнейшие"},{c:"2",lbl:"Крупные"},{c:"3",lbl:"Большие"},{c:"4",lbl:"Средние"},{c:"5",lbl:"Малые"});
 let BENCH_STATE={mainKey:null,compKeys:Array.of(),tokens:{},inited:false,refreshFn:null};
 
@@ -209,6 +215,7 @@ function renderBenchmark(){
       const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=cleanBenchGroup(g.name);view.appendChild(gh);
     }
     g.items.forEach(m=>{
+      const divT=getSubBlockDivider(m.id);if(divT){const dh=document.createElement("div");dh.style.cssText="background:#f1f5f9;color:#1e293b;font-weight:bold;font-size:12px;padding:4px 8px;border-left:3px solid #0284c7;margin:4px 0 2px 0;";dh.textContent=divT;view.appendChild(dh);}
       const valMap=((m.cat||m.is_cat||!isCoh)&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
       const row=document.createElement("div");row.className="bench-row";const nm=document.createElement("div");nm.className="bench-met-name";nm.textContent=cleanBenchMetName(m);row.appendChild(nm);
       if(m.cat||m.is_cat){
@@ -259,7 +266,7 @@ function buildBenchCanvases(){
   groups.forEach((g,gi)=>{
     if(gi===0){rows.push({kind:"cat"});}
     rows.push({kind:"blk",txt:cleanBenchGroup(g.name)});
-    g.items.forEach(m=>rows.push({kind:"met",m}));
+    g.items.forEach(m=>{const divT=getSubBlockDivider(m.id);if(divT)rows.push({kind:"subblk",txt:divT});rows.push({kind:"met",m});});
     if(g.name.startsWith("4."))rows.push({kind:"radars"});
   });
   const splitIdx=Math.ceil(rows.length/2),pagesRows=Array.of(rows.slice(0,splitIdx),rows.slice(splitIdx));
@@ -278,6 +285,7 @@ function buildBenchCanvases(){
       const y=curY,rowH=it.kind==="radars"?step*5:step;curY+=rowH;
       if(it.kind==="radars"){const rData=getBenchRadarSeries(selMOs,yr,isCoh);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,y+6,W-100,rowH-12);ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости (4)",610,y+34);ctx.fillText("Подблоки показателей (9)",1620,y+34);ctx.textAlign="left";const radR=Math.min(145,Math.floor((rowH-90)/2));drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,y+rowH/2+14,radR);drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,y+rowH/2+14,radR);return;}
       if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,64,y+step-14);return;}
+      if(it.kind==="subblk"){ctx.fillStyle="#f1f5f9";ctx.fillRect(50,y+6,W-100,step-12);ctx.fillStyle="#0369a1";ctx.fillRect(50,y+6,8,step-12);ctx.fillStyle="#0f172a";ctx.font="bold 20px 'Times New Roman'";ctx.fillText(it.txt,70,y+step-15);return;}
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(50,y+step);ctx.lineTo(W-50,y+step);ctx.stroke();
       const sx=1040,sw=W-1090;
       if(it.kind==="cat"){
