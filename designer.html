@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Конструктор и отладчик макетов Атласа</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Times New Roman',serif;background:#e2e8f0;color:#111;display:flex;height:100vh;overflow:hidden}
+.side{width:340px;background:#fff;border-right:1px solid #94a3b8;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.side h2{font-size:16px;border-bottom:2px solid #0f172a;padding-bottom:4px}
+.grp{border:1px solid #cbd5e1;border-radius:4px;padding:8px;background:#f8fafc;display:flex;flex-direction:column;gap:6px}
+.grp-t{font-weight:bold;font-size:13px;color:#0f172a}
+label{font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+input[type=range]{width:130px}
+select,button{height:28px;font-family:inherit;font-size:12.5px;border:1px solid #64748b;border-radius:3px;padding:0 6px}
+.btn-p{background:#0284c7;color:#fff;border:none;font-weight:bold;cursor:pointer}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;overflow:auto;gap:10px}
+canvas{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.2);max-width:100%;height:auto}
+textarea{width:100%;height:84px;font-family:monospace;font-size:11px;padding:4px;border:1px solid #94a3b8}
+</style>
+</head>
+<body>
+<div class="side">
+  <h2>🛠 Отладчик макетов Атласа</h2>
+  <label><b>Макет листа:</b>
+    <select id="dMode">
+      <option value="passport">Цифровой паспорт МО (А4 книж.)</option>
+      <option value="bench">Бенчмаркинг МО (А4 книж.)</option>
+      <option value="table">Таблица динамики (А4 альб.)</option>
+      <option value="map">Карта территории (А4 альб.)</option>
+    </select>
+  </label>
+  <div class="grp">
+    <div class="grp-t">1. Типографика и шрифты</div>
+    <label>Заголовок листа: <span id="vH1">42</span>px <input type="range" id="rH1" min="28" max="72" value="42"></label>
+    <label>Подзаголовок: <span id="vH2">30</span>px <input type="range" id="rH2" min="20" max="54" value="30"></label>
+    <label>Основной текст / таблицы: <span id="vBody">20</span>px <input type="range" id="rBody" min="14" max="32" value="20"></label>
+    <label>Подписи шкалы / легенды: <span id="vLeg">26</span>px <input type="range" id="rLeg" min="16" max="40" value="26"></label>
+  </div>
+  <div class="grp">
+    <div class="grp-t">2. Геометрия и пропорции</div>
+    <label>Ширина колонки названий: <span id="vColW">1360</span>px <input type="range" id="rColW" min="900" max="1650" value="1360"></label>
+    <label>Радиус лепестковых диаграмм: <span id="vRad">155</span>px <input type="range" id="rRad" min="100" max="210" value="155"></label>
+    <label>Прозрачность заливки диаграмм: <span id="vAlpha">0.16</span> <input type="range" id="rAlpha" min="0.04" max="0.40" step="0.02" value="0.16"></label>
+  </div>
+  <div class="grp">
+    <div class="grp-t">3. Состав и порядок блоков</div>
+    <label><input type="checkbox" id="cMeta" checked> Блок общей характеристики</label>
+    <label><input type="checkbox" id="cSubRad" checked> Диаграмма субиндексов</label>
+    <label><input type="checkbox" id="cMidTbl" checked> Таблица субиндексов и подблоков</label>
+    <label><input type="checkbox" id="cBlkRad" checked> Диаграмма подблоков</label>
+    <label><input type="checkbox" id="c39" checked> Блок 39 частных показателей</label>
+    <label><input type="checkbox" id="cInvScale" checked> Шкала дестимуляторов: зелёный справа</label>
+  </div>
+  <button type="button" class="btn-p" id="btnDlTest">💾 Скачать тестовый PNG (300 dpi)</button>
+  <div class="grp">
+    <div class="grp-t">Параметры для переноса в код:</div>
+    <textarea id="cfgOut" readonly></textarea>
+  </div>
+</div>
+<div class="main">
+  <canvas id="prevCv" width="1117" height="1579"></canvas>
+</div>
+<script>
+const cv=document.getElementById("prevCv"),ctx=cv.getContext("2d");
+function drawPreview(){
+  const mode=document.getElementById("dMode").value;
+  const h1=+document.getElementById("rH1").value,h2=+document.getElementById("rH2").value,body=+document.getElementById("rBody").value,leg=+document.getElementById("rLeg").value;
+  const colW=+document.getElementById("rColW").value,rad=+document.getElementById("rRad").value,alpha=+document.getElementById("rAlpha").value;
+  document.getElementById("vH1").textContent=h1;document.getElementById("vH2").textContent=h2;document.getElementById("vBody").textContent=body;
+  document.getElementById("vLeg").textContent=leg;document.getElementById("vColW").textContent=colW;document.getElementById("vRad").textContent=rad;document.getElementById("vAlpha").textContent=alpha;
+
+  const isPort=(mode==="passport"||mode==="bench"),W=isPort?2234:3508,H=isPort?3158:2480;
+  cv.width=Math.round(W*0.42);cv.height=Math.round(H*0.42);
+  ctx.save();ctx.scale(0.42,0.42);
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.strokeStyle="#111";ctx.lineWidth=3;ctx.strokeRect(20,20,W-40,H-40);
+
+  ctx.textAlign="center";ctx.fillStyle="#111";ctx.font="bold "+h1+"px 'Times New Roman'";
+  const titles={passport:"Цифровой паспорт устойчивости муниципального образования",bench:"Многокритериальный бенчмаркинг муниципальных образований",table:"Динамика показателей устойчивого развития (2019–2024 гг.)",map:"Пространственное распределение показателя устойчивого развития"};
+  ctx.fillText(titles[mode],W/2,78);
+  ctx.font="bold "+h2+"px 'Times New Roman'";ctx.fillText("Эталонный макет предпросмотра (А4, 300/1200 dpi)",W/2,88+h1);
+  ctx.textAlign="left";
+
+  let y=120+h1;
+  if(mode==="passport"){
+    if(document.getElementById("cMeta").checked){
+      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,y,W-90,104);ctx.font="bold "+(body+4)+"px 'Times New Roman'";
+      ctx.fillText("Кластер (2024 г.): Б. Эколого-социальный вектор",70,y+40);ctx.fillText("Категория: Малые (≤ 50 тыс. чел.)",1150,y+40);
+      ctx.fillText("Площадь, га: 246 113",70,y+84);ctx.fillText("Численность, чел.: 48 352",1150,y+84);y+=124;
+    }
+    const showSub=document.getElementById("cSubRad").checked,showMid=document.getElementById("cMidTbl").checked,showBlk=document.getElementById("cBlkRad").checked;
+    if(showSub||showMid||showBlk){
+      const midH=Math.max(rad*2+120,560);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,y,W-90,midH);
+      const drawR=(cx,cy,lbls)=>{
+        const n=lbls.length;ctx.strokeStyle="#cbd5e1";
+        [0.33,0.66,1].forEach(lv=>{ctx.beginPath();lbls.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n,x=cx+Math.cos(a)*rad*lv,yy=cy+Math.sin(a)*rad*lv;i?ctx.lineTo(x,yy):ctx.moveTo(x,yy);});ctx.closePath();ctx.stroke();});
+        lbls.forEach((l,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;ctx.fillStyle="#111";ctx.font="bold "+body+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(l,cx+Math.cos(a)*(rad+28),cy+Math.sin(a)*(rad+22));});
+        ctx.beginPath();lbls.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n,v=0.62+0.15*Math.sin(i*2),x=cx+Math.cos(a)*rad*v,yy=cy+Math.sin(a)*rad*v;i?ctx.lineTo(x,yy):ctx.moveTo(x,yy);});ctx.closePath();ctx.fillStyle="rgba(29,78,216,"+alpha+")";ctx.fill();ctx.strokeStyle="#1d4ed8";ctx.lineWidth=3;ctx.stroke();ctx.textAlign="left";
+      };
+      if(showSub)drawR(300,y+midH/2+15,["ЭК","СЦ","УЭ","IQ"]);
+      if(showBlk)drawR(W-300,y+midH/2+15,["ЭК-1","ЭК-2","ЭК-3","СЦ-1","СЦ-2","СЦ-3","УЭ-1","УЭ-2","УЭ-3"]);
+      if(showMid){
+        const tx0=showSub?550:70,tw=(showBlk?W-550:W-70)-tx0;
+        ["Интегральный индекс устойчивого развития","Экологический субиндекс","  ЭК-1. Качество окружающей среды","Социальный субиндекс","  СЦ-1. Демография и здравоохранение","Управленческо-экономический субиндекс","  УЭ-1. Производственно-инвестиционный потенциал"].forEach((nm,ri)=>{
+          const ry=y+24+ri*(body+16);ctx.fillStyle=nm.startsWith("  ")?"#fff":"#eef3f8";ctx.fillRect(tx0,ry,tw,body+14);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(tx0,ry,tw,body+14);
+          ctx.fillStyle="#111";ctx.font=(nm.startsWith("  ")?"":"bold ")+body+"px 'Times New Roman'";ctx.fillText(nm,tx0+12,ry+body+4);
+        });
+      }
+      y+=midH+20;
+    }
+    if(document.getElementById("c39").checked){
+      const cw=(W-128)/3;
+      ["Экологический блок","Социальный блок","Управленческо-экономический блок"].forEach((bt,bi)=>{
+        const bx=45+bi*(cw+19);ctx.fillStyle="#e2e8f0";ctx.fillRect(bx,y,cw,42);ctx.strokeStyle="#64748b";ctx.strokeRect(bx,y,cw,42);
+        ctx.fillStyle="#111";ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(bt,bx+cw/2,y+28);ctx.textAlign="left";
+        for(let r=0;r<6;r++){const ry=y+42+r*95;ctx.strokeStyle="#cbd5e1";ctx.strokeRect(bx,ry,cw,95);ctx.font=body+"px 'Times New Roman'";ctx.fillText("Показатель "+(r+1)+" (пример переноса строки)",bx+10,ry+38);}
+      });
+    }
+  }else if(mode==="bench"){
+    ctx.strokeStyle="#64748b";ctx.strokeRect(45,y,colW,60);ctx.strokeRect(45+colW,y,W-90-colW,60);
+    ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.fillText("Показатель (ширина: "+colW+" px)",60,y+38);ctx.fillText("Значения МО",65+colW,y+38);
+    for(let r=0;r<12;r++){const ry=y+60+r*64;ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,ry,colW,64);ctx.strokeRect(45+colW,ry,W-90-colW,64);ctx.font=body+"px 'Times New Roman'";ctx.fillText("ЭК-0"+(r+1)+" — Наименование показателя в колонке "+colW+" px",60,ry+40);}
+  }else{
+    ctx.strokeStyle="#94a3b8";ctx.strokeRect(45,y,W-90,H-y-180);
+    ctx.font="bold "+(body+6)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(mode==="map"?"Область карты территории":"Область таблицы динамики 2019–2024 гг.",W/2,(H+y-180)/2);ctx.textAlign="left";
+  }
+
+  // Шкала внизу
+  const fy=H-140,inv=document.getElementById("cInvScale").checked;
+  const grd=ctx.createLinearGradient(W-920,0,W-60,0);
+  grd.addColorStop(0,"#a50026");grd.addColorStop(0.5,"#ffffbf");grd.addColorStop(1,"#006837");
+  ctx.fillStyle=grd;ctx.fillRect(W-920,fy,860,30);ctx.strokeStyle="#475569";ctx.strokeRect(W-920,fy,860,30);
+  ctx.fillStyle="#111";ctx.font="bold "+leg+"px 'Times New Roman'";
+  ctx.fillText(inv?"71,00 (худшее)":"4,50",W-920,fy+62);ctx.textAlign="right";ctx.fillText(inv?"4,50 (лучшее)":"71,00",W-60,fy+62);ctx.textAlign="left";
+  ctx.restore();
+  document.getElementById("cfgOut").value=JSON.stringify({mode,h1,h2,body,leg,colW,rad,alpha,invScale:inv},null,2);
+  }
+  document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",drawPreview));
+  ocument.getElementById("btnDlTest").onclick=()=>{const a=document.createElement("a");a.download="Макет_"+document.getElementById("dMode").value+".png";a.href=cv.toDataURL("image/png");a.click();};
+  drawPreview();
+
+

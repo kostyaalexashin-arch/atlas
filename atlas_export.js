@@ -523,14 +523,16 @@ async function runControl1200DpiPdf(){
   const flushVol=()=>{
     if(!pdfPages.length)return;
     const a=document.createElement("a");a.download="Контрольный_пакет_1200dpi_Том_"+String(partIdx).padStart(2,"0")+".pdf";
-    a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();pdfPages=Array.of();partIdx++;
+    const u=URL.createObjectURL(buildPdfBlob(pdfPages));a.href=u;a.click();setTimeout(()=>URL.revokeObjectURL(u),15000);pdfPages=Array.of();partIdx++;
   };
   const pushCv=cv=>{
     if(!cv)return;
-    const b64=cv.toDataURL("image/jpeg",0.86).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+    const w=cv.width,h=cv.height,b64=cv.toDataURL("image/jpeg",0.84).split(",").at(1);
+    cv.width=0;cv.height=0;
+    const bin=atob(b64),arr=new Uint8Array(bin.length);
     for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
-    pdfPages.push({w:cv.width,h:cv.height,jpg:arr});
-    if(pdfPages.length>=50)flushVol();
+    pdfPages.push({w,h,jpg:arr});
+    if(pdfPages.length>=25)flushVol();
   };
 
   if(btn)btn.disabled=true;
