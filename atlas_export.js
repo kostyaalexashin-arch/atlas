@@ -363,17 +363,48 @@ async function buildSheetCanvas(){
       ctx.putImageData(idt,40,155);
     }
     
-    if(window._expCorePins&&window._expCorePins.length>0){
-      window._expCorePins.forEach(p=>{
-        const lx=40+p.rx*mapW,ly=155+p.ry*mapH;
-        ctx.save();
-        ctx.font="bold 24px 'Times New Roman', serif";
-        const tw=ctx.measureText(p.txt).width,bw=tw+16,bh=34;
-        ctx.fillStyle="rgba(255,255,255,0.95)";ctx.fillRect(lx-bw/2,ly-bh/2,bw,bh);
-        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.2;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
-        ctx.fillStyle="#111111";ctx.textAlign="center";ctx.textBaseline="middle";
-        ctx.fillText(p.txt,lx,ly+1);ctx.restore();
+    if(fo!=="RF"&&reg==="ALL"){
+      const fl=mapEl._fullLayout,w0=fl?fl.width:1540,h0=fl?fl.height:972;
+      const geoKeys=["geo","geo2","geo3","geo4"];
+      const coreFeats=GEO.features.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке"&&(f.properties.fo===fo));
+      const ptsOnCanvas=[],placedBadges=[];
+      coreFeats.forEach(f=>{
+        const c=f.properties._cent;if(!c)return;
+        for(const gk of geoKeys){
+          const sub=fl&&fl[gk]&&fl[gk]._subplot,proj=sub&&sub.projection;
+          if(!proj)continue;
+          const xy=proj([c.lon,c.lat]);
+          if(!xy||!Number.isFinite(xy.at(0))||!Number.isFinite(xy.at(1)))continue;
+          const domX=fl[gk].domain?fl[gk].domain.x:[0,1],domY=fl[gk].domain?fl[gk].domain.y:[0,1];
+          const rx=xy.at(0)/w0,ry=xy.at(1)/h0;
+          if(rx>=domX.at(0)-0.01&&rx<=domX.at(1)+0.01&&ry>=(1-domY.at(1))-0.01&&ry<=(1-domY.at(0))+0.01){
+            ptsOnCanvas.push({cx:40+rx*mapW,cy:155+ry*mapH,lbl:String(f.properties._lbl||"").trim()});
+            break;
+          }
+        }
       });
+      ptsOnCanvas.sort((a,b)=>a.cy-b.cy);
+      ctx.save();
+      ctx.font="bold 24px 'Times New Roman', serif";
+      const dirs=[[0,-1],,[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],,[-1,0],[0,-1.65],[0,1.65],[1.45,-1.1],[-1.45,-1.1],[1.45,1.1],[-1.45,1.1]];
+      ptsOnCanvas.forEach(pt=>{
+        if(!pt.lbl)return;
+        const tw=ctx.measureText(pt.lbl).width,bw=tw+16,bh=34;
+        let bestX=pt.cx,bestY=pt.cy-34;
+        for(const d of dirs){
+          const lx=pt.cx+Math.round(d.at(0)*66),ly=pt.cy+Math.round(d.at(1)*34);
+          if(lx-bw*0.5<48||lx+bw*0.5>40+mapW-8||ly-bh*0.5<163||ly+bh*0.5>155+mapH-8)continue;
+          const hitB=placedBadges.some(b=>Math.abs(lx-b.x)<(bw+b.w)*0.5+6&&Math.abs(ly-b.y)<(bh+b.h)*0.5+4);
+          const hitP=ptsOnCanvas.some(p=>Math.abs(lx-p.cx)<bw*0.5+14&&Math.abs(ly-p.cy)<bh*0.5+14);
+          if(!hitB&&!hitP){bestX=lx;bestY=ly;break;}
+        }
+        placedBadges.push({x:bestX,y:bestY,w:bw,h:bh});
+        ctx.fillStyle="rgba(255,255,255,0.95)";ctx.fillRect(bestX-bw/2,bestY-bh/2,bw,bh);
+        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.2;ctx.strokeRect(bestX-bw/2,bestY-bh/2,bw,bh);
+        ctx.fillStyle="#111111";ctx.textAlign="center";ctx.textBaseline="middle";
+        ctx.fillText(pt.lbl,bestX,bestY+1);
+      });
+      ctx.restore();
     }
     const sbEl=mapEl.querySelector("#mapScaleBarG");
     if(sbEl){
