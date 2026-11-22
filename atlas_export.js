@@ -424,6 +424,7 @@ async function buildSheetCanvas(){
   }
 }
 
+}
 async function exportFullSheetPng(){
   const mVal=document.getElementById("selMode").value;
   if(mVal==="table"){
@@ -457,6 +458,7 @@ function buildPdfBlob(pages){
   for(let i=1;i<3+n*3;i++)push(String(offs[i]).padStart(10,"0")+" 00000 n \n");
   push("trailer\n<< /Size "+(3+n*3)+" /Root 1 0 R >>\nstartxref\n"+xPos+"\n%%EOF");
   return new Blob(chunks,{type:"application/pdf"});
+}
 async function exportBatchPdf(){
   const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
   const curM=document.getElementById("selMode").value;
@@ -669,19 +671,24 @@ const btn=document.getElementById("btnCtrl1200");
       const it=tblTerrs.at(i);sMet.value=allMets.at((i*3)%allMets.length);setTerr(it.fo,it.reg);
       const cs=buildTableCanvases(true);if(cs.length)pushCv(cs.at(0));await bgTick(15);
     }
-    // Этап 3: 40 случайных сравнений Бенчмаркинга
+    // Этап 3: 10 сравнений Бенчмаркинга (2 по 2 МО, 2 по 3 МО, 3 по 4 МО, 3 по 5 МО)
+    const _ctrlCustom = window._buildCustomCtrlTasks(_allCtrlMos);
+    const _ctrlBench = _ctrlCustom.benchTasks.length ? _ctrlCustom.benchTasks : benchPairs.slice(0,10).map(p=>({mos:[p.m1,p.m2]}));
+    const _ctrlPass  = _ctrlCustom.passTasks.length  ? _ctrlCustom.passTasks  : passList.slice(0,10);
+    const _tokPool = ["🔵","🟥","🟩","🟨","🟪"];
     sMode.value="bench";syncControls();initBenchControls();
-    for(let i=0;i<benchPairs.length;i++){
-      if(btn)btn.textContent="3/4 Бенчмаркинг: "+(i+1)+"/"+benchPairs.length;
-      const {m1,m2}=benchPairs.at(i);BENCH_STATE.mainKey=m1.key;BENCH_STATE.compKeys=Array.of(m2.key);
-      BENCH_STATE.tokens[m1.key]="🔵";BENCH_STATE.tokens[m2.key]="🟥";
+    for(let i=0;i<_ctrlBench.length;i++){
+      if(btn)btn.textContent="3/4 Бенчмаркинг: "+(i+1)+"/"+_ctrlBench.length;
+      const grp=_ctrlBench.at(i).mos||[];if(grp.length<2)continue;
+      BENCH_STATE.mainKey=grp.at(0).key;BENCH_STATE.compKeys=grp.slice(1).map(x=>x.key);
+      grp.forEach((x,ti)=>{BENCH_STATE.tokens[x.key]=_tokPool.at(ti%_tokPool.length);});
       buildBenchCanvases().forEach(cv=>pushCv(cv));await bgTick(15);
     }
-    // Этап 4: 40 случайных Цифровых паспортов МО
+    // Этап 4: 10 Цифровых паспортов МО (разные категории, ФО и регионы)
     sMode.value="passport";syncControls();initPassportControls();
-    for(let i=0;i<passList.length;i++){
-      if(btn)btn.textContent="4/4 Паспорта: "+(i+1)+"/"+passList.length;
-      const mo=passList.at(i);document.getElementById("pYear").value=mo.coh?"2023":"2024";
+    for(let i=0;i<_ctrlPass.length;i++){
+      if(btn)btn.textContent="4/4 Паспорта: "+(i+1)+"/"+_ctrlPass.length;
+      const mo=_ctrlPass.at(i);document.getElementById("pYear").value=mo.coh?"2023":"2024";
       pushCv(await buildPassportCanvas(mo));await bgTick(15);
     }
     flushVol();
@@ -690,8 +697,11 @@ const btn=document.getElementById("btnCtrl1200");
     sDpi.value=orig.dpi;sMode.value=orig.mode;sBase.value=orig.base;sYr.value=orig.yr;sMet.value=orig.met;
     setTerr(orig.fo,orig.reg);syncControls();render();
     if(btn){btn.disabled=false;btn.textContent="🧪 Контроль 1200 dpi (PDF)";}
-  }
+
 }
 }
 }
-}
+window.exportFullSheetPng = exportFullSheetPng;
+window.exportBatchPdf = exportBatchPdf;
+window.runCustomBatchExport = runCustomBatchExport;
+window.runControl1200DpiPdf = runControl1200DpiPdf;
