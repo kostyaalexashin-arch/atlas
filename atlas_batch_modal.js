@@ -37,7 +37,8 @@ function initBatchModal(){
     if(c2T)c2T.textContent=mode==="bench"?"Группа сравнения (с кем сравниваем):":(mode==="passport"?"2. Состав паспорта":"2. Показатели и блоки");
     document.getElementById("bmAllTerr").parentElement.style.display=(mode==="bench"||mode==="passport")?"none":"";
     document.getElementById("bmAllMet").parentElement.style.display=(mode==="bench"||mode==="passport")?"none":"";
-    document.getElementById("bmAllYr").parentElement.style.display=(mode==="grid"||mode==="table")?"none":"";
+    document.getElementById("bmAllYr").parentElement.style.display=(mode==="table")?"none":"";
+    const mw=document.getElementById("bmMergeWrap");if(mw)mw.style.display=(mode==="table")?"flex":"none";
     document.getElementById("bmAllYr").checked=false;
     if(mode==="bench"){
       initBenchControls();const all=getBenchMOs(),curK=BENCH_STATE.mainKey||(all.at(0)?.key||""),curY=document.getElementById("bYear")?.value||"2024";
@@ -76,14 +77,14 @@ function initBatchModal(){
       document.getElementById("bmAllYr").onchange=e=>{modal.querySelectorAll(".bm-y-chk").forEach(c=>c.checked=e.target.checked);updSum();};
       modal.querySelectorAll("select,input").forEach(el=>el.addEventListener("change",updSum));updSum();modal.classList.add("open");return;
     }
-    const isCoh=(mode==="grid"||mode==="table"||document.getElementById("selBase").value==="coh"),cohRegs=new Set(GEO.features.filter(f=>f.properties.coh&&f.properties._map_status==="В_выборке").map(f=>f.properties.region));
+    const isCoh=(mode==="table"||document.getElementById("selBase").value==="coh"),cohRegs=new Set(GEO.features.filter(f=>f.properties.coh&&f.properties._map_status==="В_выборке").map(f=>f.properties.region));
     tList.innerHTML='<label class="bm-grp"><input type="checkbox" class="bm-t-chk" data-fo="RF" data-reg="ALL" checked> Российская Федерация (вся РФ)</label>';
     DATA.fos.forEach(fo=>{tList.insertAdjacentHTML("beforeend",'<label class="bm-grp"><input type="checkbox" class="bm-t-chk" data-fo="'+fo+'" data-reg="ALL"> '+fo+' ФО (целиком)</label>');(DATA.fo_to_regs[fo]||Array.of()).forEach(reg=>{if(!isCoh||cohRegs.has(reg))tList.insertAdjacentHTML("beforeend",'<label class="bm-item"><input type="checkbox" class="bm-t-chk" data-fo="'+fo+'" data-reg="'+reg+'"> '+reg+'</label>');});});
     mList.innerHTML="";const curM=document.getElementById("selMetric").value,grps=Array.of();
     DATA.metrics.forEach(m=>{if((mode==="table"||mode==="grid")&&(m.cat||m.is_cat))return;let g=grps.find(x=>x.name===m.group);if(!g){g={name:m.group,items:Array.of()};grps.push(g);}g.items.push(m);});
     grps.forEach((g,gi)=>{const gId="bmGrp_"+gi;mList.insertAdjacentHTML("beforeend",'<label class="bm-grp"><input type="checkbox" class="bm-g-chk" data-gid="'+gId+'"> '+g.name+'</label>');g.items.forEach(m=>{if(m.id==="ЭК-01"||m.id==="СЦ-01"||m.id==="УЭ-01")mList.insertAdjacentHTML("beforeend",'<div style="font-weight:bold;font-size:11.5px;color:#0369a1;padding:3px 0 1px 8px;">'+(m.id==="ЭК-01"?"Экологический блок (ЭК-01 — ЭК-13)":(m.id==="СЦ-01"?"Социальный блок (СЦ-01 — СЦ-13)":"Управленческо-экономический блок (УЭ-01 — УЭ-13)"))+'</div>');mList.insertAdjacentHTML("beforeend",'<label class="bm-item"><input type="checkbox" class="bm-m-chk" data-gid="'+gId+'" value="'+m.id+'" '+(m.id===curM?"checked":"")+'> '+m.id+' — '+m.title+'</label>');});});
     const curY=document.getElementById("selYear").value;
-    yList.innerHTML=(mode==="grid"||mode==="table")?'<div style="color:#475569;padding:4px;">Весь период (2019–2024 гг.)</div>':(!isCoh?'<label class="bm-item"><input type="checkbox" class="bm-y-chk" value="2024" checked disabled> 2024 г. (срез)</label>':Array.of("2019","2020","2021","2022","2023","2024").map(y=>'<label class="bm-item"><input type="checkbox" class="bm-y-chk" value="'+y+'" '+(y===curY?"checked":"")+'> '+y+' г.</label>').join(""));
+    yList.innerHTML=(mode==="table")?'<div style="color:#475569;padding:4px;">Весь период (2019–2024 гг.)</div>':(!isCoh?'<label class="bm-item"><input type="checkbox" class="bm-y-chk" value="2024" checked disabled> 2024 г. (срез)</label>':Array.of("2019","2020","2021","2022","2023","2024").map(y=>'<label class="bm-item"><input type="checkbox" class="bm-y-chk" value="'+y+'" '+(y===curY?"checked":"")+'> '+y+' г.</label>').join(""));
     modal.querySelectorAll(".bm-g-chk").forEach(gc=>{gc.onchange=()=>{modal.querySelectorAll('.bm-m-chk[data-gid="'+gc.dataset.gid+'"]').forEach(mc=>mc.checked=gc.checked);updSum();};});
     document.getElementById("bmAllTerr").onchange=e=>{modal.querySelectorAll(".bm-t-chk").forEach(c=>c.checked=e.target.checked);updSum();};
     document.getElementById("bmAllMet").onchange=e=>{modal.querySelectorAll(".bm-m-chk,.bm-g-chk").forEach(c=>c.checked=e.target.checked);updSum();};

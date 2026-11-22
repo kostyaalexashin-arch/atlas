@@ -88,7 +88,7 @@ function syncControls(){
     const curMM=DATA.metrics.find(x=>x.id===sMet.value);
     if(isTbl&&curMM&&(curMM.cat||curMM.is_cat)){const okOpt=Array.from(sMet.options).find(o=>{const mm=DATA.metrics.find(x=>x.id===o.value);return mm&&!(mm.cat||mm.is_cat);});if(okOpt)sMet.value=okOpt.value;}
   }
-  if(sM.value==="grid"||sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
+  if(sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
   else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
 }
 function stepSelect(selId,dir){const el=document.getElementById(selId);if(!el||el.options.length===0)return;el.selectedIndex=(el.selectedIndex+dir+el.options.length)%el.options.length;el.dispatchEvent(new Event("change"));}
