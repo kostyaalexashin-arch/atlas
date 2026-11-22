@@ -231,19 +231,11 @@ async function buildSheetCanvas(){
     }else if(window._badgesReady){
       await window._badgesReady;
       savedAnns=(mapEl.layout.annotations||Array.of()).slice();
-      const fl=mapEl._fullLayout,sub=fl&&fl.geo&&fl.geo._subplot,proj=sub&&sub.projection;
-      const w0=fl?fl.width:1540,h0=fl?fl.height:740;
-      const coreFeats=GEO.features.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
-      window._expCorePins=savedAnns.filter(a=>a._isCore).map(a=>{
-        const txt=String(a.text||"").replace(/<[^>]+>/g,"").trim();
-        let rx=a.x,ry=1-a.y;
-        const cf=coreFeats.find(f=>String(f.properties._lbl||"").trim()===txt);
-        if(cf&&proj&&cf.properties._cent){
-          const xy=proj([cf.properties._cent.lon,cf.properties._cent.lat]);
-          if(xy&&Number.isFinite(xy.at(0))){rx=xy.at(0)/w0;ry=xy.at(1)/h0;}
-        }
-        return{rx,ry,ax:a.ax||0,ay:a.ay||0,txt};
-      });
+      window._expCorePins=savedAnns.filter(a=>a._isCore).map(a=>({
+        rx:a.x,
+        ry:1-a.y,
+        txt:String(a.text||"").replace(/<[^>]+>/g,"").trim()
+      }));
       await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
     }
 
@@ -264,13 +256,12 @@ async function buildSheetCanvas(){
     ctx.drawImage(mapImg,40,155,mapW,mapH);
     if(window._expCorePins&&window._expCorePins.length>0){
       window._expCorePins.forEach(p=>{
-        const cx=40+p.rx*mapW,cy=155+p.ry*mapH,lx=cx+p.ax*2,ly=cy+p.ay*2;
-        ctx.save();ctx.strokeStyle="#e6007e";ctx.lineWidth=2.6;
-        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(lx,ly);ctx.stroke();
-        ctx.font="bold 24px 'Times New Roman', serif";
-        const tw=ctx.measureText(p.txt).width,bw=tw+16,bh=34;
-        ctx.fillStyle="rgba(255,255,255,0.96)";ctx.fillRect(lx-bw/2,ly-bh/2,bw,bh);
-        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.2;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
+        const lx=40+p.rx*mapW,ly=155+p.ry*mapH;
+        ctx.save();
+        ctx.font="bold 23px 'Times New Roman', serif";
+        const tw=ctx.measureText(p.txt).width,bw=tw+14,bh=32;
+        ctx.fillStyle="rgba(255,255,255,0.95)";ctx.fillRect(lx-bw/2,ly-bh/2,bw,bh);
+        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.0;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
         ctx.fillStyle="#111111";ctx.textAlign="center";ctx.textBaseline="middle";
         ctx.fillText(p.txt,lx,ly+1);ctx.restore();
       });
