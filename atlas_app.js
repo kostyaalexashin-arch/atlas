@@ -84,8 +84,9 @@ function syncControls(){
   const sMet=document.getElementById("selMetric");
   if(sMet){
     const isTbl=(sM.value==="table");
-    Array.from(sMet.querySelectorAll("optgroup")).forEach(og=>{if(og.label.startsWith("0."))og.style.display=isTbl?"none":"";});
-    if(isTbl&&sMet.value==="Кластер 2024"){const okOpt=Array.from(sMet.options).find(o=>o.value!=="Кластер 2024");if(okOpt)sMet.value=okOpt.value;}
+    Array.from(sMet.options).forEach(opt=>{const mm=DATA.metrics.find(x=>x.id===opt.value);opt.style.display=(isTbl&&mm&&(mm.cat||mm.is_cat))?"none":"";});
+    const curMM=DATA.metrics.find(x=>x.id===sMet.value);
+    if(isTbl&&curMM&&(curMM.cat||curMM.is_cat)){const okOpt=Array.from(sMet.options).find(o=>{const mm=DATA.metrics.find(x=>x.id===o.value);return mm&&!(mm.cat||mm.is_cat);});if(okOpt)sMet.value=okOpt.value;}
   }
   if(sM.value==="grid"||sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
   else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}

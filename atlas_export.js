@@ -331,3 +331,47 @@ async function exportBatchPdf(){
     document.getElementById("selMetric").value=mId;sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
   }
 }
+
+async function runCustomBatchExport(fmt){
+  const modal=document.getElementById("batchModal"),btnZ=document.getElementById("bmRunZip"),btnP=document.getElementById("bmRunPdf");
+  const terrs=Array.from(modal.querySelectorAll(".bm-t-chk:checked")).map(c=>({fo:c.dataset.fo,reg:c.dataset.reg}));
+  const mets=Array.from(modal.querySelectorAll(".bm-m-chk:checked")).map(c=>c.value);
+  const yrsChecked=Array.from(modal.querySelectorAll(".bm-y-chk:checked")).map(c=>c.value);
+  if(!terrs.length||!mets.length)return alert("Выберите хотя бы одну территорию и один показатель.");
+  const mode=document.getElementById("selMode").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric"),sYr=document.getElementById("selYear");
+  const origFO=sFO.value,origReg=sReg.value,origMet=sMet.value,origYr=sYr.value;
+  const yrs=(mode==="single"&&document.getElementById("selBase").value==="coh"&&yrsChecked.length)?yrsChecked:Array.of(origYr);
+  const tasks=Array.of();
+  terrs.forEach(t=>mets.forEach(m=>yrs.forEach(y=>tasks.push({fo:t.fo,reg:t.reg,met:m,yr:y}))));
+  btnZ.disabled=true;btnP.disabled=true;window._isExportMode=true;
+  const zFiles=Array.of(),pdfPages=Array.of(),scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.52:(scDpi<0.6?0.65:0.84);
+  try{
+    for(let i=0;i<tasks.length;i++){
+      const t=tasks.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+(i+1)+"/"+tasks.length;
+      btnZ.textContent=lbl;btnP.textContent=lbl;
+      if(sFO.value!==t.fo){sFO.value=t.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(t.fo!=="RF")(DATA.fo_to_regs[t.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
+      sReg.value=t.reg;sMet.value=t.met;sYr.value=t.yr;
+      const tag=((t.reg!=="ALL"?t.reg:t.fo)+"_"+t.met+(mode==="single"?"_"+t.yr:"")).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
+      const cvs=(mode==="table")?buildTableCanvases(true):Array.of(await (async()=>{render();if(window._plotReady)await window._plotReady;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,340))));return await buildSheetCanvas();})());
+      for(let ci=0;ci<cvs.length;ci++){
+        const cv=cvs.at(ci);if(!cv)continue;
+        if(fmt==="zip"){
+          const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+          for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
+          zFiles.push({name:tag+(cvs.length>1?"_Лист_"+String(ci+1).padStart(2,"0"):"")+".png",data:arr});
+        }else{
+          const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+          for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
+          pdfPages.push({w:cv.width,h:cv.height,jpg:arr});
+        }
+      }
+    }
+    if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Пакет_Атлас_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+    if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Пакет_Атлас.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
+    modal.classList.remove("open");
+  }finally{
+    window._isExportMode=false;sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
+    sReg.value=origReg;sMet.value=origMet;sYr.value=origYr;if(mode!=="table")render();
+    btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";
+  }
+}
