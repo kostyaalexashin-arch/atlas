@@ -357,22 +357,23 @@ async function buildSheetCanvas(){
     ctx.font="bold 36px \'Times New Roman\'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
+    {
+      const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
+      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=4&&Math.abs(px[k+1]-214)<=4&&Math.abs(px[k+2]-225)<=4);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
+      ctx.putImageData(idt,40,155);
+    }
+    
     if(window._expCorePins&&window._expCorePins.length>0){
       window._expCorePins.forEach(p=>{
         const lx=40+p.rx*mapW,ly=155+p.ry*mapH;
         ctx.save();
         ctx.font="bold 24px 'Times New Roman', serif";
-        const tw=ctx.measureText(p.txt).width,bw=tw+14,bh=32;
+        const tw=ctx.measureText(p.txt).width,bw=tw+16,bh=34;
         ctx.fillStyle="rgba(255,255,255,0.95)";ctx.fillRect(lx-bw/2,ly-bh/2,bw,bh);
-        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.0;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
+        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.2;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
         ctx.fillStyle="#111111";ctx.textAlign="center";ctx.textBaseline="middle";
         ctx.fillText(p.txt,lx,ly+1);ctx.restore();
       });
-    }
-    {
-      const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
-      for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=4&&Math.abs(px[k+1]-214)<=4&&Math.abs(px[k+2]-225)<=4);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
-      ctx.putImageData(idt,40,155);
     }
     const sbEl=mapEl.querySelector("#mapScaleBarG");
     if(sbEl){
