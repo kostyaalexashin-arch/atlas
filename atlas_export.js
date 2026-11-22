@@ -131,23 +131,24 @@ function buildMergedTableCanvases(terrs,silent=false){
     rows.push({lbl:p._lbl,reg:p.region,fo:p.fo,cat:p.cat,vals,v24:vals.at(5)});
   });
   const sorted=sortTableRows(rows,mObj);if(!sorted.length){if(!silent)alert("Нет строк для выбранных территорий.");return Array.of();}
-  const sc=Number(document.getElementById("selDpi")?.value||1),W=Math.round(3508*sc),H=Math.round(2480*sc),rowsPerPage=48,pages=Math.max(1,Math.ceil(sorted.length/rowsPerPage)),out=Array.of();
+  const sc=Number(document.getElementById("selDpi")?.value||1),W=Math.round(3508*sc),H=Math.round(2480*sc),rowsPerPage=46,pages=Math.max(1,Math.ceil(sorted.length/rowsPerPage)),out=Array.of();
   const fVals=sorted.flatMap(r=>r.vals).filter(v=>v!==null&&v!==undefined&&!isNaN(Number(v))).map(Number),mn=fVals.length?Math.min(...fVals):0,mx=fVals.length?Math.max(...fVals):1;
   const subTitle=hasRF?"Российская Федерация (сводная выборка)":"Выбранные территории ("+terrs.length+" поз.)";
   for(let pg=0;pg<pages;pg++){
     const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3508,2480);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(18,18,3472,2444);
-    ctx.fillStyle="#111111";ctx.font="bold 44px 'Times New Roman'";ctx.textAlign="center";
-    ctx.fillText(mObj.id+" — "+mObj.title,1754,76);
-    ctx.font="italic 36px \'Times New Roman\'";ctx.fillStyle="#334155";
-    ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,122);
+    ctx.fillStyle="#111111";ctx.font="bold 36px 'Times New Roman'";ctx.textAlign="center";
+    const mLines=wrapTitle(mObj.id+" — "+mObj.title,115).split("<br>");
+    if(mLines.length===1){ctx.fillText(mLines.at(0),1754,64);}else{ctx.fillText(mLines.at(0),1754,54);ctx.fillText(mLines.at(1),1754,94);}
+    ctx.font="bold 36px 'Times New Roman'";ctx.fillStyle="#111111";
+    ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,138);
     const cols=Array.of({x:40,w:980,t:"Муниципальное образование (Регион)"},{x:1020,w:380,t:"Категория МО"},{x:1400,w:330,t:"2019"},{x:1730,w:330,t:"2020"},{x:2060,w:330,t:"2021"},{x:2390,w:330,t:"2022"},{x:2720,w:330,t:"2023"},{x:3050,w:418,t:"2024"});
-    ctx.fillStyle="#eef3f8";ctx.fillRect(40,150,3428,48);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,150,3428,48);
+    ctx.fillStyle="#eef3f8";ctx.fillRect(40,170,3428,48);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,170,3428,48);
     ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";
-    cols.forEach(c=>{ctx.strokeRect(c.x,150,c.w,48);ctx.fillText(c.t,c.x+c.w/2,182);});
+    cols.forEach(c=>{ctx.strokeRect(c.x,170,c.w,48);ctx.fillText(c.t,c.x+c.w/2,202);});
     const slice=sorted.slice(pg*rowsPerPage,(pg+1)*rowsPerPage);
     slice.forEach((r,idx)=>{
-      const y=198+idx*42;ctx.fillStyle=idx%2?"#fafbfc":"#ffffff";ctx.fillRect(40,y,3428,42);
+      const y=218+idx*43;ctx.fillStyle=idx%2?"#fafbfc":"#ffffff";ctx.fillRect(40,y,3428,42);
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1;cols.forEach(c=>ctx.strokeRect(c.x,y,c.w,42));
       ctx.textAlign="left";ctx.fillStyle="#111111";ctx.font=" 24px \'Times New Roman\'";
       ctx.fillText((r.lbl+" ("+r.reg+")").slice(0,58),52,y+28);
@@ -233,7 +234,7 @@ function buildTableCanvases(silent=false){
     if(it.isFO)activeFO=it.title;
     if(curPg.length===0&&!it.isFO&&grpFO&&activeFO)curPg.push({isFO:true,title:activeFO+" (продолжение)"});
     curPg.push(it);
-    if(curPg.length>=24){pagesArr.push(curPg);curPg=Array.of();}
+    if(curPg.length>=23){pagesArr.push(curPg);curPg=Array.of();}
   });
   if(curPg.length>0)pagesArr.push(curPg);
   const totalPages=pagesArr.length,W=3160,H=2234,sc=Number(document.getElementById("selDpi")?.value||1);
@@ -242,9 +243,11 @@ function buildTableCanvases(silent=false){
   for(let pg=0;pg<totalPages;pg++){
     const sub=pagesArr.at(pg),canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
-    ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 44px 'Times New Roman'";ctx.fillText(mMeta.title+" (2019–2024 гг.)",W/2,56);
-    ctx.font="bold 36px \'Times New Roman\'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,96);ctx.textAlign="left";
-    const xCols=Array.of(40,530,1240,1553,1866,2179,2492,2805,3120),tTop=120,hdrH=52,rowH=78;
+    ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 36px 'Times New Roman'";
+    const mLines=wrapTitle(mMeta.title+" (2019–2024 гг.)",105).split("<br>");
+    if(mLines.length===1){ctx.fillText(mLines.at(0),W/2,56);}else{ctx.fillText(mLines.at(0),W/2,44);ctx.fillText(mLines.at(1),W/2,84);}
+    ctx.font="bold 36px 'Times New Roman'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,128);ctx.textAlign="left";
+    const xCols=Array.of(40,530,1240,1553,1866,2179,2492,2805,3120),tTop=156,hdrH=52,rowH=81;
     ctx.fillStyle="#eef3f8";ctx.fillRect(40,tTop,3080,hdrH);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,tTop,3080,hdrH);
     const hdrs=Array.of("Регион","Муниципальное образование","2019 г.","2020 г.","2021 г.","2022 г.","2023 г.","2024 г.");
     ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="center";
