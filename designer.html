@@ -2,27 +2,28 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Конструктор и отладчик макетов Атласа</title>
+<title>Отладчик и конструктор макетов выгрузки Атласа</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Times New Roman',serif;background:#cbd5e1;color:#111;display:flex;height:100vh;overflow:hidden}
-.side{width:355px;background:#fff;border-right:1px solid #94a3b8;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
-.side h2{font-size:16px;border-bottom:2px solid #0f172a;padding-bottom:4px;display:flex;justify-content:space-between;align-items:center}
-.grp{border:1px solid #cbd5e1;border-radius:4px;padding:8px;background:#f8fafc;display:flex;flex-direction:column;gap:6px}
-.grp-t{font-weight:bold;font-size:13px;color:#0f172a}
-label{font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:6px}
-input[type=range]{width:125px;cursor:pointer}
-select,button{height:28px;font-family:inherit;font-size:12.5px;border:1px solid #64748b;border-radius:3px;padding:0 6px}
+.side{width:380px;background:#fff;border-right:1px solid #94a3b8;padding:10px 12px;display:flex;flex-direction:column;gap:7px;overflow-y:auto}
+.side h2{font-size:15.5px;border-bottom:2px solid #0f172a;padding-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.grp{border:1px solid #cbd5e1;border-radius:4px;padding:7px 8px;background:#f8fafc;display:flex;flex-direction:column;gap:5px}
+.grp-t{font-weight:bold;font-size:12.5px;color:#0369a1;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
+label{font-size:11.5px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+input[type=range]{width:130px;cursor:pointer}
+input[type=number]{width:62px;height:22px;padding:0 4px;font-size:11.5px;border:1px solid #94a3b8;border-radius:2px}
+select,button{height:27px;font-family:inherit;font-size:12px;border:1px solid #64748b;border-radius:3px;padding:0 6px}
 .btn-p{background:#0284c7;color:#fff;border:none;font-weight:bold;cursor:pointer}
 .btn-g{background:#15803d;color:#fff;border:none;font-weight:bold;cursor:pointer}
-.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;overflow:auto;gap:10px}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;overflow:auto;gap:10px}
 canvas{background:#fff;box-shadow:0 8px 28px rgba(0,0,0,0.28);max-width:100%;height:auto;border:1px solid #64748b}
-textarea{width:100%;height:74px;font-family:monospace;font-size:11px;padding:4px;border:1px solid #94a3b8}
+textarea{width:100%;height:78px;font-family:monospace;font-size:10.5px;padding:4px;border:1px solid #94a3b8}
 </style>
 </head>
 <body>
 <div class="side">
-  <h2><span>🛠 Отладчик макетов</span><span id="dStatus" style="font-size:11px;color:#15803d;">Готов</span></h2>
+  <h2><span>🛠 Отладчик макетов</span><span id="dStatus" style="font-size:11px;color:#15803d;">Инициализация...</span></h2>
   <label><b>Макет листа:</b>
     <select id="dMode">
       <option value="passport">Цифровой паспорт МО (А4 книж.)</option>
@@ -31,35 +32,48 @@ textarea{width:100%;height:74px;font-family:monospace;font-size:11px;padding:4px
       <option value="map">Карта территории (А4 альб.)</option>
     </select>
   </label>
-  <label><b>Образец МО:</b><select id="dSampleMO" style="max-width:210px;"><option value="">Загрузка МО...</option></select></label>
+  <label><b>Образец МО:</b><select id="dSampleMO" style="max-width:230px;"><option value="">Загрузка МО...</option></select></label>
+
   <div class="grp">
-    <div class="grp-t">1. Типографика и шрифты</div>
-    <label>Заголовок листа: <span id="vH1">42</span>px <input type="range" id="rH1" min="28" max="72" value="42"></label>
-    <label>Подзаголовок: <span id="vH2">30</span>px <input type="range" id="rH2" min="20" max="54" value="30"></label>
-    <label>Основной текст / таблицы: <span id="vBody">20</span>px <input type="range" id="rBody" min="14" max="30" value="20"></label>
-    <label>Подписи шкалы / легенды: <span id="vLeg">26</span>px <input type="range" id="rLeg" min="16" max="40" value="26"></label>
+    <div class="grp-t">1. Границы и ширина столбцов (px)</div>
+    <label>Поля листа (отступ от края): <span id="vMargin">45</span> <input type="range" id="rMargin" min="20" max="100" step="5" value="45"></label>
+    <label>Столбец названий (Бенч/Табл): <span id="vColName">1360</span> <input type="range" id="rColName" min="700" max="1650" step="10" value="1360"></label>
+    <label>Столбец категории (Табл): <span id="vColCat">380</span> <input type="range" id="rColCat" min="200" max="600" step="10" value="380"></label>
+    <label>Столбец значений (Паспорт): <span id="vColVal">120</span> <input type="range" id="rColVal" min="80" max="220" step="5" value="120"></label>
+    <label>Межколоночный зазор (gap): <span id="vGap">18</span> <input type="range" id="rGap" min="0" max="50" step="2" value="18"></label>
+    <label><input type="checkbox" id="cShowGuides" checked> Показывать красные направляющие границ</label>
   </div>
+
   <div class="grp">
-    <div class="grp-t">2. Геометрия и пропорции</div>
-    <label>Ширина колонки названий: <span id="vColW">1360</span>px <input type="range" id="rColW" min="900" max="1650" value="1360"></label>
-    <label>Радиус лепестковых диаграмм: <span id="vRad">155</span>px <input type="range" id="rRad" min="100" max="210" value="155"></label>
-    <label>Прозрачность заливки: <span id="vAlpha">0.16</span> <input type="range" id="rAlpha" min="0.04" max="0.40" step="0.02" value="0.16"></label>
+    <div class="grp-t">2. Типографика и размеры шрифтов (px)</div>
+    <label>Заголовок листа: <span id="vH1">42</span> <input type="range" id="rH1" min="26" max="72" value="42"></label>
+    <label>Подзаголовок: <span id="vH2">30</span> <input type="range" id="rH2" min="18" max="54" value="30"></label>
+    <label>Текст таблиц и показателей: <span id="vBody">20</span> <input type="range" id="rBody" min="14" max="32" value="20"></label>
+    <label>Подписи шкалы и легенды: <span id="vLeg">26</span> <input type="range" id="rLeg" min="16" max="42" value="26"></label>
   </div>
+
   <div class="grp">
-    <div class="grp-t">3. Состав и порядок блоков</div>
-    <label><input type="checkbox" id="cMeta" checked> Блок общей характеристики</label>
-    <label><input type="checkbox" id="cSubRad" checked> Диаграмма субиндексов</label>
-    <label><input type="checkbox" id="cMidTbl" checked> Таблица субиндексов и подблоков</label>
-    <label><input type="checkbox" id="cBlkRad" checked> Диаграмма подблоков</label>
-    <label><input type="checkbox" id="c39" checked> Блок 39 частных показателей</label>
+    <div class="grp-t">3. Лепестковые диаграммы и цвета</div>
+    <label>Радиус диаграмм: <span id="vRad">155</span> <input type="range" id="rRad" min="90" max="210" step="5" value="155"></label>
+    <label>Прозрачность заливки: <span id="vAlpha">0.16</span> <input type="range" id="rAlpha" min="0.04" max="0.45" step="0.02" value="0.16"></label>
+    <label><input type="checkbox" id="cClFill"> Цветная заливка ячеек кластеров</label>
     <label><input type="checkbox" id="cInvScale" checked> Шкала дестимуляторов: зелёный справа</label>
   </div>
-  <button type="button" class="btn-g" id="btnApplySite">✅ Сохранить настройки для Атласа</button>
-  <button type="button" class="btn-p" id="btnDlTest">💾 Скачать тестовый PNG (300 dpi)</button>
+
   <div class="grp">
-    <div class="grp-t">Конфигурация (JSON):</div>
-    <textarea id="cfgOut" readonly></textarea>
+    <div class="grp-t">4. Состав блоков на листе</div>
+    <label><input type="checkbox" id="cMeta" checked> Блок общей характеристики</label>
+    <label><input type="checkbox" id="cSubRad" checked> Диаграмма субиндексов</label>
+    <label><input type="checkbox" id="cMidTbl" checked> Сводная таблица субиндексов и подблоков</label>
+    <label><input type="checkbox" id="cBlkRad" checked> Диаграмма подблоков</label>
+    <label><input type="checkbox" id="c39" checked> Блок 39 частных показателей (3 столбца)</label>
   </div>
+
+  <div style="display:flex;gap:6px;">
+    <button type="button" class="btn-p" id="btnDlTest" style="flex:1;">💾 Тестовый PNG</button>
+    <button type="button" class="btn-g" id="btnCopyCfg" style="flex:1;">📋 Копировать JSON</button>
+  </div>
+  <textarea id="cfgOut" readonly></textarea>
 </div>
 <div class="main">
   <canvas id="prevCv" width="938" height="1326"></canvas>
@@ -79,7 +93,7 @@ async function loadRealAtlasData(){
         seen.add(p.join_key);REAL_MOS.push({key:p.join_key,lbl:p._lbl||p.name,reg:p.region||"",cat:p.cat||"5"});
       });
       REAL_MOS.sort((a,b)=>a.lbl.localeCompare(b.lbl,"ru"));
-      document.getElementById("dSampleMO").innerHTML=REAL_MOS.slice(0,250).map(m=>'<option value="'+m.key+'">'+m.lbl+' ('+m.reg+')</option>').join("");
+      document.getElementById("dSampleMO").innerHTML=REAL_MOS.slice(0,300).map(m=>'<option value="'+m.key+'">'+m.lbl+' ('+m.reg+')</option>').join("");
     }
     document.getElementById("dStatus").textContent="База: "+REAL_MOS.length+" МО";
   }catch(e){document.getElementById("dStatus").textContent="Демо-режим";}
@@ -92,13 +106,27 @@ function getVal(mPat,jk,defV){
   const v=REAL_DATA.v2024?.[m.id]?.[jk];return(v!==null&&v!==undefined&&!isNaN(Number(v)))?Number(v):defV;
 }
 
+function drawGuide(x,y1,y2,lbl){
+  if(!document.getElementById("cShowGuides").checked)return;
+  ctx.save();ctx.strokeStyle="#e11d48";ctx.lineWidth=2;ctx.setLineDash(Array.of(8,6));
+  ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y2);ctx.stroke();
+  ctx.fillStyle="#e11d48";ctx.font="bold 16px monospace";ctx.fillText(lbl+" ("+Math.round(x)+")",x+4,y1+18);
+  ctx.restore();
+}
+
 function drawPreview(){
   const mode=document.getElementById("dMode").value,jk=document.getElementById("dSampleMO").value;
   const mo=REAL_MOS.find(x=>x.key===jk)||{lbl:"Апатиты (МО)",reg:"Мурманская область",cat:"4"};
+  const margin=+document.getElementById("rMargin").value,colName=+document.getElementById("rColName").value;
+  const colCat=+document.getElementById("rColCat").value,colVal=+document.getElementById("rColVal").value,gap=+document.getElementById("rGap").value;
   const h1=+document.getElementById("rH1").value,h2=+document.getElementById("rH2").value,body=+document.getElementById("rBody").value,leg=+document.getElementById("rLeg").value;
-  const colW=+document.getElementById("rColW").value,rad=+document.getElementById("rRad").value,alpha=+document.getElementById("rAlpha").value;
-  document.getElementById("vH1").textContent=h1;document.getElementById("vH2").textContent=h2;document.getElementById("vBody").textContent=body;
-  document.getElementById("vLeg").textContent=leg;document.getElementById("vColW").textContent=colW;document.getElementById("vRad").textContent=rad;document.getElementById("vAlpha").textContent=alpha;
+  const rad=+document.getElementById("rRad").value,alpha=+document.getElementById("rAlpha").value;
+  const clFill=document.getElementById("cClFill").checked,inv=document.getElementById("cInvScale").checked;
+
+  document.getElementById("vMargin").textContent=margin;document.getElementById("vColName").textContent=colName;
+  document.getElementById("vColCat").textContent=colCat;document.getElementById("vColVal").textContent=colVal;document.getElementById("vGap").textContent=gap;
+  document.getElementById("vH1").textContent=h1;document.getElementById("vH2").textContent=h2;document.getElementById("vBody").textContent=body;document.getElementById("vLeg").textContent=leg;
+  document.getElementById("vRad").textContent=rad;document.getElementById("vAlpha").textContent=alpha;
 
   const isPort=(mode==="passport"||mode==="bench"),W=isPort?2234:3508,H=isPort?3158:2480;
   cv.width=Math.round(W*0.42);cv.height=Math.round(H*0.42);
@@ -108,19 +136,20 @@ function drawPreview(){
   ctx.textAlign="center";ctx.fillStyle="#111111";ctx.font="bold "+h1+"px 'Times New Roman'";
   const titles={passport:"Цифровой паспорт устойчивости муниципального образования",bench:"Многокритериальный бенчмаркинг муниципальных образований",table:"Интегральный индекс устойчивого развития муниципальных образований",map:"Доля населенных пунктов, не имеющих водопроводов, % (2024 г.)"};
   ctx.fillText(titles[mode],W/2,76);ctx.font="bold "+h2+"px 'Times New Roman'";
-  ctx.fillText(mode==="passport"?(mo.lbl+" ("+mo.reg+") — 2024 г."):"Предпросмотр печатного листа А4 (300 / 1200 dpi)",W/2,88+h1);ctx.textAlign="left";
+  ctx.fillText(mode==="passport"?(mo.lbl+" ("+mo.reg+") — 2024 г."):"Предпросмотр печатного листа А4",W/2,88+h1);ctx.textAlign="left";
 
   let y=118+h1;
+  const innerW=W-margin*2;
   if(mode==="passport"){
     if(document.getElementById("cMeta").checked){
-      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,y,W-90,104);ctx.font="bold "+(body+4)+"px 'Times New Roman'";
-      ctx.fillText("Кластер (2024 г.): Б. Эколого-социальный вектор",70,y+40);ctx.fillText("Категория: "+mo.cat,1150,y+40);
-      ctx.fillText("Площадь, га: "+Math.round(getVal("Площадь",jk,246113)).toLocaleString("ru-RU"),70,y+84);
-      ctx.fillText("Численность, чел.: "+Math.round(getVal("Численность",jk,48352)).toLocaleString("ru-RU"),1150,y+84);y+=124;
+      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(margin,y,innerW,104);ctx.font="bold "+(body+4)+"px 'Times New Roman'";
+      ctx.fillText("Кластер (2024 г.): Б. Эколого-социальный вектор",margin+22,y+40);ctx.fillText("Категория: "+mo.cat,W/2+30,y+40);
+      ctx.fillText("Площадь, га: "+Math.round(getVal("Площадь",jk,246113)).toLocaleString("ru-RU"),margin+22,y+84);
+      ctx.fillText("Численность, чел.: "+Math.round(getVal("Численность",jk,48352)).toLocaleString("ru-RU"),W/2+30,y+84);y+=124;
     }
     const showSub=document.getElementById("cSubRad").checked,showMid=document.getElementById("cMidTbl").checked,showBlk=document.getElementById("cBlkRad").checked;
     if(showSub||showMid||showBlk){
-      const midH=Math.max(rad*2+140,610);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,y,W-90,midH);
+      const midH=Math.max(rad*2+140,600);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(margin,y,innerW,midH);
       const drawR=(cx,cy,lbls,vals)=>{
         const n=lbls.length;ctx.strokeStyle="#cbd5e1";
         Array.of(0.25,0.5,0.75,1).forEach(lv=>{ctx.beginPath();lbls.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n,x=cx+Math.cos(a)*rad*lv,yy=cy+Math.sin(a)*rad*lv;i?ctx.lineTo(x,yy):ctx.moveTo(x,yy);});ctx.closePath();ctx.stroke();});
@@ -129,66 +158,89 @@ function drawPreview(){
       };
       const sVals=Array.of(getVal("Индекс ЭК",jk,0.72),getVal("Индекс СЦ",jk,0.61),getVal("Индекс УЭ",jk,0.45),getVal("IQ от max",jk,0.64));
       const bVals=Array.of(getVal("ЭК-Подблок 1",jk,0.7),getVal("ЭК-Подблок 2",jk,0.65),getVal("ЭК-Подблок 3",jk,0.8),getVal("СЦ-Подблок 1",jk,0.55),getVal("СЦ-Подблок 2",jk,0.62),getVal("СЦ-Подблок 3",jk,0.68),getVal("УЭ-Подблок 1",jk,0.42),getVal("УЭ-Подблок 2",jk,0.48),getVal("УЭ-Подблок 3",jk,0.51));
-      if(showSub){ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",300,y+34);ctx.textAlign="left";drawR(300,y+midH/2+18,Array.of("ЭК","СЦ","УЭ","IQ"),sVals);}
-      if(showBlk){ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Подблоки показателей",W-300,y+34);ctx.textAlign="left";drawR(W-300,y+midH/2+18,Array.of("ЭК-1","ЭК-2","ЭК-3","СЦ-1","СЦ-2","СЦ-3","УЭ-1","УЭ-2","УЭ-3"),bVals);}
+      const sideW=rad*2+180;
+      if(showSub){ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",margin+sideW/2,y+34);ctx.textAlign="left";drawR(margin+sideW/2,y+midH/2+18,Array.of("ЭК","СЦ","УЭ","IQ"),sVals);}
+      if(showBlk){ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Подблоки показателей",W-margin-sideW/2,y+34);ctx.textAlign="left";drawR(W-margin-sideW/2,y+midH/2+18,Array.of("ЭК-1","ЭК-2","ЭК-3","СЦ-1","СЦ-2","СЦ-3","УЭ-1","УЭ-2","УЭ-3"),bVals);}
       if(showMid){
-        const tx0=showSub?550:70,tw=(showBlk?W-550:W-70)-tx0;
+        const tx0=showSub?(margin+sideW):(margin+15),tw=(showBlk?(W-margin-sideW):(W-margin-15))-tx0;
         const rows=Array.of(
           Array.of("Интегральный индекс устойчивого развития",getVal("Интегральный индекс",jk,0.5956).toFixed(4),true),
           Array.of("Экологический субиндекс",sVals.at(0).toFixed(4),true),
-          Array.of("  ЭК-1. Качество окружающей среды",bVals.at(0).toFixed(4),false),
+          Array.of("  ЭК-1. Обеспеченность водной инфраструктурой",bVals.at(0).toFixed(4),false),
           Array.of("  ЭК-2. Износ коммунальных сетей",bVals.at(1).toFixed(4),false),
-          Array.of("  ЭК-3. Обращение с отходами",bVals.at(2).toFixed(4),false),
+          Array.of("  ЭК-3. Качество окружающей среды и отходы",bVals.at(2).toFixed(4),false),
           Array.of("Социальный субиндекс",sVals.at(1).toFixed(4),true),
-          Array.of("  СЦ-1. Демография и здравоохранение",bVals.at(3).toFixed(4),false),
-          Array.of("  СЦ-2. Социальная инфраструктура",bVals.at(4).toFixed(4),false),
-          Array.of("  СЦ-3. Потребительский рынок и ЖКХ",bVals.at(5).toFixed(4),false),
+          Array.of("  СЦ-1. Демографическая устойчивость",bVals.at(3).toFixed(4),false),
+          Array.of("  СЦ-2. Состояние социальной инфраструктуры",bVals.at(4).toFixed(4),false),
+          Array.of("  СЦ-3. Жилищная обеспеченность и транспорт",bVals.at(5).toFixed(4),false),
           Array.of("Управленческо-экономический субиндекс",sVals.at(2).toFixed(4),true),
           Array.of("  УЭ-1. Производственно-инвестиционный потенциал",bVals.at(6).toFixed(4),false),
-          Array.of("  УЭ-2. Бюджетная обеспеченность",bVals.at(7).toFixed(4),false),
+          Array.of("  УЭ-2. Потребительский рынок и бюджет",bVals.at(7).toFixed(4),false),
           Array.of("  УЭ-3. Финансовая результативность",bVals.at(8).toFixed(4),false)
         );
         rows.forEach((r,ri)=>{
-          const ry=y+20+ri*(body+16);ctx.fillStyle=r.at(2)?"#eef3f8":"#ffffff";ctx.fillRect(tx0,ry,tw,body+14);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(tx0,ry,tw,body+14);
-          ctx.fillStyle="#111";ctx.font=(r.at(2)?"bold ":"")+body+"px 'Times New Roman'";ctx.fillText(r.at(0),tx0+12,ry+body+4);
-          ctx.font="bold "+body+"px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(r.at(1),tx0+tw-14,ry+body+4);ctx.textAlign="left";
+          const ry=y+20+ri*(body+16);ctx.fillStyle=r.at(2)?"#eef3f8":"#ffffff";ctx.fillRect(tx0,ry,tw,body+14);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(tx0,ry,tw-colVal,body+14);ctx.strokeRect(tx0+tw-colVal,ry,colVal,body+14);
+          ctx.fillStyle="#111";ctx.font=(r.at(2)?"bold ":"")+body+"px 'Times New Roman'";ctx.fillText(r.at(0),tx0+10,ry+body+4);
+          ctx.font="bold "+body+"px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(r.at(1),tx0+tw-12,ry+body+4);ctx.textAlign="left";
         });
+        drawGuide(tx0+tw-colVal,y+20,y+20+rows.length*(body+16),"valCol");
       }
       y+=midH+20;
     }
     if(document.getElementById("c39").checked){
-      const cw=(W-128)/3;
+      const cw=(innerW-gap*2)/3;
       Array.of("Экологический блок","Социальный блок","Управленческо-экономический блок").forEach((bt,bi)=>{
-        const bx=45+bi*(cw+19);ctx.fillStyle="#e2e8f0";ctx.fillRect(bx,y,cw,44);ctx.strokeStyle="#64748b";ctx.strokeRect(bx,y,cw,44);
+        const bx=margin+bi*(cw+gap);ctx.fillStyle="#e2e8f0";ctx.fillRect(bx,y,cw,44);ctx.strokeStyle="#64748b";ctx.strokeRect(bx,y,cw,44);
         ctx.fillStyle="#111";ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(bt,bx+cw/2,y+30);ctx.textAlign="left";
-        for(let r=0;r<12;r++){const ry=y+44+r*145;if(ry+145>H-40)break;ctx.strokeStyle="#cbd5e1";ctx.strokeRect(bx,ry,cw,145);ctx.font=body+"px 'Times New Roman'";ctx.fillText("Показатель "+(r+1)+" — пример текста в колонке",bx+10,ry+42);ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="right";ctx.fillText("74,20",bx+cw-12,ry+78);ctx.textAlign="left";}
+        for(let r=0;r<12;r++){const ry=y+44+r*145;if(ry+145>H-40)break;ctx.strokeStyle="#cbd5e1";ctx.strokeRect(bx,ry,cw-colVal,145);ctx.strokeRect(bx+cw-colVal,ry,colVal,145);ctx.font=body+"px 'Times New Roman'";ctx.fillText("Показатель "+(r+1)+" — текст",bx+10,ry+42);ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.textAlign="right";ctx.fillText("74,20",bx+cw-10,ry+78);ctx.textAlign="left";}
+        drawGuide(bx+cw-colVal,y,H-60,"valW");
       });
     }
   }else if(mode==="bench"){
-    ctx.strokeStyle="#64748b";ctx.strokeRect(45,y,colW,68);ctx.strokeRect(45+colW,y,W-90-colW,68);
-    ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.fillText("Наименование показателя (колонка "+colW+" px)",60,y+42);ctx.fillText("🔵 "+mo.lbl,65+colW,y+42);
-    for(let r=0;r<18;r++){const ry=y+68+r*82;if(ry+82>H-170)break;ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,ry,colW,82);ctx.strokeRect(45+colW,ry,W-90-colW,82);ctx.font=body+"px 'Times New Roman'";ctx.fillText("ЭК-0"+(r+1)+" — Наименование показателя в расширенной колонке",60,ry+48);}
+    const valsW=innerW-colName,cw=valsW/3;
+    ctx.strokeStyle="#64748b";ctx.strokeRect(margin,y,colName,76);
+    ctx.font="bold "+(body+2)+"px 'Times New Roman'";ctx.fillText("Наименование показателя (ширина: "+colName+" px)",margin+14,y+44);
+    Array.of("🔵 "+mo.lbl,"🟥 МО сравнения 2","🟢 МО сравнения 3").forEach((t,i)=>{
+      const cx=margin+colName+i*cw;ctx.strokeRect(cx,y,cw,76);ctx.textAlign="center";ctx.fillText(t.slice(0,22),cx+cw/2,y+44);ctx.textAlign="left";
+    });
+    for(let r=0;r<18;r++){
+      const ry=y+76+r*80;if(ry+80>H-170)break;
+      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(margin,ry,colName,80);ctx.font=body+"px 'Times New Roman'";
+      ctx.fillText(r===0?"Кластер (2024 г.)":"ЭК-0"+r+" — Наименование показателя в колонке "+colName+" px",margin+14,ry+46);
+      for(let i=0;i<3;i++){
+        const cx=margin+colName+i*cw;ctx.strokeRect(cx,ry,cw,80);
+        if(r===0&&clFill){ctx.fillStyle=Array.of("#2563eb","#dc2626","#16a34a").at(i);ctx.fillRect(cx+2,ry+2,cw-4,76);}
+        ctx.fillStyle=(r===0&&clFill)?"#ffffff":"#111111";ctx.textAlign="center";ctx.fillText(r===0?"Кластер Б":"42,50",cx+cw/2,ry+46);ctx.textAlign="left";
+      }
+    }
+    drawGuide(margin+colName,y,H-170,"colName");
+  }else if(mode==="table"){
+    const yrW=(innerW-colName-colCat)/6,hdrs=Array.of("Муниципальное образование","Категория МО","2019","2020","2021","2022","2023","2024");
+    const widths=Array.of(colName,colCat,yrW,yrW,yrW,yrW,yrW,yrW);
+    let cx=margin;
+    hdrs.forEach((ht,i)=>{ctx.fillStyle="#eef3f8";ctx.fillRect(cx,y,widths.at(i),48);ctx.strokeStyle="#64748b";ctx.strokeRect(cx,y,widths.at(i),48);ctx.fillStyle="#111";ctx.font="bold "+body+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(ht,cx+widths.at(i)/2,y+32);ctx.textAlign="left";cx+=widths.at(i);});
+    for(let r=0;r<18;r++){
+      const ry=y+48+r*44;if(ry+44>H-170)break;let rx=margin;
+      widths.forEach((w,ci)=>{ctx.strokeStyle="#cbd5e1";ctx.strokeRect(rx,ry,w,44);ctx.font=body+"px 'Times New Roman'";ctx.fillText(ci===0?(mo.lbl+" ("+mo.reg+")"):(ci===1?"Малые":"0,6124"),rx+10,ry+28);rx+=w;});
+    }
+    drawGuide(margin+colName,y,H-170,"colName");drawGuide(margin+colName+colCat,y,H-170,"colCat");
   }else{
-    ctx.strokeStyle="#94a3b8";ctx.strokeRect(45,y,W-90,H-y-180);
-    ctx.font="bold "+(body+8)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(mode==="map"?"Карта территории (шрифт подписей: "+leg+" px)":"Таблица динамики 2019–2024 гг. (шрифт строк: "+body+" px)",W/2,(H+y-180)/2);ctx.textAlign="left";
+    ctx.strokeStyle="#94a3b8";ctx.strokeRect(margin,y,innerW,H-y-180);
+    ctx.font="bold "+(body+8)+"px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Область карты территории (шрифт подписей: "+leg+" px)",W/2,(H+y-180)/2);ctx.textAlign="left";
   }
 
-  const fy=H-135,inv=document.getElementById("cInvScale").checked;
-  const grd=ctx.createLinearGradient(W-920,0,W-60,0);
+  const fy=H-135,grd=ctx.createLinearGradient(W-margin-860,0,W-margin,0);
   grd.addColorStop(0,"#a50026");grd.addColorStop(0.5,"#ffffbf");grd.addColorStop(1,"#006837");
-  ctx.fillStyle=grd;ctx.fillRect(W-920,fy,860,30);ctx.strokeStyle="#475569";ctx.strokeRect(W-920,fy,860,30);
+  ctx.fillStyle=grd;ctx.fillRect(W-margin-860,fy,860,30);ctx.strokeStyle="#475569";ctx.strokeRect(W-margin-860,fy,860,30);
   ctx.fillStyle="#111";ctx.font="bold "+leg+"px 'Times New Roman'";
-  ctx.fillText(inv?"71,00 (худшее)":"4,50",W-920,fy+64);ctx.textAlign="right";ctx.fillText(inv?"4,50 (лучшее)":"71,00",W-60,fy+64);ctx.textAlign="left";
+  ctx.fillText(inv?"71,00":"4,50",W-margin-860,fy+64);ctx.textAlign="right";ctx.fillText(inv?"4,50":"71,00",W-margin,fy+64);ctx.textAlign="left";
 
   ctx.restore();
-  document.getElementById("cfgOut").value=JSON.stringify({mode,h1,h2,body,leg,colW,rad,alpha,invScale:inv},null,2);
+  document.getElementById("cfgOut").value=JSON.stringify({mode,margin,colName,colCat,colVal,gap,h1,h2,body,leg,rad,alpha,clFill,invScale:inv},null,2);
 }
 
 document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",drawPreview);el.addEventListener("change",drawPreview);});
-document.getElementById("btnApplySite").onclick=()=>{
-  localStorage.setItem("ATLAS_LAYOUT_CFG",document.getElementById("cfgOut").value);
-  alert("Настройки сохранены! Обновите основную вкладку Атласа (Ctrl+F5).");
-};
+document.getElementById("btnCopyCfg").onclick=()=>{const ta=document.getElementById("cfgOut");ta.select();document.execCommand("copy");alert("JSON с параметрами границ и шрифтов скопирован в буфер обмена!");};
 document.getElementById("btnDlTest").onclick=()=>{const a=document.createElement("a");a.download="Макет_"+document.getElementById("dMode").value+".png";a.href=cv.toDataURL("image/png");a.click();};
 drawPreview();
 loadRealAtlasData();
