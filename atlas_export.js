@@ -384,7 +384,7 @@ async function exportBatchPdf(){
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
       if(it.met)document.getElementById("selMetric").value=it.met;sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await bgTick(300);
       const c=await buildSheetCanvas();if(!c)continue;
-      const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:0.85)),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+      const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:(scDpi>2.5?0.78:0.86))),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
     }
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
@@ -396,7 +396,7 @@ async function exportBatchPdf(){
 
 async function runCustomBatchExport(fmt){
   const modal=document.getElementById("batchModal"),btnZ=document.getElementById("bmRunZip"),btnP=document.getElementById("bmRunPdf");
-  const mode=document.getElementById("selMode").value,scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.52:(scDpi<0.6?0.65:0.84);
+  const mode=document.getElementById("selMode").value,scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.52:(scDpi<0.6?0.65:(scDpi>2.5?0.78:0.85));
   if(mode==="bench"){
     const {baseMO,tasks}=getBenchBatchPairs();
     if(!baseMO||!tasks.length)return alert("Нет парных МО с данными за выбранный год в этой группе.");
