@@ -123,50 +123,68 @@ function wrapPassText(ctx,txt,maxW){
   words.forEach(w=>{const test=cur?cur+" "+w:w;if(ctx.measureText(test).width<=maxW)cur=test;else{if(cur)lines.push(cur);cur=w;}});
   if(cur)lines.push(cur);return lines.slice(0,3);
 }
-function buildPassportCanvas(overrideMO=null){
-  const yr=document.getElementById("pYear").value,all=getPassMOs(),mo=overrideMO||all.find(m=>m.key===PASS_STATE.key);
-  if(!mo){alert("Выберите муниципальное образование для паспорта.");return null;}
-  const pd=getPassportData(mo,yr),W=2234,H=3160,canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
-  const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
+async function buildPassportCanvas(overrideMO=null){
+  const mo=overrideMO||getPassMOs().find(m=>m.key===PASS_STATE.key);if(!mo)return null;
+  const yr=document.getElementById("pYear")?.value||"2024",pd=collectPassportData(mo,yr);
+  const sc=Number(document.getElementById("selDpi")?.value||1),W=Math.round(2234*sc),H=Math.round(3158*sc);
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
+  ctx.fillStyle="#ffffff";ctx.fillRect(0,0,2234,3158);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(20,20,2194,3118);
+
+  // 1. Шапка на всю ширину
   ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 42px 'Times New Roman'";
-  ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1117,84);
-  ctx.font="bold 33px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,132);
-  ctx.font="italic 21px 'Times New Roman'";
-  ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1117,176);
-  ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1117,206);
+  ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1117,76);
+  ctx.font="bold 33px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,122);
+  ctx.font="italic 20.5px 'Times New Roman'";ctx.fillStyle="#334155";
+  ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1117,162);
+  ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1117,190);
   ctx.textAlign="left";
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,235,2134,115);
-  ctx.font="bold 25px 'Times New Roman'";ctx.fillStyle="#111111";
-  ctx.fillText("Кластер (2024 г.): "+pd.clVal,75,282);ctx.fillText("Категория: "+pd.catTxt,1150,282);
-  ctx.fillText("Площадь, га: "+pd.area,75,330);ctx.fillText("Численность, чел.: "+pd.pop,1150,330);
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,370,2134,515);
-  ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",440,442);ctx.textAlign="left";
-  drawCanvasRadar(ctx,pd.topSubs,440,745,220,"rgba(225,29,72,0.24)","#e11d48");
-  let iy1=520;const ix=840,iw=1320;
-  ctx.fillStyle="#e2e8f0";ctx.fillRect(ix,iy1-34,iw,46);ctx.fillStyle="#111111";ctx.font="bold 27px 'Times New Roman'";ctx.fillText("Интегральный индекс устойчивого развития",ix+14,iy1);ctx.textAlign="right";ctx.fillText(pd.idxMain,ix+iw-14,iy1);ctx.textAlign="left";iy1+=68;
-  pd.topSubs.forEach(s=>{ctx.fillStyle="#f1f5f9";ctx.fillRect(ix,iy1-30,iw,42);ctx.fillStyle="#111111";ctx.font="bold 24px 'Times New Roman'";ctx.fillText(s.name,ix+14,iy1);ctx.textAlign="right";ctx.fillText(s.txt,ix+iw-14,iy1);ctx.textAlign="left";iy1+=62;});
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,1070,2134,670);
-  ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Подблоки показателей (9)",440,1108);ctx.textAlign="left";
-  drawCanvasRadar(ctx,pd.subBlocks,440,1425,220,"rgba(2,132,199,0.24)","#0284c7");
-  let iy2=1145;
-  pd.subBlocks.forEach(b=>{ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(ix,iy2+14);ctx.lineTo(ix+iw,iy2+14);ctx.stroke();ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";ctx.fillText(b.name,ix+14,iy2);ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(b.txt,ix+iw-14,iy2);ctx.textAlign="left";iy2+=64;});
-  const cols=Array.of({t:"Экологический блок",a:pd.ekList},{t:"Социальный блок",a:pd.scList},{t:"Управленческо-экономический блок",a:pd.ueList});
-  const cw=700,by0=910,rowStep=160;
-  cols.forEach((col,ci)=>{
-    const cx0=50+ci*722,valColX=cx0+cw-115;
-    ctx.fillStyle="#eef3f8";ctx.fillRect(cx0,by0,cw,48);ctx.strokeStyle="#94a3b8";ctx.strokeRect(cx0,by0,cw,48);
-    ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(col.t,cx0+cw/2,by0+32);ctx.textAlign="left";
-    let cy=by0+76;
-    col.a.forEach(it=>{
-      ctx.strokeStyle="#cbd5e1";ctx.beginPath();ctx.moveTo(cx0,cy+66);ctx.lineTo(cx0+cw,cy+66);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(valColX,cy-24);ctx.lineTo(valColX,cy+66);ctx.stroke();
-      ctx.fillStyle="#111111";ctx.font="20.5px 'Times New Roman'";
-      const tLines=wrapPassText(ctx,it.id+" — "+it.title,valColX-cx0-12);
-      tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+6,cy+li*23));
-      ctx.font="bold 21.5px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(it.val,cx0+cw-8,cy+22);ctx.textAlign="left";cy+=rowStep;
+
+  // 2. Общая характеристика (Численность под Категорией, Кластер без цветной заливки)
+  ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(45,212,2144,104);
+  ctx.font="bold 24px 'Times New Roman'";ctx.fillStyle="#111111";
+  ctx.fillText("Кластер (2024 г.): "+pd.clVal,68,254);ctx.fillText("Категория: "+pd.catTxt,1150,254);
+  ctx.fillText("Площадь, га: "+pd.area,68,298);ctx.fillText("Численность, чел.: "+pd.pop,1150,298);
+
+  // 3. Единый центральный блок (y: 332..965): Слева диаграмма субиндексов, по центру таблица в 1 строку (подблоки внутри субиндексов), справа диаграмма подблоков
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,332,2144,630);
+  ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";
+  ctx.fillText("Субиндексы устойчивости",295,368);
+  ctx.fillText("Подблоки показателей",1935,368);
+  ctx.textAlign="left";
+  drawCanvasRadar(ctx,pd.subLabels,pd.subVals,295,660,155);
+  drawCanvasRadar(ctx,pd.blkLabels,pd.blkVals,1935,660,155);
+
+  // Центральная однострочная таблица (x: 545..1685, 15 строк * 38px = 570px -> строго до y=940, без переносов строк!)
+  const tx0=545,tw=1140,valW=145;let ty=355;
+  pd.midRows.forEach(r=>{
+    const isHdr=r.isSub;
+    ctx.fillStyle=isHdr?"#eef3f8":"#ffffff";ctx.fillRect(tx0,ty,tw,38);
+    ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1;ctx.strokeRect(tx0,ty,tw-valW,38);ctx.strokeRect(tx0+tw-valW,ty,valW,38);
+    ctx.fillStyle="#111111";ctx.font=(isHdr?"bold 20px":"19px")+" 'Times New Roman'";
+    ctx.fillText(r.name,tx0+(isHdr?10:26),ty+26);
+    ctx.font="bold 20px 'Times New Roman'";ctx.textAlign="right";
+    ctx.fillText(r.val,tx0+tw-14,ty+26);ctx.textAlign="left";
+    ty+=38;
+  });
+
+  // 4. Нижний блок: 3 широких столбца с 39 частными показателями (y: 985..3100, высота 2115px -> 148px на каждую из 13 строк!)
+  const cw=702,gap=19,by0=985,rowStep=154;
+  pd.blocks.forEach((blk,bi)=>{
+    const cx0=45+bi*(cw+gap),valColX=cx0+cw-118;
+    ctx.fillStyle="#e2e8f0";ctx.fillRect(cx0,by0,cw,46);ctx.strokeStyle="#64748b";ctx.strokeRect(cx0,by0,cw,46);
+    ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.textAlign="center";
+    ctx.fillText(blk.title,cx0+cw/2,by0+31);ctx.textAlign="left";
+    blk.items.forEach((it,ri)=>{
+      const cy=by0+46+ri*rowStep;
+      ctx.fillStyle=ri%2?"#fafbfc":"#ffffff";ctx.fillRect(cx0,cy,cw,rowStep);
+      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(cx0,cy,cw-118,rowStep);ctx.strokeRect(valColX,cy,118,rowStep);
+      ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";
+      const tLines=wrapPassText(ctx,it.id+" — "+it.title,cw-134);
+      const startY=cy+Math.max(26,Math.floor((rowStep-(tLines.length-1)*23)/2)+6);
+      tLines.slice(0,5).forEach((ln,li)=>ctx.fillText(ln,cx0+8,startY+li*23));
+      ctx.font="bold 21.5px 'Times New Roman'";ctx.textAlign="right";
+      ctx.fillText(it.val,cx0+cw-10,cy+rowStep/2+7);ctx.textAlign="left";
     });
   });
-  const sc=Number(document.getElementById("selDpi")?.value||1);
-  if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(W*sc);c2.height=Math.round(H*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
-  return canvas;
+  return cv;
 }

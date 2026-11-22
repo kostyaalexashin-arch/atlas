@@ -26,27 +26,28 @@ function buildMergedTableCanvases(terrs,silent=false){
     rows.push({lbl:p._lbl,reg:p.region,fo:p.fo,cat:p.cat,vals,v24:vals.at(5)});
   });
   const sorted=sortTableRows(rows,mObj);if(!sorted.length){if(!silent)alert("Нет строк для выбранных территорий.");return Array.of();}
-  const sc=Number(document.getElementById("selDpi")?.value||1),W=Math.round(3508*sc),H=Math.round(2480*sc),rowsPerPage=48,pages=Math.max(1,Math.ceil(sorted.length/rowsPerPage)),out=Array.of();
+  const sc=Number(document.getElementById("selDpi")?.value||1),W=Math.round(3508*sc),H=Math.round(2480*sc),rowsPerPage=46,pages=Math.max(1,Math.ceil(sorted.length/rowsPerPage)),out=Array.of();
   const fVals=sorted.flatMap(r=>r.vals).filter(v=>v!==null&&v!==undefined&&!isNaN(Number(v))).map(Number),mn=fVals.length?Math.min(...fVals):0,mx=fVals.length?Math.max(...fVals):1;
   const subTitle=hasRF?"Российская Федерация (сводная выборка)":"Выбранные территории ("+terrs.length+" поз.)";
   for(let pg=0;pg<pages;pg++){
     const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3508,2480);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(18,18,3472,2444);
     ctx.fillStyle="#111111";ctx.font="bold 38px 'Times New Roman'";ctx.textAlign="center";
-    const fullT=mObj.id+" — "+mObj.title;
-    if(fullT.length<=92){ctx.fillText(fullT,1754,68);}
-    else{const sp=fullT.lastIndexOf(" ",92)>30?fullT.lastIndexOf(" ",92):92;ctx.fillText(fullT.slice(0,sp),1754,54);ctx.fillText(fullT.slice(sp).trim(),1754,94);}
+    const fullT=mObj.id+" — "+mObj.title,wordsT=fullT.split(/\s+/),linesT=Array.of();let curT="";
+    wordsT.forEach(w=>{const cand=curT?curT+" "+w:w;if(ctx.measureText(cand).width<=3340)curT=cand;else{if(curT)linesT.push(curT);curT=w;}});
+    if(curT)linesT.push(curT);
+    linesT.slice(0,2).forEach((ln,li)=>ctx.fillText(ln,1754,58+li*44));
     ctx.font="italic 28px 'Times New Roman'";ctx.fillStyle="#334155";
-    ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,122);
+    ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,linesT.length>1?142:108);
     const cols=Array.of({x:40,w:980,t:"Муниципальное образование (Регион)"},{x:1020,w:380,t:"Категория МО"},{x:1400,w:330,t:"2019"},{x:1730,w:330,t:"2020"},{x:2060,w:330,t:"2021"},{x:2390,w:330,t:"2022"},{x:2720,w:330,t:"2023"},{x:3050,w:418,t:"2024"});
-    ctx.fillStyle="#eef3f8";ctx.fillRect(40,150,3428,48);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,150,3428,48);
+    ctx.fillStyle="#eef3f8";ctx.fillRect(40,168,3428,48);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,168,3428,48);
     ctx.fillStyle="#111111";ctx.font="bold 24px 'Times New Roman'";
-    cols.forEach(c=>{ctx.strokeRect(c.x,150,c.w,48);ctx.fillText(c.t,c.x+c.w/2,182);});
+    cols.forEach(c=>{ctx.strokeRect(c.x,168,c.w,48);ctx.fillText(c.t,c.x+c.w/2,200);});
     const slice=sorted.slice(pg*rowsPerPage,(pg+1)*rowsPerPage);
     slice.forEach((r,idx)=>{
-      const y=198+idx*42;ctx.fillStyle=idx%2?"#fafbfc":"#ffffff";ctx.fillRect(40,y,3428,42);
+      const y=216+idx*42;ctx.fillStyle=idx%2?"#fafbfc":"#ffffff";ctx.fillRect(40,y,3428,42);
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1;cols.forEach(c=>ctx.strokeRect(c.x,y,c.w,42));
-      ctx.textAlign="left";ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";
+      ctx.textAlign="left";ctx.fillStyle="#111111";ctx.font="28px 'Times New Roman'";
       ctx.fillText((r.lbl+" ("+r.reg+")").slice(0,58),52,y+28);
       ctx.textAlign="center";ctx.fillText((CAT_NAMES[r.cat]||r.cat).slice(0,22),1210,y+28);
       r.vals.forEach((v,vi)=>{
@@ -55,7 +56,7 @@ function buildMergedTableCanvases(terrs,silent=false){
           const t=mx>mn?(Number(v)-mn)/(mx-mn):0.5,rgb=samplePalRGB(currentPal,mObj.inv?1-t:t);
           ctx.fillStyle="rgba("+rgb.at(0)+","+rgb.at(1)+","+rgb.at(2)+",0.35)";ctx.fillRect(cx+1,y+1,cw-2,40);
         }
-        ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.fillText(fmtVal(v,mObj.dec),cx+cw/2,y+28);
+        ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.fillText(fmtVal(v,mObj.dec),cx+cw/2,y+28);
       });
     });
     drawFooterOnCanvas(ctx,3508,2480,false,getScale(mObj,fVals,false),null);out.push(cv);
@@ -149,7 +150,7 @@ function buildTableCanvases(silent=false){
     hdrs.forEach((h,i)=>{if(i>0){ctx.beginPath();ctx.moveTo(xCols.at(i),tTop);ctx.lineTo(xCols.at(i),tTop+hdrH);ctx.stroke();}ctx.fillText(h,(xCols.at(i)+xCols.at(i+1))/2,tTop+34);});
     sub.forEach((it,ri)=>{
       const y=tTop+hdrH+ri*rowH;
-      if(it.isFO){ctx.fillStyle="#dbeafe";ctx.fillRect(40,y,3080,rowH);ctx.strokeStyle="#64748b";ctx.strokeRect(40,y,3080,rowH);ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font="bold 22px 'Times New Roman'";ctx.fillText(it.title,56,y+47);return;}
+      if(it.isFO){ctx.fillStyle="#dbeafe";ctx.fillRect(40,y,3080,rowH);ctx.strokeStyle="#64748b";ctx.strokeRect(40,y,3080,rowH);ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font="bold 28px 'Times New Roman'";ctx.fillText(it.title,56,y+47);return;}
       const f=it.f,jk=f.properties.join_key;
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.2;ctx.strokeRect(40,y,3080,rowH);
       for(let ci=1;ci<8;ci++){ctx.beginPath();ctx.moveTo(xCols.at(ci),y);ctx.lineTo(xCols.at(ci),y+rowH);ctx.stroke();}
@@ -507,15 +508,15 @@ async function runControl1200DpiPdf(){
   pickRnd(DATA.fos,4).forEach(f=>tblTerrs.push({fo:f,reg:"ALL"}));
   pickRnd(cohRegs,20).forEach(r=>{const fo=Object.entries(DATA.fo_to_regs).find(p=>p.at(1).includes(r))?.at(0)||"RF";tblTerrs.push({fo,reg:r});});
 
-  // 3. 40 случайных парных сравнений в Бенчмаркинге по разным кластерам, категориям и регионам
-  const allMOs=getBenchMOs(),benchPairs=Array.of(),shuffledMOs=pickRnd(allMOs,allMOs.length);
-  for(let i=0;i<shuffledMOs.length&&benchPairs.length<40;i++){
-    const m1=shuffledMOs.at(i),m2=shuffledMOs.find((x,idx)=>idx>i&&x.key!==m1.key&&(x.cat!==m1.cat||x.reg!==m1.reg));
-    if(m2)benchPairs.push({m1,m2});
-  }
+  // 3. 10 случайных бенчмаркингов: 2 по 2 МО, 2 по 3 МО, 3 по 4 МО, 3 по 5 МО
+  const allMOs=getBenchMOs(),benchGroups=Array.of(),bSizes=Array.of(2,2,3,3,4,4,4,5,5,5);
+  bSizes.forEach(sz=>benchGroups.push(pickRnd(allMOs,sz)));
 
-  // 4. 40 случайных МО из разных категорий и кластеров для Цифрового паспорта
-  const passList=pickRnd(getPassMOs(),40);
+  // 4. Паспорта: по 2 из каждой категории (1..5) и по 2 из каждого ФО (с дедупликацией)
+  const allPass=getPassMOs(),passMap=new Map();
+  Array.of("1","2","3","4","5").forEach(cat=>pickRnd(allPass.filter(m=>m.cat===cat),2).forEach(m=>passMap.set(m.key,m)));
+  DATA.fos.forEach(fo=>pickRnd(allPass.filter(m=>m.fo===fo),2).forEach(m=>passMap.set(m.key,m)));
+  const passList=Array.from(passMap.values());
 
   // Сохраняем в томах по 50 страниц, чтобы 1200 dpi не переполняло память браузера
   let partIdx=1,pdfPages=Array.of();
@@ -550,12 +551,13 @@ async function runControl1200DpiPdf(){
       const it=tblTerrs.at(i);sMet.value=allMets.at((i*3)%allMets.length);setTerr(it.fo,it.reg);
       const cs=buildTableCanvases(true);if(cs.length)pushCv(cs.at(0));await bgTick(15);
     }
-    // Этап 3: 40 случайных сравнений Бенчмаркинга
+    // Этап 3: 10 сравнений Бенчмаркинга (2x2, 2x3, 3x4, 3x5 МО)
     sMode.value="bench";syncControls();initBenchControls();
-    for(let i=0;i<benchPairs.length;i++){
-      if(btn)btn.textContent="3/4 Бенчмаркинг: "+(i+1)+"/"+benchPairs.length;
-      const {m1,m2}=benchPairs.at(i);BENCH_STATE.mainKey=m1.key;BENCH_STATE.compKeys=Array.of(m2.key);
-      BENCH_STATE.tokens[m1.key]="🔵";BENCH_STATE.tokens[m2.key]="🟥";
+    for(let i=0;i<benchGroups.length;i++){
+      const grp=benchGroups.at(i);if(grp.length<2)continue;
+      if(btn)btn.textContent="3/4 Бенчмаркинг ("+grp.length+" МО): "+(i+1)+"/"+benchGroups.length;
+      BENCH_STATE.mainKey=grp.at(0).key;BENCH_STATE.compKeys=grp.slice(1).map(m=>m.key);
+      grp.forEach((m,idx)=>BENCH_STATE.tokens[m.key]=MONOPOLY_TOKENS.at(idx%MONOPOLY_TOKENS.length));
       buildBenchCanvases().forEach(cv=>pushCv(cv));await bgTick(15);
     }
     // Этап 4: 40 случайных Цифровых паспортов МО
