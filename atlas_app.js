@@ -77,6 +77,12 @@ function syncControls(){
   document.querySelectorAll(".nav-grp").forEach(el=>el.style.display=hideStd?"none":"flex");
   if(hideStd)return;
   const gW=document.getElementById("grpFOWrap");if(gW)gW.style.display=(sM.value==="table"&&document.getElementById("selFO")?.value==="RF")?"flex":"none";
+  const sMet=document.getElementById("selMetric");
+  if(sMet){
+    const isTbl=(sM.value==="table");
+    Array.from(sMet.querySelectorAll("optgroup")).forEach(og=>{if(og.label.startsWith("0."))og.style.display=isTbl?"none":"";});
+    if(isTbl&&sMet.value==="Кластер 2024"){const okOpt=Array.from(sMet.options).find(o=>o.value!=="Кластер 2024");if(okOpt)sMet.value=okOpt.value;}
+  }
   if(sM.value==="grid"||sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
   else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
 }
@@ -199,7 +205,7 @@ function render(){
     });
     const sHex=actCol.at(Math.floor(actCol.length*0.75)),legIt=Array.of();
     Object.keys(CAT_META).forEach(k=>{if(presCats.has(k))legIt.push({col:sHex,kind:"box",icon:markerSvg(k,sHex,18),txt:CAT_META[k].lbl});});
-    wrap.append(hdr,tbl);box.innerHTML="";box.append(wrap,buildFooterHtml(false,scObj,legIt));return;
+    box.style.display="flex";box.style.flexDirection="column";box.style.overflow="hidden";wrap.append(hdr,tbl);box.innerHTML="";box.append(wrap,buildFooterHtml(false,scObj,legIt));return;
   }
   box.innerHTML="";box.appendChild(buildHeaderHtml(mMeta.title,mode==="grid"?"2019–2024 гг.":yr+" г.",terrTitle));
   const mapEl=document.createElement("div");mapEl.id="mapDiv";box.appendChild(mapEl);

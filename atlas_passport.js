@@ -38,11 +38,13 @@ function initPassportControls(){
     const hit=all.find(m=>m.full.toLowerCase()===mIn.value.trim().toLowerCase());
     if(!hit)return;
     PASS_STATE.key=hit.key;
-    if(hit.coh){ySel.disabled=false;}else{ySel.value="2024";ySel.disabled=true;}
+    const pP=document.getElementById("prevPYear"),nP=document.getElementById("nextPYear");if(hit.coh){ySel.disabled=false;if(pP)pP.disabled=false;if(nP)nP.disabled=false;}else{ySel.value="2024";ySel.disabled=true;if(pP)pP.disabled=true;if(nP)nP.disabled=true;}
     cIn.value="";fIn.value="";rIn.value="";mIn.blur();syncAll();renderPassport();
   };
   ySel.onchange=renderPassport;
-  rst.onclick=()=>{PASS_STATE.key=null;cIn.value="";fIn.value="";rIn.value="";mIn.value="";ySel.value="2024";ySel.disabled=true;syncAll();renderPassport();};
+  const stepPY=d=>{if(ySel.disabled)return;ySel.selectedIndex=(ySel.selectedIndex+d+ySel.options.length)%ySel.options.length;renderPassport();};
+  const pP=document.getElementById("prevPYear"),nP=document.getElementById("nextPYear");if(pP)pP.onclick=()=>stepPY(-1);if(nP)nP.onclick=()=>stepPY(1);
+  rst.onclick=()=>{PASS_STATE.key=null;cIn.value="";fIn.value="";rIn.value="";mIn.value="";ySel.value="2024";ySel.disabled=true;if(pP)pP.disabled=true;if(nP)nP.disabled=true;syncAll();renderPassport();};
   syncAll();
 }
 function buildRadarSvg(items,fillRgba,strokeHex){
@@ -101,8 +103,8 @@ function renderPassport(){
   const sec2Html=pd.subBlocks.map(b=>bRow(b.name,b.txt,"blk")).join("");
   const colHtml=(title,arr)=>'<div><div class="pass-col-hdr">'+title+'</div>'+arr.map(x=>'<div class="pass-crow"><span><b>'+x.id+'</b> — '+x.title+'</span><b>'+x.val+'</b></div>').join("")+'</div>';
   box.innerHTML='<div class="pass-view">'+
-    '<div class="pass-top"><div class="pass-coat">Место под герб<br>(будет позже)</div><div class="pass-intro"><div class="pass-title">Цифровой паспорт устойчивости муниципального образования</div><div class="pass-sub">'+mo.full+' — '+yr+' г.</div><div class="pass-desc">Цифровой паспорт — это интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития. В режиме реального времени собраны ключевые показатели. Цифровой инструмент создан для открытого диалога между властью, бизнесом и жителями, помогая вместе планировать уверенное и экологичное будущее.</div></div></div>'+
-    '<div class="pass-meta-grid"><div class="pass-mrow"><span>Кластер (2024 г.):</span><b style="background:'+pd.clCol+';padding:1px 8px;border-radius:3px;border:1px solid #475569;">'+pd.clVal+'</b></div><div class="pass-mrow"><span>Категория:</span><b>'+pd.catTxt+'</b></div><div class="pass-mrow"><span>Численность, чел.:</span><b>'+pd.pop+'</b></div><div class="pass-mrow"><span>Площадь, га:</span><b>'+pd.area+'</b></div></div>'+
+    '<div class="pass-top" style="display:block;"><div class="pass-intro" style="width:100%;"><div class="pass-title">Цифровой паспорт устойчивости муниципального образования</div><div class="pass-sub">'+mo.full+' — '+yr+' г.</div><div class="pass-desc">Цифровой паспорт — это интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития. В режиме реального времени собраны ключевые показатели. Цифровой инструмент создан для открытого диалога между властью, бизнесом и жителями, помогая вместе планировать уверенное и экологичное будущее.</div></div></div>'+
+    '<div class="pass-meta-grid"><div class="pass-mrow"><span>Кластер (2024 г.):</span><b>'+pd.clVal+'</b></div><div class="pass-mrow"><span>Категория:</span><b>'+pd.catTxt+'</b></div><div class="pass-mrow"><span>Площадь, га:</span><b>'+pd.area+'</b></div><div class="pass-mrow"><span>Численность, чел.:</span><b>'+pd.pop+'</b></div></div>'+
     '<div class="pass-sec"><div class="pass-radar-box"><div style="font-weight:bold;font-size:11px;">Субиндексы устойчивости</div>'+buildRadarSvg(pd.topSubs,"rgba(225,29,72,0.24)","#e11d48")+'</div><div class="pass-idx-box">'+sec1Html+'</div></div>'+
     '<div class="pass-sec"><div class="pass-radar-box"><div style="font-weight:bold;font-size:11px;">Подблоки показателей (9)</div>'+buildRadarSvg(pd.subBlocks,"rgba(2,132,199,0.24)","#0284c7")+'</div><div class="pass-idx-box">'+sec2Html+'</div></div>'+
     '<div class="pass-bot">'+colHtml("Экологический блок",pd.ekList)+colHtml("Социальный блок",pd.scList)+colHtml("Управленческо-экономический блок",pd.ueList)+'</div></div>';
@@ -126,19 +128,18 @@ function buildPassportCanvas(overrideMO=null){
   if(!mo){alert("Выберите муниципальное образование для паспорта.");return null;}
   const pd=getPassportData(mo,yr),W=2234,H=3160,canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle="#475569";ctx.lineWidth=2;ctx.strokeRect(50,40,210,210);
-  ctx.fillStyle="#475569";ctx.font="20px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Место под герб",155,136);ctx.fillText("(будет позже)",155,164);
-  ctx.fillStyle="#111111";ctx.font="bold 40px 'Times New Roman'";ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1240,86);
-  ctx.font="bold 31px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1240,134);
-  ctx.font="italic 20px 'Times New Roman'";
-  ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1240,178);
-  ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1240,206);
+  ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 42px 'Times New Roman'";
+  ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1117,84);
+  ctx.font="bold 33px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,132);
+  ctx.font="italic 21px 'Times New Roman'";
+  ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1117,176);
+  ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1117,206);
   ctx.textAlign="left";
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,270,2134,110);
-  ctx.font="bold 24px 'Times New Roman'";ctx.fillStyle="#111111";
-  ctx.fillText("Кластер (2024 г.): "+pd.clVal,75,314);ctx.fillText("Категория: "+pd.catTxt,1150,314);
-  ctx.fillText("Численность, чел.: "+pd.pop,75,360);ctx.fillText("Площадь, га: "+pd.area,1150,360);
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,405,2134,640);
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,235,2134,115);
+  ctx.font="bold 25px 'Times New Roman'";ctx.fillStyle="#111111";
+  ctx.fillText("Кластер (2024 г.): "+pd.clVal,75,282);ctx.fillText("Категория: "+pd.catTxt,1150,282);
+  ctx.fillText("Площадь, га: "+pd.area,75,330);ctx.fillText("Численность, чел.: "+pd.pop,1150,330);
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,375,2134,660);
   ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",440,442);ctx.textAlign="left";
   drawCanvasRadar(ctx,pd.topSubs,440,745,220,"rgba(225,29,72,0.24)","#e11d48");
   let iy1=520;const ix=840,iw=1320;
@@ -150,7 +151,7 @@ function buildPassportCanvas(overrideMO=null){
   let iy2=1145;
   pd.subBlocks.forEach(b=>{ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(ix,iy2+14);ctx.lineTo(ix+iw,iy2+14);ctx.stroke();ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";ctx.fillText(b.name,ix+14,iy2);ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(b.txt,ix+iw-14,iy2);ctx.textAlign="left";iy2+=64;});
   const cols=Array.of({t:"Экологический блок",a:pd.ekList},{t:"Социальный блок",a:pd.scList},{t:"Управленческо-экономический блок",a:pd.ueList});
-  const cw=690,by0=1780,rowStep=98;
+  const cw=690,by0=1760,rowStep=102;
   cols.forEach((col,ci)=>{
     const cx0=50+ci*722,valColX=cx0+cw-115;
     ctx.fillStyle="#eef3f8";ctx.fillRect(cx0,by0,cw,48);ctx.strokeStyle="#94a3b8";ctx.strokeRect(cx0,by0,cw,48);
@@ -159,10 +160,10 @@ function buildPassportCanvas(overrideMO=null){
     col.a.forEach(it=>{
       ctx.strokeStyle="#cbd5e1";ctx.beginPath();ctx.moveTo(cx0,cy+66);ctx.lineTo(cx0+cw,cy+66);ctx.stroke();
       ctx.beginPath();ctx.moveTo(valColX,cy-24);ctx.lineTo(valColX,cy+66);ctx.stroke();
-      ctx.fillStyle="#111111";ctx.font="18.5px 'Times New Roman'";
-      const tLines=wrapPassText(ctx,it.id+" — "+it.title,valColX-cx0-14);
-      tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+6,cy+li*21));
-      ctx.font="bold 20px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(it.val,cx0+cw-8,cy+22);ctx.textAlign="left";cy+=rowStep;
+      ctx.fillStyle="#111111";ctx.font="20.5px 'Times New Roman'";
+      const tLines=wrapPassText(ctx,it.id+" — "+it.title,valColX-cx0-12);
+      tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+6,cy+li*23));
+      ctx.font="bold 21.5px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(it.val,cx0+cw-8,cy+22);ctx.textAlign="left";cy+=rowStep;
     });
   });
   const sc=Number(document.getElementById("selDpi")?.value||1);

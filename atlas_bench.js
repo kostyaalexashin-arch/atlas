@@ -1,3 +1,11 @@
+function cleanBenchGroup(gName){
+  return String(gName||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
+}
+function cleanBenchMetName(m){
+  const t=String(m.title||"").trim(),id=String(m.id||"").trim();
+  if(/^(ЭК|СЦ|УЭ)-\d+/.test(id))return id+" — "+t;
+  return t;
+}
 const MONOPOLY_TOKENS=Array.of("🔵","🟥","🔺","💠","⭐","🟢","🟣","🔶","⬛","🩷");
 const CAT_HOUSES=Array.of(
   {c:"1",ico:"🏙️",lbl:"Крупнейшие"},{c:"2",ico:"🏢",lbl:"Крупные"},
@@ -155,13 +163,13 @@ function renderBenchmark(){
         cgrid.appendChild(cell);
       });
       crow.appendChild(cgrid);view.appendChild(crow);
-      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
+      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=cleanBenchGroup(g.name);view.appendChild(gh);
     }else{
-      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=g.name;view.appendChild(gh);
+      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=cleanBenchGroup(g.name);view.appendChild(gh);
     }
     g.items.forEach(m=>{
       const valMap=((m.cat||m.is_cat||!isCoh)&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
-      const row=document.createElement("div");row.className="bench-row";const nm=document.createElement("div");nm.className="bench-met-name";nm.textContent=m.id+" — "+m.title;row.appendChild(nm);
+      const row=document.createElement("div");row.className="bench-row";const nm=document.createElement("div");nm.className="bench-met-name";nm.textContent=cleanBenchMetName(m);row.appendChild(nm);
       if(m.cat||m.is_cat){
         const grid=document.createElement("div");grid.className="bench-clust-cells";
         clEntries.forEach(pair=>{
@@ -202,7 +210,7 @@ function buildBenchCanvases(){
   const rows=Array.of();
   groups.forEach((g,gi)=>{
     if(gi===0){if(yr!=="2024")rows.push({kind:"blk",txt:"0. Категория МО"});rows.push({kind:"cat"});}
-    rows.push({kind:"blk",txt:g.name});
+    rows.push({kind:"blk",txt:cleanBenchGroup(g.name)});
     g.items.forEach(m=>rows.push({kind:"met",m}));
   });
   const splitIdx=Math.ceil(rows.length/2),pagesRows=Array.of(rows.slice(0,splitIdx),rows.slice(splitIdx));
@@ -235,7 +243,7 @@ function buildBenchCanvases(){
         return;
       }
       const m=it.m,valMap=(!isCoh&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
-      ctx.fillStyle="#111111";ctx.font="19.5px 'Times New Roman'";const tLines=wrapBenchTitle(ctx,m.id+" — "+m.title,960),lH=22,stY=y+(step-(tLines.length-1)*lH)/2+6;
+      ctx.fillStyle="#111111";ctx.font="19.5px 'Times New Roman'";const tLines=wrapBenchTitle(ctx,cleanBenchMetName(m),960),lH=22,stY=y+(step-(tLines.length-1)*lH)/2+6;
       tLines.forEach((ln,li)=>ctx.fillText(ln,56,stY+li*lH));
       if(m.cat||m.is_cat){
         const cw=Math.floor(sw/7),ch=Math.min(62,step-10),cy=y+(step-ch)/2;
