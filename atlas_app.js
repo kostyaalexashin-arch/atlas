@@ -144,16 +144,19 @@ function addCoreBadges(mapEl,isRegLevel){
   const sRect=svg.getBoundingClientRect(),pW=sRect.width,pH=sRect.height;if(pW<50||pH<50)return Promise.resolve();
   const oldA=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore),anns=oldA.slice();
   const hasRight=Boolean(document.querySelector(".mo-side-panel"))||(mapEl.layout&&Boolean(mapEl.layout.geo3));
-  const xMax=hasRight?0.76:0.99,placed=Array.of();
+  const xMax=hasRight?0.76:0.99,placed=Array.of(),ptObstacles=Array.of();
   const placeItem=(cx,cy,lbl,sz,pad,distX,distY)=>{
-    const dirs=[[0,-1],[0,1],[1,-0.7],[-1,-0.7],[1,0.7],[-1,0.7],[1,0],[-1,0]];
+    const bw=Math.max(46,lbl.length*(sz*0.62)+14),bh=sz+pad*2+6;
+    const dirs=[[0,-1],,[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],,[-1,0],[0,-1.55],[0,1.55],[1.35,-1.1],[-1.35,-1.1],[1.35,1.1],[-1.35,1.1]];
     let bestLx=cx,bestLy=cy-distY;
     for(const[ux,uy]of dirs){
       const lx=cx+Math.round(ux*distX),ly=cy+Math.round(uy*distY);
-      if(lx<sRect.left+42||lx>sRect.left+pW*xMax-42||ly<sRect.top+16||ly>sRect.bottom-16)continue;
-      if(!placed.some(b=>Math.abs(lx-b.x)<82&&Math.abs(ly-b.y)<22)){bestLx=lx;bestLy=ly;break;}
+      if(lx-bw*0.5<sRect.left+6||lx+bw*0.5>sRect.left+pW*xMax-6||ly-bh*0.5<sRect.top+6||ly+bh*0.5>sRect.bottom-6)continue;
+      const hitBox=placed.some(b=>Math.abs(lx-b.x)<(bw+b.w)*0.5+4&&Math.abs(ly-b.y)<(bh+b.h)*0.5+3);
+      const hitPt=ptObstacles.some(p=>Math.abs(lx-p.x)<bw*0.5+8&&Math.abs(ly-p.y)<bh*0.5+8);
+      if(!hitBox&&!hitPt){bestLx=lx;bestLy=ly;break;}
     }
-    placed.push({x:bestLx,y:bestLy});
+    placed.push({x:bestLx,y:bestLy,w:bw,h:bh});
     const px=(bestLx-sRect.left)/pW,py=1.0-(bestLy-sRect.top)/pH;
     anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,xanchor:"center",yanchor:"middle",text:"<b>"+lbl+"</b>",showarrow:false,bgcolor:"rgba(255,255,255,0.95)",bordercolor:"#e6007e",borderwidth:1.1,borderpad:pad,font:{family:"Times New Roman",size:sz,color:"#111111"}});
   };
@@ -171,13 +174,17 @@ function addCoreBadges(mapEl,isRegLevel){
   }else{
     const pts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer path.point"));
     const txts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer text"));
+    const items=Array.of();
     pts.forEach(pt=>{
       const r=pt.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
       if(r.width<=0||cx<sRect.left+4||cx>sRect.left+pW*xMax||cy<sRect.top+4||cy>sRect.bottom-4)return;
+      ptObstacles.push({x:cx,y:cy});
       let bestT=null,bestD=1e9;
       txts.forEach(t=>{const tr=t.getBoundingClientRect(),d=Math.hypot((tr.left+tr.width*0.5)-cx,(tr.top+tr.height*0.5)-cy);if(d<bestD){bestD=d;bestT=t;}});
-      if(bestT&&bestD<80)placeItem(cx,cy,bestT.textContent||"",11.5,2,34,17);
+      if(bestT&&bestD<80)items.push({cx,cy,lbl:bestT.textContent||""});
     });
+    items.sort((a,b)=>a.cy-b.cy);
+    items.forEach(it=>placeItem(it.cx,it.cy,it.lbl,11.5,2,36,18));
   }
   window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},350);});
 }
