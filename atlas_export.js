@@ -1,17 +1,22 @@
 function collectTableBatchCanvases(scope){
-  const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),origFO=sFO.value,origReg=sReg.value;
+  const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric");
+  const origFO=sFO.value,origReg=sReg.value,origMet=sMet.value;
   const tasks=Array.of();
-  if(scope==="all_fo"){DATA.fos.forEach(f=>tasks.push({fo:f,reg:"ALL",tag:f+"_ФО"}));}
-  else if(scope==="all_reg"){DATA.fos.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>tasks.push({fo:f,reg:r,tag:r})));}
-  else{tasks.push({fo:origFO,reg:origReg,tag:origReg!=="ALL"?origReg:origFO});}
+  if(scope==="all_fo"){DATA.fos.forEach(f=>tasks.push({fo:f,reg:"ALL",met:origMet,tag:f+"_ФО"}));}
+  else if(scope==="all_reg"){DATA.fos.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>tasks.push({fo:f,reg:r,met:origMet,tag:r})));}
+  else if(scope==="all_met"){
+    const baseTag=origReg!=="ALL"?origReg:origFO;
+    DATA.metrics.filter(m=>!(m.cat||m.is_cat)).forEach(m=>tasks.push({fo:origFO,reg:origReg,met:m.id,tag:baseTag+"_"+m.id}));
+  }
+  else{tasks.push({fo:origFO,reg:origReg,met:origMet,tag:origReg!=="ALL"?origReg:origFO});}
   const allOut=Array.of();
   try{
     tasks.forEach(t=>{
-      sFO.value=t.fo;sReg.value=t.reg;
-      const cs=buildTableCanvases();
+      sFO.value=t.fo;sReg.value=t.reg;sMet.value=t.met;
+      const cs=buildTableCanvases(tasks.length>1);
       cs.forEach((cv,i)=>allOut.push({cv,name:t.tag.replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_")+"_Лист_"+String(i+1).padStart(2,"0")+".png"}));
     });
-  }finally{sFO.value=origFO;sReg.value=origReg;}
+  }finally{sFO.value=origFO;sReg.value=origReg;sMet.value=origMet;}
   return allOut;
 }
 function buildZipBlob(files){
@@ -41,7 +46,7 @@ function drawCatShape(ctx,cat,cx,cy,r,fill){
   else{for(let i=0;i<5;i++){const a=-Math.PI/2+i*2*Math.PI/5,px=cx+Math.cos(a)*r*1.1,py=cy+Math.sin(a)*r*1.1;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();}
   ctx.fill();ctx.stroke();
 }
-function buildTableCanvases(){
+function buildTableCanvases(silent=false){
   const fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,mId=document.getElementById("selMetric").value;
   const grpFO=(fo==="RF"&&Boolean(document.getElementById("chkGroupFO")?.checked));
   const FO_ORD=Array.of("Центральный","Северо-Западный","Южный","Северо-Кавказский","Приволжский","Уральский","Сибирский","Дальневосточный");
@@ -54,7 +59,7 @@ function buildTableCanvases(){
     if(grpFO){const ia=FO_ORD.indexOf(a.properties.fo),ib=FO_ORD.indexOf(b.properties.fo);if(ia!==ib)return(ia===-1?99:ia)-(ib===-1?99:ib);}
     return a.properties.region.localeCompare(b.properties.region,"ru")||cmpMO(a,b);
   });
-  if(!sorted.length){alert("Нет строк для отображения в выбранной территории.");return Array.of();}
+  if(!sorted.length){if(!silent)alert("Нет строк для отображения в выбранной территории.");return Array.of();}
   const items=Array.of();let lastFO=null;
   sorted.forEach(f=>{if(grpFO&&f.properties.fo!==lastFO){lastFO=f.properties.fo;items.push({isFO:true,title:lastFO+" федеральный округ"});}items.push({isFO:false,f});});
   const pagesArr=Array.of();let curPg=Array.of(),activeFO="";
@@ -305,7 +310,8 @@ async function exportBatchPdf(){
     const a=document.createElement("a");a.download="Бенчмаркинг_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
   }
   const origFO=sFO.value,origReg=sReg.value,queue=Array.of(),pages=Array.of();
-  if(scope==="cur"){queue.push({fo:origFO,reg:origReg});}
+  if(scope==="cur"){queue.push({fo:origFO,reg:origReg,met:mId});}
+  else if(scope==="all_met"){DATA.metrics.filter(m=>!(m.cat||m.is_cat)||document.getElementById("selMode").value==="single").forEach(m=>queue.push({fo:origFO,reg:origReg,met:m.id}));}
   else if(scope==="fo"){queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>queue.push({fo:f,reg:"ALL"}));}
   else if(scope==="cur_fo"){const fl=origFO==="RF"?DATA.fos:Array.of(origFO);fl.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r})));}
   else{queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>{queue.push({fo:f,reg:"ALL"});(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r}));});}
@@ -314,7 +320,7 @@ async function exportBatchPdf(){
     for(let i=0;i<queue.length;i++){
       btn.textContent="PDF: "+(i+1)+" / "+queue.length+"...";const it=queue.at(i);
       if(sFO.value!==it.fo){sFO.value=it.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(it.fo!=="RF")(DATA.fo_to_regs[it.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
-      sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,380))));
+      if(it.met)document.getElementById("selMetric").value=it.met;sReg.value=it.reg;render();if(window._plotReady)await window._plotReady;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,380))));
       const c=await buildSheetCanvas();if(!c)continue;
       const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:0.85)),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
@@ -322,6 +328,6 @@ async function exportBatchPdf(){
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
   }finally{
     window._isExportMode=false;sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
-    sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
+    document.getElementById("selMetric").value=mId;sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
   }
 }
