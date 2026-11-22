@@ -110,7 +110,23 @@ function syncControls(){
   if(sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
   else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
 }
-function stepSelect(selId,dir){const el=document.getElementById(selId);if(!el||el.options.length===0)return;el.selectedIndex=(el.selectedIndex+dir+el.options.length)%el.options.length;el.dispatchEvent(new Event("change"));}
+function stepSelect(selId,dir){
+  const el=document.getElementById(selId);if(!el||el.options.length===0)return;
+  const n=el.options.length,curMode=document.getElementById("selMode")?.value;
+  let idx=el.selectedIndex;
+  for(let k=0;k<n;k++){
+    idx=(idx+dir+n)%n;
+    const opt=el.options[idx];
+    if(opt.disabled||opt.hidden)continue;
+    if(selId==="selMetric"&&curMode==="table"&&typeof DATA!=="undefined"){
+      const mm=(DATA.metrics||[]).find(m=>m.id===opt.value);
+      if(mm&&(mm.cat||mm.is_cat))continue;
+    }
+    el.selectedIndex=idx;
+    el.dispatchEvent(new Event("change"));
+    return;
+  }
+}
 const getJson=u=>fetch(u+"?v="+Date.now()).then(r=>{if(!r.ok)throw new Error(u+": HTTP "+r.status);return r.json();});
 Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJson("metrics_data.json"))).then(res=>{try{
   GEO=res.at(0);REGS=res.at(1);DATA=res.at(2);GEO.features.forEach(f=>{f.properties._cent=(f.properties._cx!==undefined)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);});
