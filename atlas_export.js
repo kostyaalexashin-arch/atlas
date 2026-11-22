@@ -137,19 +137,19 @@ function buildMergedTableCanvases(terrs,silent=false){
   for(let pg=0;pg<pages;pg++){
     const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3508,2480);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(18,18,3472,2444);
-    ctx.fillStyle="#111111";ctx.font="bold 57px 'Times New Roman'";ctx.textAlign="center";
+    ctx.fillStyle="#111111";ctx.font="bold 44px 'Times New Roman'";ctx.textAlign="center";
     ctx.fillText(mObj.id+" — "+mObj.title,1754,76);
-    ctx.font="italic 40px 'Times New Roman'";ctx.fillStyle="#334155";
+    ctx.font="italic 36px \'Times New Roman\'";ctx.fillStyle="#334155";
     ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,122);
     const cols=Array.of({x:40,w:980,t:"Муниципальное образование (Регион)"},{x:1020,w:380,t:"Категория МО"},{x:1400,w:330,t:"2019"},{x:1730,w:330,t:"2020"},{x:2060,w:330,t:"2021"},{x:2390,w:330,t:"2022"},{x:2720,w:330,t:"2023"},{x:3050,w:418,t:"2024"});
     ctx.fillStyle="#eef3f8";ctx.fillRect(40,150,3428,48);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,150,3428,48);
-    ctx.fillStyle="#111111";ctx.font="bold 31px 'Times New Roman'";
+    ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";
     cols.forEach(c=>{ctx.strokeRect(c.x,150,c.w,48);ctx.fillText(c.t,c.x+c.w/2,182);});
     const slice=sorted.slice(pg*rowsPerPage,(pg+1)*rowsPerPage);
     slice.forEach((r,idx)=>{
       const y=198+idx*42;ctx.fillStyle=idx%2?"#fafbfc":"#ffffff";ctx.fillRect(40,y,3428,42);
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1;cols.forEach(c=>ctx.strokeRect(c.x,y,c.w,42));
-      ctx.textAlign="left";ctx.fillStyle="#111111";ctx.font="29px 'Times New Roman'";
+      ctx.textAlign="left";ctx.fillStyle="#111111";ctx.font=" 24px \'Times New Roman\'";
       ctx.fillText((r.lbl+" ("+r.reg+")").slice(0,58),52,y+28);
       ctx.textAlign="center";ctx.fillText((CAT_NAMES[r.cat]||r.cat).slice(0,22),1210,y+28);
       r.vals.forEach((v,vi)=>{
@@ -158,7 +158,7 @@ function buildMergedTableCanvases(terrs,silent=false){
           const t=mx>mn?(Number(v)-mn)/(mx-mn):0.5,rgb=samplePalRGB(currentPal,mObj.inv?1-t:t);
           ctx.fillStyle="rgba("+rgb.at(0)+","+rgb.at(1)+","+rgb.at(2)+",0.35)";ctx.fillRect(cx+1,y+1,cw-2,40);
         }
-        ctx.fillStyle="#111111";ctx.font="bold 29px 'Times New Roman'";ctx.fillText(fmtVal(v,mObj.dec),cx+cw/2,y+28);
+        ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.fillText(fmtVal(v,mObj.dec),cx+cw/2,y+28);
       });
     });
     drawFooterOnCanvas(ctx,3508,2480,false,getScale(mObj,fVals,false),null);out.push(cv);
@@ -242,19 +242,19 @@ function buildTableCanvases(silent=false){
     const sub=pagesArr.at(pg),canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 44px 'Times New Roman'";ctx.fillText(mMeta.title+" (2019–2024 гг.)",W/2,56);
-    ctx.font="bold 34px 'Times New Roman'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,96);ctx.textAlign="left";
+    ctx.font="bold 36px \'Times New Roman\'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,96);ctx.textAlign="left";
     const xCols=Array.of(40,460,1120,1453,1786,2119,2452,2785,3120),tTop=120,hdrH=52,rowH=78;
     ctx.fillStyle="#eef3f8";ctx.fillRect(40,tTop,3080,hdrH);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,tTop,3080,hdrH);
     const hdrs=Array.of("Регион","Муниципальное образование","2019 г.","2020 г.","2021 г.","2022 г.","2023 г.","2024 г.");
-    ctx.fillStyle="#111111";ctx.font="bold 27px 'Times New Roman'";ctx.textAlign="center";
+    ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="center";
     hdrs.forEach((h,i)=>{if(i>0){ctx.beginPath();ctx.moveTo(xCols.at(i),tTop);ctx.lineTo(xCols.at(i),tTop+hdrH);ctx.stroke();}ctx.fillText(h,(xCols.at(i)+xCols.at(i+1))/2,tTop+34);});
     sub.forEach((it,ri)=>{
       const y=tTop+hdrH+ri*rowH;
-      if(it.isFO){ctx.fillStyle="#dbeafe";ctx.fillRect(40,y,3080,rowH);ctx.strokeStyle="#64748b";ctx.strokeRect(40,y,3080,rowH);ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font="bold 29px 'Times New Roman'";ctx.fillText(it.title,56,y+47);return;}
+      if(it.isFO){ctx.fillStyle="#dbeafe";ctx.fillRect(40,y,3080,rowH);ctx.strokeStyle="#64748b";ctx.strokeRect(40,y,3080,rowH);ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font="bold 28px 'Times New Roman'";ctx.fillText(it.title,56,y+47);return;}
       const f=it.f,jk=f.properties.join_key;
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.2;ctx.strokeRect(40,y,3080,rowH);
       for(let ci=1;ci<8;ci++){ctx.beginPath();ctx.moveTo(xCols.at(ci),y);ctx.lineTo(xCols.at(ci),y+rowH);ctx.stroke();}
-      ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font="25px 'Times New Roman'";
+      ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font=" 24px \'Times New Roman\'";
       const rTxt=f.properties.region;ctx.fillText(rTxt.length>26?rTxt.slice(0,25)+"…":rTxt,54,y+46);
       ctx.font=(f.properties.is_center?"bold ":"")+"19px 'Times New Roman'";const mTxt=f.properties._lbl;ctx.fillText(mTxt.length>38?mTxt.slice(0,37)+"…":mTxt,474,y+46);
       ctx.textAlign="center";
@@ -266,16 +266,16 @@ function buildTableCanvases(silent=false){
           else{const nv=Number(v);txt=fmtNum(nv,mMeta.dec);if(scTbl){const u=scTbl.vmax<=scTbl.vmin?0.5:Math.pow(Math.max(0,Math.min(1,(nv-scTbl.vmin)/(scTbl.vmax-scTbl.vmin))),scTbl.gamma);const ci=Math.min(scTbl.pal.length-1,Math.floor(u*scTbl.pal.length));fill=scTbl.pal.at(ci);}}
         }
         drawCatShape(ctx,catYr,cx,y+30,15,fill);
-        ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(txt,cx,y+67);
+        ctx.fillStyle="#111111";ctx.font="bold  24px \'Times New Roman\'";ctx.fillText(txt,cx,y+67);
       });
     });
     const footY=2095;ctx.strokeStyle="#94a3b8";ctx.beginPath();ctx.moveTo(40,footY);ctx.lineTo(3120,footY);ctx.stroke();
-    ctx.textAlign="left";ctx.font="23px 'Times New Roman'";
+    ctx.textAlign="left";ctx.font=" 24px \'Times New Roman\'";
     catsLeg.forEach((it,i)=>{const c=Math.floor(i/2),r=i%2,lx=55+c*520,ly=footY+36+r*44;drawCatShape(ctx,it.c,lx,ly-6,11,"#ffffff");ctx.fillStyle="#111111";ctx.fillText(it.t,lx+22,ly);});
     if(scTbl){
       const xBar=2000,wBar=1100,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);scTbl.pal.forEach((c,i)=>grd.addColorStop(i/(scTbl.pal.length-1),c));
       ctx.fillStyle=grd;ctx.fillRect(xBar,footY+18,wBar,32);ctx.strokeStyle="#475569";ctx.strokeRect(xBar,footY+18,wBar,32);
-      ctx.fillStyle="#111111";ctx.font="bold 25px 'Times New Roman'";ctx.textAlign="center";
+      ctx.fillStyle="#111111";ctx.font="bold  24px \'Times New Roman\'";ctx.textAlign="center";
       scTbl.ticks.forEach((t,i)=>ctx.fillText(fmtNum(t,mMeta.dec),xBar+wBar*(0.06+i*0.22),footY+80));
     }
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(W*sc);c2.height=Math.round(H*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);out.push(c2);}
@@ -322,12 +322,12 @@ async function buildSheetCanvas(){
       const nTr=nPack.arr.length>0?Array.of(
         {type:"scattergeo",geo:"geo2",mode:"lines",lon:nPack.lLon,lat:nPack.lLat,line:{color:"#1e293b",width:1.1},showlegend:false,hoverinfo:"skip"},
         {type:"scattergeo",geo:"geo2",mode:"markers",lon:nPack.arr.map(p=>p.lon),lat:nPack.arr.map(p=>p.lat),marker:{size:15,color:"rgba(255,255,255,0.85)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",geo:"geo2",mode:"text",lon:nPack.arr.map(p=>p.lon),lat:nPack.arr.map(p=>p.lat),text:nPack.arr.map(p=>String(p.idx+1)),textfont:{family:"Times New Roman",size:10.5,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+        {type:"scattergeo",geo:"geo2",mode:"text",lon:nPack.arr.map(p=>p.lon),lat:nPack.arr.map(p=>p.lat),text:nPack.arr.map(p=>String(p.idx+1)),textfont:{family:"Times New Roman",size:14,color:"#111111"},showlegend:false,hoverinfo:"skip"}
       ):Array.of();
       await Plotly.addTraces(mapEl,Array.of(
         {type:"scattergeo",mode:"lines",lon:mPack.lLon,lat:mPack.lLat,line:{color:"#1e293b",width:1.1},showlegend:false,hoverinfo:"skip"},
         {type:"scattergeo",mode:"markers",lon:mPack.arr.map(p=>p.lon),lat:mPack.arr.map(p=>p.lat),marker:{size:15,color:"rgba(255,255,255,0.8)",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
-        {type:"scattergeo",mode:"text",lon:mPack.arr.map(p=>p.lon),lat:mPack.arr.map(p=>p.lat),text:mPack.arr.map(p=>String(p.idx+1)),textfont:{family:"Times New Roman",size:10.5,color:"#111111"},showlegend:false,hoverinfo:"skip"}
+        {type:"scattergeo",mode:"text",lon:mPack.arr.map(p=>p.lon),lat:mPack.arr.map(p=>p.lat),text:mPack.arr.map(p=>String(p.idx+1)),textfont:{family:"Times New Roman",size:14,color:"#111111"},showlegend:false,hoverinfo:"skip"}
       ).concat(nTr));
       window._numTrCnt=3+nTr.length;
       numTraceAdded=true;
@@ -353,14 +353,14 @@ async function buildSheetCanvas(){
     ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 44px 'Times New Roman'";
     const lines=wrapTitle(fullMet,92).split("<br>");
     if(lines.length===1){ctx.fillText(lines.at(0),1580,68);}else{ctx.fillText(lines.at(0),1580,48);ctx.fillText(lines.at(1),1580,88);}
-    ctx.font="bold 42px 'Times New Roman'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
+    ctx.font="bold 36px \'Times New Roman\'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
     if(window._expCorePins&&window._expCorePins.length>0){
       window._expCorePins.forEach(p=>{
         const lx=40+p.rx*mapW,ly=155+p.ry*mapH;
         ctx.save();
-        ctx.font="bold 30px 'Times New Roman', serif";
+        ctx.font="bold 24px 'Times New Roman', serif";
         const tw=ctx.measureText(p.txt).width,bw=tw+14,bh=32;
         ctx.fillStyle="rgba(255,255,255,0.95)";ctx.fillRect(lx-bw/2,ly-bh/2,bw,bh);
         ctx.strokeStyle="#e6007e";ctx.lineWidth=2.0;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
@@ -382,13 +382,13 @@ async function buildSheetCanvas(){
         const sx0=isKr?760:64,sy0=155+mapH-26;
         ctx.fillStyle="rgba(255,255,255,0.9)";ctx.fillRect(sx0-8,sy0-34,wPx+24,42);
         ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx0,sy0-10);ctx.lineTo(sx0,sy0);ctx.lineTo(sx0+wPx,sy0);ctx.lineTo(sx0+wPx,sy0-10);ctx.stroke();
-        ctx.fillStyle="#111111";ctx.font="bold 27px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(tEl.textContent,sx0+wPx/2,sy0-10);ctx.textAlign="left";
+        ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(tEl.textContent,sx0+wPx/2,sy0-10);ctx.textAlign="left";
       }
     }
     if(hasList){
       const lx=40+Math.round(mapW*0.785),lw=3120-lx,lyTop=isArk?(155+Math.round(mapH*0.67)):165,lyBot=155+mapH-8;
-      const step=23,fs=18,maxRows=Math.max(6,Math.floor((lyBot-lyTop-34)/step)),twoCols=regFeats.length>maxRows;
-      ctx.fillStyle="#111111";ctx.font="bold 26px 'Times New Roman'";ctx.fillText("Муниципальные образования:",lx,lyTop+18);
+      const step=28,fs=23,maxRows=Math.max(6,Math.floor((lyBot-lyTop-38)/step)),twoCols=regFeats.length>maxRows;
+      ctx.fillStyle="#111111";ctx.font="bold  24px \'Times New Roman\'";ctx.fillText("Муниципальные образования:",lx,lyTop+18);
       ctx.font=fs+"px 'Times New Roman'";
       const splitIdx=twoCols?Math.ceil(regFeats.length/2):regFeats.length,colW=twoCols?Math.floor(lw/2):lw,maxCh=twoCols?25:52;
       regFeats.forEach((f,i)=>{
@@ -398,7 +398,7 @@ async function buildSheetCanvas(){
     }
     const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),footY=2125,legW=hasCbar?1900:3080;
     const items=Array.from(document.querySelectorAll("#sheetBox .leg-item")),cols=hasCbar?3:5,colW=Math.floor(legW/cols);
-    ctx.font="27px 'Times New Roman'";
+    ctx.font=" 24px \'Times New Roman\'";
     items.forEach((el,idx)=>{
       const c=Math.floor(idx/2),r=idx%2,ix=46+c*colW,iy=footY+28+r*42,colHex=el.dataset.color||"#94a3b8",kind=el.dataset.kind||"box";
       if(kind==="dot"){ctx.fillStyle=colHex;ctx.beginPath();ctx.arc(ix+10,iy-6,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.stroke();}
@@ -410,7 +410,7 @@ async function buildSheetCanvas(){
       const actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],xBar=2050,wBar=1070,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
       actCol.forEach((c,i)=>grd.addColorStop(i/(actCol.length-1),c));
       ctx.fillStyle=grd;ctx.fillRect(xBar,footY+8,wBar,32);ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+8,wBar,32);
-      ctx.fillStyle="#111111";ctx.font="bold 27px 'Times New Roman'";ctx.textAlign="center";
+      ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="center";
       const tks=Array.from(document.querySelectorAll("#sheetBox .cbar-ticks span")).map(s=>s.textContent);
       tks.forEach((t,i)=>ctx.fillText(t,xBar+(wBar*(0.06+i*0.22)),footY+68));ctx.textAlign="left";
     }
