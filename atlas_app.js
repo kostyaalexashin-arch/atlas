@@ -145,16 +145,18 @@ function addCoreBadges(mapEl,isRegLevel){
   const oldA=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore),anns=oldA.slice();
   const hasRight=Boolean(document.querySelector(".mo-side-panel"))||(mapEl.layout&&Boolean(mapEl.layout.geo3));
   const xMax=hasRight?0.76:0.99,placed=Array.of();
-  const placeItem=(cx,cy,lbl,sz,pad,extraOut)=>{
+  const placeItem=(cx,cy,lbl,sz,pad,dist)=>{
     const px=(cx-sRect.left)/pW,py=1.0-(cy-sRect.top)/pH;
-    const goLeft=px>0.52;
-    let dx=goLeft?-(58+extraOut):(58+extraOut),dy=(py>0.78?28:(py<0.22?-28:-18));
-    for(let k=0;k<8;k++){
+    const dirs=[[1,-0.55],[-1,-0.55],[1,0.55],[-1,0.55],[0,-1],[0,1],[1,0],[-1,0]];
+    let bestDx=dist,bestDy=-Math.round(dist*0.55);
+    for(const[ux,uy]of dirs){
+      const dx=Math.round(ux*dist),dy=Math.round(uy*dist);
       const lx=cx+dx,ly=cy+dy;
-      if(placed.some(b=>Math.abs(lx-b.x)<95&&Math.abs(ly-b.y)<26))dy+=(py>0.5?26:-26);else break;
+      if(lx<sRect.left+45||lx>sRect.left+pW*xMax-45||ly<sRect.top+18||ly>sRect.bottom-18)continue;
+      if(!placed.some(b=>Math.abs(lx-b.x)<86&&Math.abs(ly-b.y)<24)){bestDx=dx;bestDy=dy;break;}
     }
-    placed.push({x:cx+dx,y:cy+dy});
-    anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.3,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:pad,font:{family:"Times New Roman",size:sz,color:"#111111"}});
+    placed.push({x:cx+bestDx,y:cy+bestDy});
+    anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.2,arrowcolor:"#e6007e",ax:bestDx,ay:bestDy,bgcolor:"rgba(255,255,255,0.95)",bordercolor:"#e6007e",borderwidth:1.1,borderpad:pad,font:{family:"Times New Roman",size:sz,color:"#111111"}});
   };
   if(isRegLevel){
     const coreP=Array.from(svg.querySelectorAll(".geolayer .choropleth path")).find(p=>{const st=(p.getAttribute("style")||"").replace(/\s/g,"");return st.includes("230,0,126")||st.includes("e6007e");});
@@ -164,17 +166,19 @@ function addCoreBadges(mapEl,isRegLevel){
     if(coreP){
       const r=coreP.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
       if(r.width>0&&cx>=sRect.left+4&&cx<=sRect.left+pW*xMax&&cy>=sRect.top+4&&cy<=sRect.bottom-4){
-        placeItem(cx,cy,cName,13,3,Math.min(115,Math.round(r.width*0.55)));
+        placeItem(cx,cy,cName,13,3,Math.min(115,Math.round(r.width*0.55+24)));
       }
     }
   }else{
-    const pts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer path.point")),txts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer text"));
-    const n=Math.min(pts.length,txts.length);
-    for(let i=0;i<n;i++){
-      const r=pts.at(i).getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
-      if(r.width<=0||cx<sRect.left+4||cx>sRect.left+pW*xMax||cy<sRect.top+4||cy>sRect.bottom-4)continue;
-      placeItem(cx,cy,txts.at(i).textContent||"",12,2.5,0);
-    }
+    const pts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer path.point"));
+    const txts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer text"));
+    pts.forEach(pt=>{
+      const r=pt.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
+      if(r.width<=0||cx<sRect.left+4||cx>sRect.left+pW*xMax||cy<sRect.top+4||cy>sRect.bottom-4)return;
+      let bestT=null,bestD=1e9;
+      txts.forEach(t=>{const tr=t.getBoundingClientRect(),d=Math.hypot((tr.left+tr.width*0.5)-cx,(tr.top+tr.height*0.5)-cy);if(d<bestD){bestD=d;bestT=t;}});
+      if(bestT&&bestD<80)placeItem(cx,cy,bestT.textContent||"",11.5,2,28);
+    });
   }
   window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},350);});
 }
