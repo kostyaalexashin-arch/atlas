@@ -1,3 +1,108 @@
+
+window._buildCustomCtrlTasks = function(allMos){
+  const list = Array.isArray(allMos) ? allMos.filter(m => m && m.oktmo) : [];
+  const getCat = m => String(m.cat || m.category || m.pop_cat || m.group || 'Без категории');
+  const getFo  = m => String(m.fo || m.fed_okrug || '');
+  const getReg = m => String(m.region || m.reg || '');
+
+  const buckets = new Map();
+  list.forEach(m => {
+    const key = getCat(m) + '||' + getFo(m);
+    if(!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(m);
+  });
+  const sortedBuckets = Array.from(buckets.values()).filter(b => b.length >= 2);
+
+  const benchSizes = Array.of(2, 2, 3, 3, 4, 4, 4, 5, 5, 5);
+  const benchTasks = [];
+  const usedBenchRefs = new Set();
+
+  benchSizes.forEach((sz, idx) => {
+    let chosen = null;
+    for(let shift = 0; shift < sortedBuckets.length; shift++){
+      const b = sortedBuckets[(idx + shift) % sortedBuckets.length];
+      const avail = b.filter(m => !usedBenchRefs.has(m.oktmo));
+      if(avail.length >= sz){
+        const picked = [];
+        const seenR = new Set();
+        for(const item of avail){
+          if(!seenR.has(getReg(item))){ picked.push(item); seenR.add(getReg(item)); }
+          if(picked.length === sz) break;
+        }
+        for(const item of avail){
+          if(picked.length === sz) break;
+          if(!picked.includes(item)) picked.push(item);
+        }
+        chosen = picked;
+        break;
+      }
+    }
+    if(!chosen && list.length >= sz){
+      chosen = list.slice(idx * 2, idx * 2 + sz);
+    }
+    if(chosen && chosen.length >= 2){
+      chosen.forEach(m => usedBenchRefs.add(m.oktmo));
+      benchTasks.push({ ref: chosen.at(0), peers: chosen.slice(1), mos: chosen, count: chosen.length });
+    }
+  });
+
+  const cats = Array.from(new Set(list.map(getCat)));
+  const fos  = Array.from(new Set(list.map(getFo)));
+  const passTasks = [];
+  const usedRegs = new Set();
+  const usedOktmo = new Set();
+
+  for(let step = 0; step < 10; step++){
+    const targetCat = cats.length ? cats[step % cats.length] : null;
+    const targetFo  = fos.length  ? fos[step % fos.length]   : null;
+    let cand = list.find(m =>
+      !usedOktmo.has(m.oktmo) && !usedRegs.has(getReg(m)) &&
+      (!targetCat || getCat(m) === targetCat) && (!targetFo || getFo(m) === targetFo)
+    );
+    if(!cand) cand = list.find(m => !usedOktmo.has(m.oktmo) && !usedRegs.has(getReg(m)) && (!targetCat || getCat(m) === targetCat));
+    if(!cand) cand = list.find(m => !usedOktmo.has(m.oktmo) && !usedRegs.has(getReg(m)));
+    if(!cand) cand = list.find(m => !usedOktmo.has(m.oktmo));
+    if(cand){
+      usedRegs.add(getReg(cand));
+      usedOktmo.add(cand.oktmo);
+      passTasks.push(cand);
+    }
+  }
+  return { benchTasks, passTasks };
+};
+
+
+// --- Анти-троттлинг фоновой вкладки (Web Worker + Web Lock) ---
+window._bgSleep = (function(){
+  try {
+    const blob = new Blob([
+      'self.onmessage = function(e){ setTimeout(function(){ self.postMessage(e.data); }, e.data.ms); };'
+    ], {type: 'application/javascript'});
+    const worker = new Worker(URL.createObjectURL(blob));
+    const cbs = new Map();
+    let seq = 0;
+    worker.onmessage = function(e){
+      const fn = cbs.get(e.data.id);
+      if(fn){ cbs.delete(e.data.id); fn(); }
+    };
+    return function(ms){
+      return new Promise(res => {
+        const id = ++seq;
+        cbs.set(id, res);
+        worker.postMessage({id, ms: Math.max(1, ms || 1)});
+      });
+    };
+  } catch(e) {
+    return ms => new Promise(res => setTimeout(res, ms));
+  }
+})();
+window._withBgLock = async function(fn){
+  if(navigator.locks && navigator.locks.request){
+    return navigator.locks.request('atlas_export_active', {mode: 'exclusive'}, fn);
+  }
+  return fn();
+};
+
 function bgTick(ms=20){
   return new Promise(res=>{
     const ch=new MessageChannel(),t0=performance.now();
@@ -97,8 +202,6 @@ function buildZipBlob(files){
   const cdSz=cds.reduce((s,b)=>s+b.length,0),eocd=new Uint8Array(22),ev=new DataView(eocd.buffer);
   ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cdSz,true);ev.setUint32(16,off,true);
   return new Blob(parts.concat(cds,Array.of(eocd)),{type:"application/zip"});
-}
-
 function drawCatShape(ctx,cat,cx,cy,r,fill){
   ctx.fillStyle=fill;ctx.strokeStyle="#334155";ctx.lineWidth=1.5;ctx.beginPath();
   if(cat==="1"){ctx.rect(cx-r,cy-r,r*2,r*2);}
@@ -192,7 +295,7 @@ async function buildSheetCanvas(){
   const hasList=regFeats.length>0,hasRightCol=hasInsets||hasList;
   const prevExp=Boolean(window._isExportMode);
   window._isExportMode=true;setKeepAlive(true);
-  if(reg!=="ALL"){render();if(window._plotReady)await window._plotReady;await new Promise(r=>setTimeout(r,260));}
+  if(reg!=="ALL"){render();if(window._plotReady)await window._plotReady;await window._bgSleep(260);}
   const mapEl=document.getElementById("mapDiv");
   let numTraceAdded=false,savedAnns=null,coreTrIdx=-1;
   try{
@@ -238,7 +341,6 @@ async function buildSheetCanvas(){
       }));
       await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
     }
-
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
     const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("zatoHatch")||s.includes("0.987")||s.replace(/\s/g,"").includes("203,213,225");});
     hPaths.forEach(p=>{p.style.fill="#e2e8f0";p.style.fillOpacity="1";p.setAttribute("fill","#e2e8f0");});
@@ -355,7 +457,6 @@ function buildPdfBlob(pages){
   for(let i=1;i<3+n*3;i++)push(String(offs[i]).padStart(10,"0")+" 00000 n \n");
   push("trailer\n<< /Size "+(3+n*3)+" /Root 1 0 R >>\nstartxref\n"+xPos+"\n%%EOF");
   return new Blob(chunks,{type:"application/pdf"});
-}
 async function exportBatchPdf(){
   const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
   const curM=document.getElementById("selMode").value;
@@ -383,9 +484,8 @@ async function exportBatchPdf(){
         const cv=await buildPassportCanvas(list.at(i));if(!cv)continue;
         const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
         for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:cv.width,h:cv.height,jpg:arr});
-      }
       if(pages.length>0){const a=document.createElement("a");a.download="Цифровые_паспорта_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
-    }finally{btn.disabled=false;btn.textContent="💾 PDF";}
+    }}finally{btn.disabled=false;btn.textContent="💾 PDF";}
     return;
   }
   if(curM==="bench"){
@@ -408,9 +508,8 @@ async function exportBatchPdf(){
       const c=await buildSheetCanvas();if(!c)continue;
       const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:(scDpi>2.5?0.78:0.86))),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
-    }
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
-  }finally{
+  }}finally{
     window._isExportMode=false;setKeepAlive(false);sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
     document.getElementById("selMetric").value=mId;sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
   }
@@ -433,11 +532,10 @@ async function runCustomBatchExport(fmt){
           if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+"_Лист_"+(ci+1)+".png",data:arr});}
           else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
         });
-      }
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
-    }finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
+    }}finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
     return;
   }
   if(mode==="passport"){
@@ -489,13 +587,12 @@ async function runCustomBatchExport(fmt){
           const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
           for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
           pdfPages.push({w:cv.width,h:cv.height,jpg:arr});
-        }
       }
     }
     if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Пакет_Атлас_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
     if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Пакет_Атлас.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
     modal.classList.remove("open");
-  }finally{
+  }}finally{
     window._isExportMode=false;setKeepAlive(false);sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
     sReg.value=origReg;sMet.value=origMet;sYr.value=origYr;if(mode!=="table")render();
     btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";
@@ -503,7 +600,11 @@ async function runCustomBatchExport(fmt){
 }
 
 async function runControl1200DpiPdf(){
-  const btn=document.getElementById("btnCtrl1200");
+  const _allCtrlMos = (typeof DATA !== 'undefined' && Array.isArray(DATA.mos)) ? DATA.mos :
+    ((typeof GEO !== 'undefined' && Array.isArray(GEO.features)) ? GEO.features.map(f => f.properties).filter(p => p && p._map_status === 'В_выборке') : []);
+  const _customCtrl = window._buildCustomCtrlTasks(_allCtrlMos);
+
+const btn=document.getElementById("btnCtrl1200");
   const sMode=document.getElementById("selMode"),sBase=document.getElementById("selBase"),sYr=document.getElementById("selYear");
   const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric"),sDpi=document.getElementById("selDpi");
   const orig={mode:sMode.value,base:sBase.value,yr:sYr.value,fo:sFO.value,reg:sReg.value,met:sMet.value,dpi:sDpi.value};
@@ -532,8 +633,6 @@ async function runControl1200DpiPdf(){
   for(let i=0;i<shuffledMOs.length&&benchPairs.length<40;i++){
     const m1=shuffledMOs.at(i),m2=shuffledMOs.find((x,idx)=>idx>i&&x.key!==m1.key&&(x.cat!==m1.cat||x.reg!==m1.reg));
     if(m2)benchPairs.push({m1,m2});
-  }
-
   // 4. 40 случайных МО из разных категорий и кластеров для Цифрового паспорта
   const passList=pickRnd(getPassMOs(),40);
 
@@ -592,4 +691,7 @@ async function runControl1200DpiPdf(){
     setTerr(orig.fo,orig.reg);syncControls();render();
     if(btn){btn.disabled=false;btn.textContent="🧪 Контроль 1200 dpi (PDF)";}
   }
+}
+}
+}
 }
