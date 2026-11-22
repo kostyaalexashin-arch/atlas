@@ -147,7 +147,7 @@ function addCoreBadges(mapEl,isRegLevel){
   const xMax=hasRight?0.76:0.99,placed=Array.of(),ptObstacles=Array.of();
   const placeItem=(cx,cy,lbl,sz,pad,distX,distY)=>{
     const bw=Math.max(46,lbl.length*(sz*0.62)+14),bh=sz+pad*2+6;
-    const dirs=[[0,-1],,[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],,[-1,0],[0,-1.55],[0,1.55],[1.35,-1.1],[-1.35,-1.1],[1.35,1.1],[-1.35,1.1]];
+    const dirs=[[0,-1],[0,1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],[1,0],[-1,0],[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
     let bestLx=cx,bestLy=cy-distY;
     for(const[ux,uy]of dirs){
       const lx=cx+Math.round(ux*distX),ly=cy+Math.round(uy*distY);
