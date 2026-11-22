@@ -59,7 +59,17 @@ function computeScale(vals,palArr,inv){
 }
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear"),isBench=(sM.value==="bench");
-  const isPass=(sM.value==="passport"),hideStd=isBench||isPass;const shB=document.getElementById("sheetBox");if(shB)shB.classList.toggle("portrait",isPass);const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
+  const isPass=(sM.value==="passport"),hideStd=isBench||isPass;const shB=document.getElementById("sheetBox");if(shB)shB.classList.toggle("portrait",isPass);
+  const scEl=document.getElementById("selPdfScope");
+  if(scEl){
+    if(isPass&&scEl.dataset.mode!=="pass"){
+      scEl.dataset.mode="pass";
+      scEl.innerHTML='<option value="cur">Текущее МО (1 лист)</option><option value="reg">Все МО региона</option><option value="fo">Все МО ФО</option><option value="cat">По категории МО</option><option value="coh">Все 193 МО когорты</option>';
+    }else if(!isPass&&scEl.dataset.mode==="pass"){
+      scEl.dataset.mode="std";
+      scEl.innerHTML='<option value="fo">РФ + 8 ФО</option><option value="cur_fo">Регионы ФО</option><option value="all">Весь атлас</option>';
+    }
+  }const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
   if(bp)bp.style.display=isBench?"flex":"none";
   if(pp)pp.style.display=isPass?"flex":"none";
   if(mb)mb.style.display=hideStd?"none":"flex";

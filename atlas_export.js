@@ -241,12 +241,16 @@ function buildPdfBlob(pages){
 async function exportBatchPdf(){
   const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
   const curM=document.getElementById("selMode").value;if(curM==="table"){const cs=buildTableCanvases();if(!cs.length)return;const pages=cs.map(cv=>{const b64=cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:cv.width,h:cv.height,jpg:arr};});const a=document.createElement("a");a.download="Таблица_динамики_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;}if(curM==="passport"){
-    const allM=getPassMOs(),curMO=allM.find(m=>m.key===PASS_STATE.key),regFilter=document.getElementById("pRegIn")?.value.trim()||"",foFilter=document.getElementById("pFOIn")?.value.trim()||"";
+    const allM=getPassMOs(),curMO=allM.find(m=>m.key===PASS_STATE.key);
+    const regFilter=document.getElementById("pRegIn")?.value.trim()||"",foFilter=document.getElementById("pFOIn")?.value.trim()||"",catTxt=document.getElementById("pCatIn")?.value.trim()||"";
+    const catCode=Object.entries(PASS_CAT_NAMES).find(p=>p.at(1).toLowerCase()===catTxt.toLowerCase())?.at(0)||(curMO?curMO.cat:"");
     let list=Array.of();
-    if(scope==="fo"){list=curMO?Array.of(curMO):allM.filter(m=>GEO.features.some(f=>f.properties.join_key===m.key&&f.properties.is_center));}
-    else if(scope==="cur_fo"){const tReg=regFilter||(curMO?curMO.reg:"");list=tReg?allM.filter(m=>m.reg===tReg):(curMO?Array.of(curMO):Array.of());}
-    else{const tFO=foFilter||(curMO?curMO.fo:"");list=tFO?allM.filter(m=>m.fo===tFO):allM.filter(m=>m.coh);}
-    if(!list.length)return alert("Выберите МО, Регион или ФО для выгрузки паспортов.");
+    if(scope==="cur"){if(curMO)list=Array.of(curMO);}
+    else if(scope==="reg"){const tReg=regFilter||(curMO?curMO.reg:"");if(tReg)list=allM.filter(m=>m.reg===tReg);}
+    else if(scope==="fo"){const tFO=foFilter||(curMO?curMO.fo:"");if(tFO)list=allM.filter(m=>m.fo===tFO);}
+    else if(scope==="cat"){if(catCode)list=allM.filter(m=>m.cat===catCode);}
+    else{list=allM.filter(m=>m.coh);}
+    if(!list.length)return alert("Выберите МО, Категорию, Регион или ФО в панели слева для выгрузки паспортов.");
     btn.disabled=true;
     try{
       const pages=Array.of(),scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.52:(scDpi<0.6?0.65:0.82);
@@ -256,7 +260,7 @@ async function exportBatchPdf(){
         const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
         for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:cv.width,h:cv.height,jpg:arr});
       }
-      if(pages.length>0){const a=document.createElement("a");a.download="Цифровые_паспорта_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
+      if(pages.length>0){const a=document.createElement("a");a.download="Цифровые_паспорта_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
     }finally{btn.disabled=false;btn.textContent="💾 PDF";}
     return;
   }if(curM==="bench"){const cs=buildBenchCanvases();if(!cs.length)return;const pages=cs.map(cv=>{const b64=cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:cv.width,h:cv.height,jpg:arr};});const a=document.createElement("a");a.download="Бенчмаркинг_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;}
