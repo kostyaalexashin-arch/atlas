@@ -231,14 +231,18 @@ async function buildSheetCanvas(){
     }else if(window._badgesReady){
       await window._badgesReady;
       savedAnns=(mapEl.layout.annotations||Array.of()).slice();
-      const svgC=mapEl.querySelector("svg.main-svg"),sR=svgC?svgC.getBoundingClientRect():{left:0,top:0,width:1540,height:740};
-      const ptsC=svgC?Array.from(svgC.querySelectorAll(".geolayer .scatterlayer path.point")).map(p=>{const r=p.getBoundingClientRect();return{rx:(r.left+r.width*0.5-sR.left)/sR.width,ry:(r.top+r.height*0.5-sR.top)/sR.height,w:r.width};}).filter(p=>p.w>0):Array.of();
+      const fl=mapEl._fullLayout,sub=fl&&fl.geo&&fl.geo._subplot,proj=sub&&sub.projection;
+      const w0=fl?fl.width:1540,h0=fl?fl.height:740;
+      const coreFeats=GEO.features.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
       window._expCorePins=savedAnns.filter(a=>a._isCore).map(a=>{
-        const ay0=1-a.y;
-        let hit=null,bestD=1e9;
-        ptsC.forEach(p=>{const d=Math.hypot(p.rx-a.x,p.ry-ay0);if(d<bestD){bestD=d;hit=p;}});
-        const rx=(hit&&bestD<0.05)?hit.rx:a.x,ry=(hit&&bestD<0.05)?hit.ry:ay0;
-        return{rx,ry,ax:a.ax||0,ay:a.ay||0,txt:String(a.text||"").replace(/<[^>]+>/g,"").trim()};
+        const txt=String(a.text||"").replace(/<[^>]+>/g,"").trim();
+        let rx=a.x,ry=1-a.y;
+        const cf=coreFeats.find(f=>String(f.properties._lbl||"").trim()===txt);
+        if(cf&&proj&&cf.properties._cent){
+          const xy=proj([cf.properties._cent.lon,cf.properties._cent.lat]);
+          if(xy&&Number.isFinite(xy.at(0))){rx=xy.at(0)/w0;ry=xy.at(1)/h0;}
+        }
+        return{rx,ry,ax:a.ax||0,ay:a.ay||0,txt};
       });
       await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
     }
