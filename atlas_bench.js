@@ -48,7 +48,9 @@ function drawMultiCanvasRadar(ctx,labels,series,keyField,rcx,rcy,R){
   ctx.textAlign="left";
 }
 function cleanBenchGroup(gName){
-  return String(gName||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
+  const s=String(gName||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
+  if(s.startsWith("5."))return"5.1. Частные показатели";
+  return s;
 }
 function cleanBenchMetName(m){
   const t=String(m.title||"").trim(),id=String(m.id||"").trim();
@@ -194,7 +196,7 @@ function renderBenchmark(){
   
   const groups=Array.of();DATA.metrics.forEach(m=>{
     if((m.cat||m.is_cat)&&yr!=="2024")return;
-    let g=groups.find(x=>x.name===m.group);if(!g){g={name:m.group,items:Array.of()};groups.push(g);}g.items.push(m);
+    const cg=cleanBenchGroup(m.group);let g=groups.find(x=>x.name===cg);if(!g){g={name:cg,items:Array.of()};groups.push(g);}g.items.push(m);
   });
   const clEntries=Object.entries(DATA.cluster_colors||{});
   groups.forEach((g,gi)=>{
@@ -261,7 +263,7 @@ function buildBenchCanvases(){
   const yr=document.getElementById("bYear").value,isCoh=(document.getElementById("bBase").value==="coh"),actCol=PALETTES[currentPal]||PALETTES["RdYlGn"];
   const availMOs=getBenchMOs(),selKeys=Array.of(BENCH_STATE.mainKey).concat(BENCH_STATE.compKeys).filter(Boolean),selMOs=selKeys.map(k=>availMOs.find(m=>m.key===k)).filter(Boolean);
   if(selMOs.length===0){alert("Выберите хотя бы одно МО для сравнения.");return Array.of();}
-  const groups=Array.of();DATA.metrics.forEach(m=>{if((m.cat||m.is_cat)&&yr!=="2024")return;let g=groups.find(x=>x.name===m.group);if(!g){g={name:m.group,items:Array.of()};groups.push(g);}g.items.push(m);});
+  const groups=Array.of();DATA.metrics.forEach(m=>{if((m.cat||m.is_cat)&&yr!=="2024")return;const cg=cleanBenchGroup(m.group);let g=groups.find(x=>x.name===cg);if(!g){g={name:cg,items:Array.of()};groups.push(g);}g.items.push(m);});
   const rows=Array.of();
   groups.forEach((g,gi)=>{
     if(gi===0){rows.push({kind:"cat"});}
@@ -284,8 +286,8 @@ function buildBenchCanvases(){
     sub.forEach((it,ri)=>{
       const y=curY,rowH=it.kind==="radars"?step*5:step;curY+=rowH;
       if(it.kind==="radars"){const rData=getBenchRadarSeries(selMOs,yr,isCoh);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,y+6,W-100,rowH-12);ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости (4)",610,y+34);ctx.fillText("Подблоки показателей (9)",1620,y+34);ctx.textAlign="left";const radR=Math.min(145,Math.floor((rowH-90)/2));drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,y+rowH/2+14,radR);drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,y+rowH/2+14,radR);return;}
-      if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,64,y+step-14);return;}
-      if(it.kind==="subblk"){ctx.fillStyle="#f1f5f9";ctx.fillRect(50,y+6,W-100,step-12);ctx.fillStyle="#0369a1";ctx.fillRect(50,y+6,8,step-12);ctx.fillStyle="#0f172a";ctx.font="bold 20px 'Times New Roman'";ctx.fillText(it.txt,70,y+step-15);return;}
+      if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,64,y+step/2+7);return;}
+      if(it.kind==="subblk"){ctx.fillStyle="#f1f5f9";ctx.fillRect(50,y+6,W-100,step-12);ctx.fillStyle="#0369a1";ctx.fillRect(50,y+6,8,step-12);ctx.fillStyle="#0f172a";ctx.font="bold 20px 'Times New Roman'";ctx.fillText(it.txt,70,y+step/2+6);return;}
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(50,y+step);ctx.lineTo(W-50,y+step);ctx.stroke();
       const sx=1040,sw=W-1090;
       if(it.kind==="cat"){
