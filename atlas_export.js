@@ -170,10 +170,10 @@ function buildTableCanvases(silent=false){
     ctx.textAlign="left";ctx.font="18px 'Times New Roman'";
     catsLeg.forEach((it,i)=>{const c=Math.floor(i/2),r=i%2,lx=55+c*520,ly=footY+36+r*44;drawCatShape(ctx,it.c,lx,ly-6,11,"#ffffff");ctx.fillStyle="#111111";ctx.fillText(it.t,lx+22,ly);});
     if(scTbl){
-      const xBar=2000,wBar=1100,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);scTbl.pal.forEach((c,i)=>grd.addColorStop(i/(scTbl.pal.length-1),c));
+      const xBar=2000,wBar=1100,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);(scTbl.inv?scTbl.pal.slice().reverse():scTbl.pal).forEach((c,i,arr)=>grd.addColorStop(i/(arr.length-1),c));
       ctx.fillStyle=grd;ctx.fillRect(xBar,footY+18,wBar,32);ctx.strokeStyle="#475569";ctx.strokeRect(xBar,footY+18,wBar,32);
       ctx.fillStyle="#111111";ctx.font="bold 19px 'Times New Roman'";ctx.textAlign="center";
-      scTbl.ticks.forEach((t,i)=>ctx.fillText(fmtNum(t,mMeta.dec),xBar+wBar*(0.06+i*0.22),footY+80));
+      (scTbl.inv?scTbl.ticks.slice().reverse():scTbl.ticks).forEach((t,i)=>ctx.fillText(fmtNum(t,mMeta.dec),xBar+wBar*(0.06+i*0.22),footY+80));
     }
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(W*sc);c2.height=Math.round(H*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);out.push(c2);}
     else out.push(canvas);
