@@ -228,7 +228,20 @@ async function buildSheetCanvas(){
       ).concat(nTr));
       window._numTrCnt=3+nTr.length;
       numTraceAdded=true;
-    }else if(window._badgesReady){await window._badgesReady;}
+    }else if(window._badgesReady){
+      await window._badgesReady;
+      savedAnns=(mapEl.layout.annotations||Array.of()).slice();
+      const svgC=mapEl.querySelector("svg.main-svg"),sR=svgC?svgC.getBoundingClientRect():{left:0,top:0,width:1540,height:740};
+      const ptsC=svgC?Array.from(svgC.querySelectorAll(".geolayer .scatterlayer path.point")):Array.of();
+      const txtsC=svgC?Array.from(svgC.querySelectorAll(".geolayer .scatterlayer text")):Array.of();
+      window._expCorePins=savedAnns.filter(a=>a._isCore).map((a,idx)=>{
+        const pEl=ptsC.at(idx),r=pEl?pEl.getBoundingClientRect():null;
+        const rx=r&&r.width>0?((r.left+r.width*0.5-sR.left)/sR.width):a.x;
+        const ry=r&&r.height>0?((r.top+r.height*0.5-sR.top)/sR.height):(1-a.y);
+        return{rx,ry,ax:a.ax||0,ay:a.ay||0,txt:String(a.text||"").replace(/<[^>]+>/g,"").trim()};
+      });
+      await Plotly.relayout(mapEl,{annotations:savedAnns.filter(a=>!a._isCore)});
+    }
 
     mapEl.querySelectorAll(".geolayer text").forEach(t=>{t.style.stroke="#ffffff";t.style.strokeWidth="3.5px";t.style.paintOrder="stroke";t.style.fontWeight="bold";});
     const hPaths=Array.from(mapEl.querySelectorAll("path")).filter(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("zatoHatch")||s.includes("0.987")||s.replace(/\s/g,"").includes("203,213,225");});
@@ -245,6 +258,19 @@ async function buildSheetCanvas(){
     ctx.font="bold 32px 'Times New Roman'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
+    if(window._expCorePins&&window._expCorePins.length>0){
+      window._expCorePins.forEach(p=>{
+        const cx=40+p.rx*mapW,cy=155+p.ry*mapH,lx=cx+p.ax*2,ly=cy+p.ay*2;
+        ctx.save();ctx.strokeStyle="#e6007e";ctx.lineWidth=2.6;
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(lx,ly);ctx.stroke();
+        ctx.font="bold 24px 'Times New Roman', serif";
+        const tw=ctx.measureText(p.txt).width,bw=tw+16,bh=34;
+        ctx.fillStyle="rgba(255,255,255,0.96)";ctx.fillRect(lx-bw/2,ly-bh/2,bw,bh);
+        ctx.strokeStyle="#e6007e";ctx.lineWidth=2.2;ctx.strokeRect(lx-bw/2,ly-bh/2,bw,bh);
+        ctx.fillStyle="#111111";ctx.textAlign="center";ctx.textBaseline="middle";
+        ctx.fillText(p.txt,lx,ly+1);ctx.restore();
+      });
+    }
     {
       const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
       for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=4&&Math.abs(px[k+1]-214)<=4&&Math.abs(px[k+2]-225)<=4);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
@@ -295,6 +321,7 @@ async function buildSheetCanvas(){
     if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(3160*sc);c2.height=Math.round(2234*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
     return canvas;
   }finally{
+    if(!hasList&&savedAnns){await Plotly.relayout(mapEl,{annotations:savedAnns});window._expCorePins=null;}
     if(numTraceAdded){const delArr=window._numTrCnt===6?Array.of(-6,-5,-4,-3,-2,-1):Array.of(-3,-2,-1);await Plotly.deleteTraces(mapEl,delArr);if(coreTrIdx!==-1)await Plotly.restyle(mapEl,{visible:true},Array.of(coreTrIdx));if(savedAnns)await Plotly.relayout(mapEl,{annotations:savedAnns});}
     window._isExportMode=prevExp;if(reg!=="ALL"&&!prevExp)render();
   }
