@@ -139,11 +139,11 @@ function applyZatoHatch(mapEl){
   pat.append(bg,ln);defs.appendChild(pat);
   svg.querySelectorAll("path").forEach(p=>{const st=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");if(st.includes("0.987")||st.replace(/\s/g,"").includes("203,213,225")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
 }
-function addCoreBadges(mapEl,isRegLevel){
+function addCoreBadges(mapEl,isRegLevel,kalCoreF){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return Promise.resolve();
   const sRect=svg.getBoundingClientRect(),pW=sRect.width,pH=sRect.height;if(pW<50||pH<50)return Promise.resolve();
   const oldA=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore),anns=oldA.slice();
-  const hasRight=Boolean(document.querySelector(".mo-side-panel"))||(mapEl.layout&&Boolean(mapEl.layout.geo3));
+  const hasRight=Boolean(document.querySelector(".mo-side-panel"));
   const xMax=hasRight?0.76:0.99,placed=Array.of(),ptObstacles=Array.of();
   const placeItem=(cx,cy,lbl,sz,pad,distX,distY)=>{
     const bw=Math.max(46,lbl.length*(sz*0.62)+14),bh=sz+pad*2+6;
@@ -185,6 +185,17 @@ function addCoreBadges(mapEl,isRegLevel){
     });
     items.sort((a,b)=>a.cy-b.cy);
     items.forEach(it=>placeItem(it.cx,it.cy,it.lbl,11.5,2,36,18));
+  }
+  if(Array.isArray(kalCoreF)&&kalCoreF.length>0){
+    const coreDot=Array.from(svg.querySelectorAll(".geo4 .scatterlayer path.point"))
+      .find(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("230,0,126")||s.includes("e6007e");});
+    if(coreDot){
+      const r=coreDot.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
+      if(r.width>0&&cx>=sRect.left+4&&cx<=sRect.left+pW-4&&cy>=sRect.top+4&&cy<=sRect.bottom-4){
+        const lbl=kalCoreF[0].properties._lbl||"Калининград";
+        placeItem(cx,cy,lbl,13,3,Math.min(90,Math.round(r.width*0.5+24)),Math.min(70,Math.round(r.height*0.5+16)));
+      }
+    }
   }
   window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},350);});
 }
@@ -286,7 +297,7 @@ function render(){
   if(kalFeats.length>0){addGeoLayers(kalFeats,"geo4");const kCore=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");if(kCore.length>0)traces.push({type:"scattergeo",geo:"geo4",mode:"markers",lon:kCore.map(f=>f.properties._cent.lon),lat:kCore.map(f=>f.properties._cent.lat),hovertext:kCore.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl),hoverinfo:"text",showlegend:false,marker:{size:8,color:CORE,line:{color:"#ffffff",width:1.1}}});}
   if(reg==="ALL"&&REGS){const rList=REGS.features.filter(f=>(fo==="RF"||f.properties.fo===fo)&&(!hasKal||!f.properties.region.includes("Калининград"))&&(!isSFO||!f.properties.region.includes("Красноярск")));traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:rList},featureidkey:"properties.region",locations:rList.map(f=>f.properties.region),z:rList.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:"#1e293b",width:1.4}}});}
   if(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat)){Object.entries(DATA.cluster_colors).forEach(p=>{const cn=p.at(0),ch=p.at(1);if(allFeats.some(f=>valMap[f.properties.join_key]===cn)||fo==="RF")legIt.push({col:ch,kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:'+ch+';border:1px solid #555;"></span>',txt:cn});});}
-  const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
+  const coreF=mainFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");const kalCoreF=kalFeats.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке");
   if(coreF.length>0){
     if(reg==="ALL"){traces.push({type:"scattergeo",geo:"geo",mode:"markers+text",lon:coreF.map(f=>f.properties._cent.lon),lat:coreF.map(f=>f.properties._cent.lat),text:coreF.map(f=>f.properties._lbl),textfont:{size:1,color:"rgba(0,0,0,0)"},hovertext:coreF.map(f=>"<b>Ядро региона:</b> "+f.properties._lbl+" ("+f.properties.region+")"),hoverinfo:"text",showlegend:false,marker:{size:fo==="RF"?6:9,color:CORE,line:{color:"#ffffff",width:1.1}}});legIt.push({col:CORE,kind:"dot",icon:'<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+CORE+';border:1.5px solid #fff;box-shadow:0 0 0 1px #666;"></span>',txt:"Ядро региона (макс. население)"});}
     else{traces.push({type:"choropleth",geo:"geo",geojson:{type:"FeatureCollection",features:mainFeats},featureidkey:"properties.join_key",locations:coreF.map(f=>f.properties.join_key),z:coreF.map(()=>1),colorscale:Array.of(Array.of(0,"rgba(0,0,0,0)"),Array.of(1,"rgba(0,0,0,0)")),showscale:false,hoverinfo:"skip",marker:{line:{color:CORE,width:3.5}}});legIt.push({col:CORE,kind:"line",icon:'<span style="display:inline-block;width:18px;height:3px;background:'+CORE+';"></span>',txt:"Ядро региона (макс. население)"});}
@@ -301,8 +312,8 @@ function render(){
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,xanchor:"center",y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(nzFeats.length>0){layout.geo3=wideGeoCfg(nzFeats,{type:"mercator"},Array.of(0.785,0.995),yNZ);layout.annotations.push({text:"<b>архипелаг Новая Земля</b>",x:0.89,xanchor:"center",y:yNZ.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(kalFeats.length>0){layout.geo4=wideGeoCfg(kalFeats,{type:"mercator"},Array.of(0.785,0.995),Array.of(0.06,0.32));layout.annotations.push({text:"<b>Калининградская область</b>",x:0.89,xanchor:"center",y:0.048,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
-  window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL");});
-  mapEl.on("plotly_relayout",ev=>{if(window._inBadgeRelayout||(ev&&ev.annotations))return;applyZatoHatch(mapEl);if(coreF.length>0&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL");});
+  window._plotReady=Plotly.newPlot(mapEl,traces,layout,{responsive:true,displaylogo:false,modeBarButtonsToRemove:Array.of("toImage")}).then(()=>{applyZatoHatch(mapEl);if((coreF.length>0||kalCoreF.length>0)&&(reg!=="ALL"||fo!=="RF"))return addCoreBadges(mapEl,reg!=="ALL",kalCoreF);});
+  mapEl.on("plotly_relayout",ev=>{if(window._inBadgeRelayout||(ev&&ev.annotations))return;applyZatoHatch(mapEl);if((coreF.length>0||kalCoreF.length>0)&&(reg!=="ALL"||fo!=="RF"))addCoreBadges(mapEl,reg!=="ALL",kalCoreF);});
 
   if(reg!=="ALL"&&mode==="single"){
     const regList=Array.from(allFeats.filter(f=>f.properties._map_status==="В_выборке"&&!f.properties._inset).reduce((m,f)=>{if(!m.has(f.properties.join_key))m.set(f.properties.join_key,f);return m;},new Map()).values()).sort((a,b)=>(Number(Boolean(b.properties.is_center))-Number(Boolean(a.properties.is_center)))||a.properties._lbl.localeCompare(b.properties._lbl,"ru"));
