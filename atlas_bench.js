@@ -231,9 +231,9 @@ function renderBenchmark(){
         row.appendChild(grid);
       }else{
         const allV=availMOs.map(mo=>Number(valMap[mo.key])).filter(v=>!isNaN(v)),scObj=computeScale(allV,actCol,m.inv);
-        const wrap=document.createElement("div");wrap.className="bench-scale-wrap";wrap.style.height="78px";const bar=document.createElement("div");bar.className="bench-bar";bar.style.background="linear-gradient(to right,"+scObj.pal.join(",")+")";
+        const wrap=document.createElement("div");wrap.className="bench-scale-wrap";wrap.style.height="78px";const bar=document.createElement("div");bar.className="bench-bar";bar.style.background="linear-gradient(to right,"+(scObj.inv?scObj.pal.slice().reverse():scObj.pal).join(",")+")";
         buildScaleGroups(selMOs,valMap,scObj,m.dec).forEach(gp=>{
-          const el=document.createElement("div");el.className="bench-grp";el.style.left=gp.pct+"%";
+          const el=document.createElement("div");el.className="bench-grp";el.style.left=(scObj.inv?(100-gp.pct):gp.pct)+"%";
           el.style.top=(-24-gp.topTier*18)+"px";el.style.bottom=(-22-gp.botTier*15)+"px";
           const tip=gp.items.map(x=>x.mo.full+": "+x.txt).join(" | "),toksHtml=gp.items.map(x=>'<span title="'+x.mo.full+': '+x.txt+'">'+(BENCH_STATE.tokens[x.mo.key]||"🎩")+'</span>').join("");
           el.innerHTML='<div class="bench-toks-row" title="'+tip+'">'+toksHtml+'</div><div class="bench-stem"></div><div class="bench-vals-row">'+gp.vals.join(" / ")+'</div>';
@@ -317,10 +317,10 @@ function buildBenchCanvases(){
         });
       }else{
         const allV=availMOs.map(mo=>Number(valMap[mo.key])).filter(v=>!isNaN(v)),scObj=computeScale(allV,actCol,m.inv);
-        const by=y+step/2-6,bh=13,grd=ctx.createLinearGradient(sx,0,sx+sw,0);scObj.pal.forEach((c,i)=>grd.addColorStop(i/(scObj.pal.length-1),c));
+        const by=y+step/2-6,bh=13,grd=ctx.createLinearGradient(sx,0,sx+sw,0);(scObj.inv?scObj.pal.slice().reverse():scObj.pal).forEach((c,i,arr)=>grd.addColorStop(i/(arr.length-1),c));
         ctx.fillStyle=grd;ctx.fillRect(sx,by,sw,bh);ctx.strokeStyle="#475569";ctx.strokeRect(sx,by,sw,bh);
         buildScaleGroups(selMOs,valMap,scObj,m.dec).forEach(gp=>{
-          const px=sx+sw*(gp.pct/100),topYPin=by-24-gp.topTier*21,botYPin=by+bh+16+gp.botTier*17;
+          const px=sx+sw*((scObj.inv?(100-gp.pct):gp.pct)/100),topYPin=by-24-gp.topTier*21,botYPin=by+bh+16+gp.botTier*17;
           ctx.strokeStyle="#1e293b";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px,topYPin+18);ctx.lineTo(px,botYPin-12);ctx.stroke();
           const tStr=gp.items.map(x=>BENCH_STATE.tokens[x.mo.key]||"🎩").join("");ctx.font="18px 'Times New Roman'";const tw=ctx.measureText(tStr).width+10;
           ctx.fillStyle="#ffffff";ctx.fillRect(px-tw/2,topYPin,tw,20);ctx.strokeStyle="#1e293b";ctx.strokeRect(px-tw/2,topYPin,tw,20);
