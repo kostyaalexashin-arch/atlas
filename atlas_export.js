@@ -336,25 +336,19 @@ async function runCustomBatchExport(fmt){
   const modal=document.getElementById("batchModal"),btnZ=document.getElementById("bmRunZip"),btnP=document.getElementById("bmRunPdf");
   const mode=document.getElementById("selMode").value,scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.52:(scDpi<0.6?0.65:0.84);
   if(mode==="bench"){
-    const baseK=document.getElementById("bmBenchBaseMO")?.value||"",scope=modal.querySelector('input[name="bmBenchScope"]:checked')?.value||"reg";
-    const all=getBenchMOs(),baseMO=all.find(m=>m.key===baseK);if(!baseMO)return alert("Выберите эталонное МО.");
-    const peers=all.filter(m=>m.key!==baseMO.key&&(scope==="cat"?m.cat===baseMO.cat:(scope==="fo"?m.fo===baseMO.fo:m.reg===baseMO.reg)));
-    if(!peers.length)return alert("В выбранной группе нет других МО для сравнения.");
-    const bYEl=document.getElementById("bYear"),origBY=bYEl.value,yrsSel=Array.from(modal.querySelectorAll(".bm-y-chk:checked")).map(c=>c.value),yrs=yrsSel.length?yrsSel:Array.of(origBY);
-    const origMain=BENCH_STATE.mainKey,origComps=BENCH_STATE.compKeys.slice(),origToks=Object.assign({},BENCH_STATE.tokens);
-    btnZ.disabled=true;btnP.disabled=true;const zFiles=Array.of(),pdfPages=Array.of();let step=0,tot=peers.length*yrs.length;
+    const {baseMO,tasks}=getBenchBatchPairs();
+    if(!baseMO||!tasks.length)return alert("Нет парных МО с данными за выбранный год в этой группе.");
+    const bYEl=document.getElementById("bYear"),origBY=bYEl.value,origMain=BENCH_STATE.mainKey,origComps=BENCH_STATE.compKeys.slice(),origToks=Object.assign({},BENCH_STATE.tokens);
+    btnZ.disabled=true;btnP.disabled=true;const zFiles=Array.of(),pdfPages=Array.of();
     try{
-      for(let yi=0;yi<yrs.length;yi++){
-        bYEl.value=yrs.at(yi);
-        for(let i=0;i<peers.length;i++){
-          step++;const pr=peers.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+step+"/"+tot;btnZ.textContent=lbl;btnP.textContent=lbl;await new Promise(r=>setTimeout(r,10));
-          BENCH_STATE.mainKey=baseMO.key;BENCH_STATE.compKeys=Array.of(pr.key);BENCH_STATE.tokens[baseMO.key]="🔵";BENCH_STATE.tokens[pr.key]="🟥";
-          const cs=buildBenchCanvases(),tag=(baseMO.lbl+"_vs_"+pr.lbl+"_"+yrs.at(yi)).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
-          cs.forEach((cv,ci)=>{
-            if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+"_Лист_"+(ci+1)+".png",data:arr});}
-            else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
-          });
-        }
+      for(let i=0;i<tasks.length;i++){
+        const {yr,pr}=tasks.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+(i+1)+"/"+tasks.length;btnZ.textContent=lbl;btnP.textContent=lbl;await new Promise(r=>setTimeout(r,10));
+        bYEl.value=yr;BENCH_STATE.mainKey=baseMO.key;BENCH_STATE.compKeys=Array.of(pr.key);BENCH_STATE.tokens[baseMO.key]="🔵";BENCH_STATE.tokens[pr.key]="🟥";
+        const cs=buildBenchCanvases(),tag=(baseMO.lbl+"_vs_"+pr.lbl+"_"+yr).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
+        cs.forEach((cv,ci)=>{
+          if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+"_Лист_"+(ci+1)+".png",data:arr});}
+          else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
+        });
       }
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
@@ -363,19 +357,16 @@ async function runCustomBatchExport(fmt){
     return;
   }
   if(mode==="passport"){
-    const list=getPassportBatchList();if(!list.length)return alert("Нет МО в выбранной группе.");
-    const pYEl=document.getElementById("pYear"),origPY=pYEl.value,yrsSel=Array.from(modal.querySelectorAll(".bm-y-chk:checked")).map(c=>c.value),yrs=yrsSel.length?yrsSel:Array.of(origPY);
-    btnZ.disabled=true;btnP.disabled=true;const zFiles=Array.of(),pdfPages=Array.of();let step=0,tot=list.length*yrs.length;
+    const tasks=getPassportBatchTasks();if(!tasks.length)return alert("В выбранной группе нет МО с данными за указанный год.");
+    const pYEl=document.getElementById("pYear"),origPY=pYEl.value;
+    btnZ.disabled=true;btnP.disabled=true;const zFiles=Array.of(),pdfPages=Array.of();
     try{
-      for(let yi=0;yi<yrs.length;yi++){
-        const curY=yrs.at(yi);
-        for(let i=0;i<list.length;i++){
-          step++;const mo=list.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+step+"/"+tot;btnZ.textContent=lbl;btnP.textContent=lbl;await new Promise(r=>setTimeout(r,10));
-          pYEl.value=mo.coh?curY:"2024";const cv=await buildPassportCanvas(mo);if(!cv)continue;
-          const tag=(mo.lbl+"_"+mo.reg+"_"+pYEl.value).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
-          if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+".png",data:arr});}
-          else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
-        }
+      for(let i=0;i<tasks.length;i++){
+        const {yr,mo}=tasks.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+(i+1)+"/"+tasks.length;btnZ.textContent=lbl;btnP.textContent=lbl;await new Promise(r=>setTimeout(r,10));
+        pYEl.value=yr;const cv=await buildPassportCanvas(mo);if(!cv)continue;
+        const tag=(mo.lbl+"_"+mo.reg+"_"+yr).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
+        if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+".png",data:arr});}
+        else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
       }
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Паспорта_МО_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Паспорта_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
