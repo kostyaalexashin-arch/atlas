@@ -202,6 +202,7 @@ function buildZipBlob(files){
   const cdSz=cds.reduce((s,b)=>s+b.length,0),eocd=new Uint8Array(22),ev=new DataView(eocd.buffer);
   ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cdSz,true);ev.setUint32(16,off,true);
   return new Blob(parts.concat(cds,Array.of(eocd)),{type:"application/zip"});
+}
 function drawCatShape(ctx,cat,cx,cy,r,fill){
   ctx.fillStyle=fill;ctx.strokeStyle="#334155";ctx.lineWidth=1.5;ctx.beginPath();
   if(cat==="1"){ctx.rect(cx-r,cy-r,r*2,r*2);}
@@ -424,7 +425,6 @@ async function buildSheetCanvas(){
   }
 }
 
-}
 async function exportFullSheetPng(){
   const mVal=document.getElementById("selMode").value;
   if(mVal==="table"){
