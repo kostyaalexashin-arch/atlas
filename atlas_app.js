@@ -139,7 +139,7 @@ function applyZatoHatch(mapEl){
   pat.append(bg,ln);defs.appendChild(pat);
   svg.querySelectorAll("path").forEach(p=>{const st=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");if(st.includes("0.987")||st.replace(/\s/g,"").includes("203,213,225")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
 }
-function addCoreBadges(mapEl,isRegLevel,kalCoreF){
+function addCoreBadges(mapEl,isRegLevel){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return Promise.resolve();
   const sRect=svg.getBoundingClientRect(),pW=sRect.width,pH=sRect.height;if(pW<50||pH<50)return Promise.resolve();
   const oldA=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore),anns=oldA.slice();
@@ -147,7 +147,7 @@ function addCoreBadges(mapEl,isRegLevel,kalCoreF){
   const xMax=hasRight?0.76:0.99,placed=Array.of(),ptObstacles=Array.of();
   const placeItem=(cx,cy,lbl,sz,pad,distX,distY)=>{
     const bw=Math.max(46,lbl.length*(sz*0.62)+14),bh=sz+pad*2+6;
-    const dirs=[[0,-1],[0,1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],[1,0],[-1,0],[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
+    const dirs=[[0,-1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],,[-1,0],,[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
     let bestLx=cx,bestLy=cy-distY;
     for(const[ux,uy]of dirs){
       const lx=cx+Math.round(ux*distX),ly=cy+Math.round(uy*distY);
@@ -161,7 +161,7 @@ function addCoreBadges(mapEl,isRegLevel,kalCoreF){
     anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,xanchor:"center",yanchor:"middle",text:"<b>"+lbl+"</b>",showarrow:false,bgcolor:"rgba(255,255,255,0.95)",bordercolor:"#e6007e",borderwidth:1.1,borderpad:pad,font:{family:"Times New Roman",size:sz,color:"#111111"}});
   };
   if(isRegLevel){
-    const coreP=Array.from(svg.querySelectorAll(".geolayer .choropleth path")).find(p=>{const st=(p.getAttribute("style")||"").replace(/\s/g,"");return st.includes("230,0,126")||st.includes("e6007e");});
+    const coreP=Array.from(svg.querySelectorAll('[class*="geo"] .choropleth path')).find(p=>{const st=(p.getAttribute("style")||"").replace(/\s/g,"");return st.includes("230,0,126")||st.includes("e6007e");});
     const regName=document.getElementById("selReg")?.value||"";
     const coreFeat=GEO.features.find(f=>f.properties.region===regName&&f.properties.is_center&&f.properties._map_status==="В_выборке");
     const cName=coreFeat?coreFeat.properties._lbl:(DATA.core_names?.[regName]||regName);
@@ -172,8 +172,8 @@ function addCoreBadges(mapEl,isRegLevel,kalCoreF){
       }
     }
   }else{
-    const pts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer path.point"));
-    const txts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer text"));
+    const pts=Array.from(svg.querySelectorAll('[class*="geo"] .scatterlayer path.point'));
+    const txts=Array.from(svg.querySelectorAll('[class*="geo"] .scatterlayer text'));
     const items=Array.of();
     pts.forEach(pt=>{
       const r=pt.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
@@ -185,17 +185,6 @@ function addCoreBadges(mapEl,isRegLevel,kalCoreF){
     });
     items.sort((a,b)=>a.cy-b.cy);
     items.forEach(it=>placeItem(it.cx,it.cy,it.lbl,11.5,2,36,18));
-  }
-  if(Array.isArray(kalCoreF)&&kalCoreF.length>0){
-    const coreDot=Array.from(svg.querySelectorAll(".geo4 .scatterlayer path.point"))
-      .find(p=>{const s=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");return s.includes("230,0,126")||s.includes("e6007e");});
-    if(coreDot){
-      const r=coreDot.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
-      if(r.width>0&&cx>=sRect.left+4&&cx<=sRect.left+pW-4&&cy>=sRect.top+4&&cy<=sRect.bottom-4){
-        const lbl=kalCoreF[0].properties._lbl||"Калининград";
-        placeItem(cx,cy,lbl,13,3,Math.min(90,Math.round(r.width*0.5+24)),Math.min(70,Math.round(r.height*0.5+16)));
-      }
-    }
   }
   window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},350);});
 }
