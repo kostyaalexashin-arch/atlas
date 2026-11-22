@@ -321,9 +321,9 @@ function render(){
 function addSubBlockSeparators(){
   const s=document.getElementById("selMetric");if(!s||s.dataset.hasSeps==="1")return;
   const defs=Array.of(
-    {id:"ЭК-01",lbl:"  ▸ Экологический блок (ЭК-01 — ЭК-13)"},
-    {id:"СЦ-01",lbl:"  ▸ Социальный блок (СЦ-01 — СЦ-13)"},
-    {id:"УЭ-01",lbl:"  ▸ Управленческо-экономический блок (УЭ-01 — УЭ-13)"}
+    {id:"ЭК-01",lbl:"  ▸ Экологический блок"},
+    {id:"СЦ-01",lbl:"  ▸ Социальный блок"},
+    {id:"УЭ-01",lbl:"  ▸ Управленческо-экономический блок"}
   );
   defs.forEach(d=>{
     const target=s.querySelector('option[value="'+d.id+'"]');
