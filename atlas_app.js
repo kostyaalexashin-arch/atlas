@@ -143,11 +143,12 @@ function addCoreBadges(mapEl,isRegLevel){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return Promise.resolve();
   const sRect=svg.getBoundingClientRect(),pW=sRect.width,pH=sRect.height;if(pW<50||pH<50)return Promise.resolve();
   const oldA=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore),anns=oldA.slice();
-  const hasRight=Boolean(document.querySelector(".mo-side-panel"));
+  const sideEl=document.querySelector(".mo-side-panel");
+  const hasRight=Boolean(sideEl&&sideEl.offsetParent!==null);
   const xMax=hasRight?0.76:0.99,placed=Array.of(),ptObstacles=Array.of();
   const placeItem=(cx,cy,lbl,sz,pad,distX,distY)=>{
     const bw=Math.max(46,lbl.length*(sz*0.62)+14),bh=sz+pad*2+6;
-    const dirs=[[0,-1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],[1,0],[-1,0],[0,1],[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
+    const dirs=[[0,-1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],[1,0],[-1,0],[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
     let bestLx=cx,bestLy=cy-distY;
     for(const item of dirs){
       const ux=item[0],uy=item[1];
@@ -182,7 +183,9 @@ function addCoreBadges(mapEl,isRegLevel){
       ptObstacles.push({x:cx,y:cy});
       let bestT=null,bestD=1e9;
       txts.forEach(t=>{const tr=t.getBoundingClientRect(),d=Math.hypot((tr.left+tr.width*0.5)-cx,(tr.top+tr.height*0.5)-cy);if(d<bestD){bestD=d;bestT=t;}});
-      if(bestT&&bestD<80)items.push({cx,cy,lbl:bestT.textContent||""});
+      let lbl=(bestT&&bestD<140)?(bestT.textContent||"").trim():"";
+      if(!lbl&&(cx-sRect.left)/pW>0.72&&(cy-sRect.top)/pH>0.55)lbl="Калининград";
+      if(lbl)items.push({cx,cy,lbl});
     });
     items.sort((a,b)=>a.cy-b.cy);
     items.forEach(it=>placeItem(it.cx,it.cy,it.lbl,11.5,2,36,18));
