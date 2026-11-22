@@ -244,7 +244,7 @@ function buildTableCanvases(silent=false){
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 44px 'Times New Roman'";ctx.fillText(mMeta.title+" (2019–2024 гг.)",W/2,56);
     ctx.font="bold 36px \'Times New Roman\'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,96);ctx.textAlign="left";
-    const xCols=Array.of(40,460,1120,1453,1786,2119,2452,2785,3120),tTop=120,hdrH=52,rowH=78;
+    const xCols=Array.of(40,530,1240,1553,1866,2179,2492,2805,3120),tTop=120,hdrH=52,rowH=78;
     ctx.fillStyle="#eef3f8";ctx.fillRect(40,tTop,3080,hdrH);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,tTop,3080,hdrH);
     const hdrs=Array.of("Регион","Муниципальное образование","2019 г.","2020 г.","2021 г.","2022 г.","2023 г.","2024 г.");
     ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="center";
@@ -255,9 +255,9 @@ function buildTableCanvases(silent=false){
       const f=it.f,jk=f.properties.join_key;
       ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.2;ctx.strokeRect(40,y,3080,rowH);
       for(let ci=1;ci<8;ci++){ctx.beginPath();ctx.moveTo(xCols.at(ci),y);ctx.lineTo(xCols.at(ci),y+rowH);ctx.stroke();}
-      ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font=" 24px \'Times New Roman\'";
-      const rTxt=f.properties.region;ctx.fillText(rTxt.length>26?rTxt.slice(0,25)+"…":rTxt,54,y+46);
-      ctx.font=(f.properties.is_center?"bold ":"")+"19px 'Times New Roman'";const mTxt=f.properties._lbl;ctx.fillText(mTxt.length>38?mTxt.slice(0,37)+"…":mTxt,474,y+46);
+      ctx.fillStyle="#111111";ctx.textAlign="left";ctx.font="28px 'Times New Roman'";
+      const rTxt=f.properties.region;ctx.fillText(rTxt.length>29?rTxt.slice(0,28)+"…":rTxt,54,y+48);
+      ctx.font=(f.properties.is_center?"bold ":"")+"28px 'Times New Roman'";const mTxt=f.properties._lbl;ctx.fillText(mTxt.length>40?mTxt.slice(0,39)+"…":mTxt,544,y+48);
       ctx.textAlign="center";
       yrs.forEach((yr,yi)=>{
         const cx=(xCols.at(yi+2)+xCols.at(yi+3))/2,v=DATA.panel[mId]?.[yr]?.[jk],catYr=String(DATA.panel_cats?.[yr]?.[jk]||"5");
