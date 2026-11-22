@@ -115,7 +115,7 @@ function drawCanvasRadar(ctx,items,rcx,rcy,R,fillRgba,strokeHex){
   items.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;ctx.beginPath();ctx.moveTo(rcx,rcy);ctx.lineTo(rcx+Math.cos(a)*R,rcy+Math.sin(a)*R);ctx.stroke();});
   ctx.beginPath();items.forEach((it,i)=>{const a=-Math.PI/2+i*2*Math.PI/n,v=Math.max(0,Math.min(1,Number(it.val)||0)),x=rcx+Math.cos(a)*R*v,y=rcy+Math.sin(a)*R*v;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.closePath();
   ctx.fillStyle=fillRgba;ctx.fill();ctx.strokeStyle=strokeHex;ctx.lineWidth=3.5;ctx.stroke();
-  ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";
+  ctx.fillStyle="#111111";ctx.font="bold 29px 'Times New Roman'";ctx.textAlign="center";
   items.forEach((it,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;ctx.fillText(it.short,rcx+Math.cos(a)*(R+36),rcy+Math.sin(a)*(R+28));});ctx.textAlign="left";
 }
 function wrapPassText(ctx,txt,maxW){
@@ -128,42 +128,42 @@ function buildPassportCanvas(overrideMO=null){
   if(!mo){alert("Выберите муниципальное образование для паспорта.");return null;}
   const pd=getPassportData(mo,yr),W=2234,H=3160,canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
-  ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 42px 'Times New Roman'";
+  ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 55px 'Times New Roman'";
   ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1117,84);
-  ctx.font="bold 33px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,132);
-  ctx.font="italic 21px 'Times New Roman'";
+  ctx.font="bold 43px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,132);
+  ctx.font="italic 27px 'Times New Roman'";
   ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1117,176);
   ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1117,206);
   ctx.textAlign="left";
   ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,235,2134,115);
-  ctx.font="bold 25px 'Times New Roman'";ctx.fillStyle="#111111";
+  ctx.font="bold 32px 'Times New Roman'";ctx.fillStyle="#111111";
   ctx.fillText("Кластер (2024 г.): "+pd.clVal,75,282);ctx.fillText("Категория: "+pd.catTxt,1150,282);
   ctx.fillText("Площадь, га: "+pd.area,75,330);ctx.fillText("Численность, чел.: "+pd.pop,1150,330);
   ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,375,2134,660);
-  ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",440,442);ctx.textAlign="left";
+  ctx.font="bold 31px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",440,442);ctx.textAlign="left";
   drawCanvasRadar(ctx,pd.topSubs,440,745,220,"rgba(225,29,72,0.24)","#e11d48");
   let iy1=520;const ix=840,iw=1320;
-  ctx.fillStyle="#e2e8f0";ctx.fillRect(ix,iy1-34,iw,46);ctx.fillStyle="#111111";ctx.font="bold 27px 'Times New Roman'";ctx.fillText("Интегральный индекс устойчивого развития",ix+14,iy1);ctx.textAlign="right";ctx.fillText(pd.idxMain,ix+iw-14,iy1);ctx.textAlign="left";iy1+=68;
-  pd.topSubs.forEach(s=>{ctx.fillStyle="#f1f5f9";ctx.fillRect(ix,iy1-30,iw,42);ctx.fillStyle="#111111";ctx.font="bold 24px 'Times New Roman'";ctx.fillText(s.name,ix+14,iy1);ctx.textAlign="right";ctx.fillText(s.txt,ix+iw-14,iy1);ctx.textAlign="left";iy1+=62;});
+  ctx.fillStyle="#e2e8f0";ctx.fillRect(ix,iy1-34,iw,46);ctx.fillStyle="#111111";ctx.font="bold 35px 'Times New Roman'";ctx.fillText("Интегральный индекс устойчивого развития",ix+14,iy1);ctx.textAlign="right";ctx.fillText(pd.idxMain,ix+iw-14,iy1);ctx.textAlign="left";iy1+=68;
+  pd.topSubs.forEach(s=>{ctx.fillStyle="#f1f5f9";ctx.fillRect(ix,iy1-30,iw,42);ctx.fillStyle="#111111";ctx.font="bold 31px 'Times New Roman'";ctx.fillText(s.name,ix+14,iy1);ctx.textAlign="right";ctx.fillText(s.txt,ix+iw-14,iy1);ctx.textAlign="left";iy1+=62;});
   ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,1070,2134,670);
-  ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Подблоки показателей (9)",440,1108);ctx.textAlign="left";
+  ctx.font="bold 31px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Подблоки показателей (9)",440,1108);ctx.textAlign="left";
   drawCanvasRadar(ctx,pd.subBlocks,440,1425,220,"rgba(2,132,199,0.24)","#0284c7");
   let iy2=1145;
-  pd.subBlocks.forEach(b=>{ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(ix,iy2+14);ctx.lineTo(ix+iw,iy2+14);ctx.stroke();ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";ctx.fillText(b.name,ix+14,iy2);ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(b.txt,ix+iw-14,iy2);ctx.textAlign="left";iy2+=64;});
+  pd.subBlocks.forEach(b=>{ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(ix,iy2+14);ctx.lineTo(ix+iw,iy2+14);ctx.stroke();ctx.fillStyle="#111111";ctx.font="29px 'Times New Roman'";ctx.fillText(b.name,ix+14,iy2);ctx.font="bold 29px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(b.txt,ix+iw-14,iy2);ctx.textAlign="left";iy2+=64;});
   const cols=Array.of({t:"Экологический блок",a:pd.ekList},{t:"Социальный блок",a:pd.scList},{t:"Управленческо-экономический блок",a:pd.ueList});
   const cw=690,by0=1760,rowStep=102;
   cols.forEach((col,ci)=>{
     const cx0=50+ci*722,valColX=cx0+cw-115;
     ctx.fillStyle="#eef3f8";ctx.fillRect(cx0,by0,cw,48);ctx.strokeStyle="#94a3b8";ctx.strokeRect(cx0,by0,cw,48);
-    ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(col.t,cx0+cw/2,by0+32);ctx.textAlign="left";
+    ctx.fillStyle="#111111";ctx.font="bold 30px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(col.t,cx0+cw/2,by0+32);ctx.textAlign="left";
     let cy=by0+76;
     col.a.forEach(it=>{
       ctx.strokeStyle="#cbd5e1";ctx.beginPath();ctx.moveTo(cx0,cy+66);ctx.lineTo(cx0+cw,cy+66);ctx.stroke();
       ctx.beginPath();ctx.moveTo(valColX,cy-24);ctx.lineTo(valColX,cy+66);ctx.stroke();
-      ctx.fillStyle="#111111";ctx.font="20.5px 'Times New Roman'";
+      ctx.fillStyle="#111111";ctx.font="27px 'Times New Roman'";
       const tLines=wrapPassText(ctx,it.id+" — "+it.title,valColX-cx0-12);
       tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+6,cy+li*23));
-      ctx.font="bold 21.5px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(it.val,cx0+cw-8,cy+22);ctx.textAlign="left";cy+=rowStep;
+      ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(it.val,cx0+cw-8,cy+22);ctx.textAlign="left";cy+=rowStep;
     });
   });
   const sc=Number(document.getElementById("selDpi")?.value||1);
