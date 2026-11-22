@@ -116,6 +116,9 @@ table.dyn-tbl td.mo-name{text-align:left}
 .pass-crow{display:flex;justify-content:space-between;align-items:baseline;gap:4px;font-size:10px;line-height:1.15;padding:2px 3px;border-bottom:1px dotted #e2e8f0}
 .pass-crow span:first-child{flex:1;min-width:0}
 .pass-crow b:last-child{width:52px;flex-shrink:0;text-align:right;border-left:1px solid #e2e8f0;padding-left:3px}
+.bench-cat-cells{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;min-height:54px}
+.bench-catcell{border:1.5px solid #475569;border-radius:3px;padding:4px 2px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;font-size:10px;text-align:center;line-height:1.1}
+.bench-cat-ico{font-size:18px;line-height:1}
 </style></head><body><div class="workspace"><div class="sidebar">
 <select id="selMode"><option value="single">Одиночная карта (срез)</option><option value="grid">Сетка динамики (2019–2024)</option><option value="table">Таблица динамики МО (2019–2024)</option><option value="bench">Бенчмаркинг</option><option value="passport">Цифровой паспорт МО</option></select>
 <select id="selBase"><option value="all">Генеральный срез 2024 (2269 МО)</option><option value="coh">Динамическая когорта (193 МО)</option></select>
@@ -148,11 +151,10 @@ table.dyn-tbl td.mo-name{text-align:left}
 <button type="button" class="btn-main" id="btnBenchRun">Сравнить</button>
 <datalist id="dlCat"></datalist><datalist id="dlFO"></datalist><datalist id="dlReg"></datalist><datalist id="dlMO"></datalist>
 </div>
-<div class="met-box" id="stdMetBox"><div class="side-hdr"><span>Показатели атласа:</span><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.22 13:22 МСК</span></div><div class="side-nav"><button type="button" id="prevMet">◀ Предыдущий</button><button type="button" id="nextMet">Следующий ▶</button></div><select id="selMetric" size="24"></select></div>
+<div class="met-box" id="stdMetBox"><div class="side-hdr"><span>Показатели атласа:</span><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.22 13:46 МСК</span></div><div class="side-nav"><button type="button" id="prevMet">◀ Предыдущий</button><button type="button" id="nextMet">Следующий ▶</button></div><select id="selMetric" size="24"></select></div>
 <select id="selScale"><option value="global">Шкала по всей РФ</option><option value="local">Локальная шкала</option></select>
 <div class="pal-dd"><button type="button" class="pal-btn" id="palBtn"></button><div class="pal-menu" id="palMenu"></div></div>
-<button type="button" class="btn-main" id="btnPng">💾 PNG</button>
 <div class="exp-row"><select id="selDpi"><option value="0.32" selected>72 dpi (эскиз)</option><option value="0.45">96 dpi</option><option value="0.72">150 dpi</option><option value="1.0">300 dpi</option></select><select id="selPdfScope"><option value="fo">РФ + 8 ФО</option><option value="cur_fo">Регионы ФО</option><option value="all">Весь атлас</option></select></div>
-<button type="button" class="btn-main btn-pdf" id="btnPdf">💾 PDF</button>
+<div class="exp-row"><button type="button" class="btn-main" id="btnPng">💾 PNG</button><button type="button" class="btn-main btn-pdf" id="btnPdf">💾 PDF</button></div>
 </div><div class="sheet" id="sheetBox"><div id="mapDiv" style="padding:40px;font-size:17px;">Загрузка данных атласа...</div></div>
-</div><script src="atlas_passport.js?v=20261122132216"></script><script src="atlas_bench.js?v=20261122132216"></script><script src="atlas_export.js?v=20261122030804"></script><script src="atlas_app.js?v=20261122132216"></script></body></html>
+</div><script src="atlas_passport.js?v=20261122134607"></script><script src="atlas_bench.js?v=20261122134607"></script><script src="atlas_export.js?v=20261122134607"></script><script src="atlas_app.js?v=20261122134607"></script></body></html>

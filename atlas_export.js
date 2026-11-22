@@ -1,3 +1,19 @@
+function collectTableBatchCanvases(scope){
+  const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),origFO=sFO.value,origReg=sReg.value;
+  const tasks=Array.of();
+  if(scope==="all_fo"){DATA.fos.forEach(f=>tasks.push({fo:f,reg:"ALL",tag:f+"_ФО"}));}
+  else if(scope==="all_reg"){DATA.fos.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>tasks.push({fo:f,reg:r,tag:r})));}
+  else{tasks.push({fo:origFO,reg:origReg,tag:origReg!=="ALL"?origReg:origFO});}
+  const allOut=Array.of();
+  try{
+    tasks.forEach(t=>{
+      sFO.value=t.fo;sReg.value=t.reg;
+      const cs=buildTableCanvases();
+      cs.forEach((cv,i)=>allOut.push({cv,name:t.tag.replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_")+"_Лист_"+String(i+1).padStart(2,"0")+".png"}));
+    });
+  }finally{sFO.value=origFO;sReg.value=origReg;}
+  return allOut;
+}
 function buildZipBlob(files){
   const enc=new TextEncoder(),crcT=new Uint32Array(256);
   for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);crcT[i]=c;}
@@ -218,7 +234,20 @@ async function buildSheetCanvas(){
 }
 
 async function exportFullSheetPng(){
-  const mVal=document.getElementById("selMode").value;if(mVal==="table"){const cs=buildTableCanvases();if(!cs.length)return;if(cs.length===1){const a=document.createElement("a");a.download="Таблица_динамики_МО.png";a.href=cs.at(0).toDataURL("image/png");a.click();return;}const zFiles=cs.map((cv,i)=>{const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:"Лист_"+String(i+1).padStart(2,"0")+".png",data:arr};});const a=document.createElement("a");a.download="Таблица_динамики_МО.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;}if(mVal==="bench"){const cs=buildBenchCanvases();if(!cs.length)return;const zFiles=cs.map((cv,i)=>{const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:"Бенчмаркинг_Лист_"+(i+1)+".png",data:arr};});const a=document.createElement("a");a.download="Бенчмаркинг_МО.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;}const c=mVal==="passport"?buildPassportCanvas():await buildSheetCanvas();if(!c)return;
+  const mVal=document.getElementById("selMode").value;
+  if(mVal==="table"){
+    const scope=document.getElementById("selPdfScope")?.value||"cur",items=collectTableBatchCanvases(scope);
+    if(!items.length)return;
+    if(items.length===1){const a=document.createElement("a");a.download=items.at(0).name;a.href=items.at(0).cv.toDataURL("image/png");a.click();return;}
+    const zFiles=items.map(it=>{const b64=it.cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:it.name,data:arr};});
+    const a=document.createElement("a");a.download="Таблица_динамики_МО.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
+  }
+  if(mVal==="bench"){
+    const cs=buildBenchCanvases();if(!cs.length)return;
+    const zFiles=cs.map((cv,i)=>{const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:"Бенчмаркинг_Лист_"+(i+1)+".png",data:arr};});
+    const a=document.createElement("a");a.download="Бенчмаркинг_МО.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
+  }
+  const c=mVal==="passport"?(await buildPassportCanvas()):(await buildSheetCanvas());if(!c)return;
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
   const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=c.toDataURL("image/png");a.click();
 }
@@ -240,7 +269,13 @@ function buildPdfBlob(pages){
 }
 async function exportBatchPdf(){
   const btn=document.getElementById("btnPdf"),scope=document.getElementById("selPdfScope").value,sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),mId=document.getElementById("selMetric").value;
-  const curM=document.getElementById("selMode").value;if(curM==="table"){const cs=buildTableCanvases();if(!cs.length)return;const pages=cs.map(cv=>{const b64=cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:cv.width,h:cv.height,jpg:arr};});const a=document.createElement("a");a.download="Таблица_динамики_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;}if(curM==="passport"){
+  const curM=document.getElementById("selMode").value;
+  if(curM==="table"){
+    const items=collectTableBatchCanvases(scope);if(!items.length)return;
+    const pages=items.map(it=>{const b64=it.cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:it.cv.width,h:it.cv.height,jpg:arr};});
+    const a=document.createElement("a");a.download="Таблица_динамики_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
+  }
+  if(curM==="passport"){
     const allM=getPassMOs(),curMO=allM.find(m=>m.key===PASS_STATE.key);
     const regFilter=document.getElementById("pRegIn")?.value.trim()||"",foFilter=document.getElementById("pFOIn")?.value.trim()||"",catTxt=document.getElementById("pCatIn")?.value.trim()||"";
     const catCode=Object.entries(PASS_CAT_NAMES).find(p=>p.at(1).toLowerCase()===catTxt.toLowerCase())?.at(0)||(curMO?curMO.cat:"");
@@ -256,16 +291,22 @@ async function exportBatchPdf(){
       const pages=Array.of(),scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.52:(scDpi<0.6?0.65:0.82);
       for(let i=0;i<list.length;i++){
         btn.textContent="PDF: "+(i+1)+" / "+list.length+"...";await new Promise(r=>setTimeout(r,15));
-        const cv=buildPassportCanvas(list.at(i));if(!cv)continue;
+        const cv=await buildPassportCanvas(list.at(i));if(!cv)continue;
         const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
         for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:cv.width,h:cv.height,jpg:arr});
       }
       if(pages.length>0){const a=document.createElement("a");a.download="Цифровые_паспорта_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
     }finally{btn.disabled=false;btn.textContent="💾 PDF";}
     return;
-  }if(curM==="bench"){const cs=buildBenchCanvases();if(!cs.length)return;const pages=cs.map(cv=>{const b64=cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:cv.width,h:cv.height,jpg:arr};});const a=document.createElement("a");a.download="Бенчмаркинг_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;}
+  }
+  if(curM==="bench"){
+    const cs=buildBenchCanvases();if(!cs.length)return;
+    const pages=cs.map(cv=>{const b64=cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:cv.width,h:cv.height,jpg:arr};});
+    const a=document.createElement("a");a.download="Бенчмаркинг_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
+  }
   const origFO=sFO.value,origReg=sReg.value,queue=Array.of(),pages=Array.of();
-  if(scope==="fo"){queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>queue.push({fo:f,reg:"ALL"}));}
+  if(scope==="cur"){queue.push({fo:origFO,reg:origReg});}
+  else if(scope==="fo"){queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>queue.push({fo:f,reg:"ALL"}));}
   else if(scope==="cur_fo"){const fl=origFO==="RF"?DATA.fos:Array.of(origFO);fl.forEach(f=>(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r})));}
   else{queue.push({fo:"RF",reg:"ALL"});DATA.fos.forEach(f=>{queue.push({fo:f,reg:"ALL"});(DATA.fo_to_regs[f]||Array.of()).forEach(r=>queue.push({fo:f,reg:r}));});}
   btn.disabled=true;window._isExportMode=true;
@@ -281,6 +322,6 @@ async function exportBatchPdf(){
     if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
   }finally{
     window._isExportMode=false;sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
-    sReg.value=origReg;render();btn.disabled=false;btn.textContent="Выгрузить PDF";
+    sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
   }
 }

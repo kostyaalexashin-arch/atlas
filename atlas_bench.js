@@ -1,3 +1,46 @@
+const TOKEN_COLORS={"🔵":"#2563eb","🟥":"#dc2626","🔺":"#e11d48","💠":"#0284c7","⭐":"#d97706","🟢":"#16a34a","🟣":"#7c3aed","🔶":"#ea580c","⬛":"#1e293b","🩷":"#db2777"};
+function hexToRgba(hex,a){const h=String(hex||"#2563eb").replace("#","");return"rgba("+parseInt(h.slice(0,2),16)+","+parseInt(h.slice(2,4),16)+","+parseInt(h.slice(4,6),16)+","+a+")";}
+function getBenchRadarSeries(selMOs,yr,isCoh){
+  const findM=pat=>DATA.metrics.find(m=>m.id===pat||m.title.includes(pat));
+  const subDefs=Array.of({s:"ЭК",p:"Индекс ЭК"},{s:"СЦ",p:"Индекс СЦ"},{s:"УЭ",p:"Индекс УЭ"},{s:"IQ",p:"IQ от max"});
+  const blkDefs=Array.of({s:"ЭК-1",p:"ЭК-Подблок 1"},{s:"ЭК-2",p:"ЭК-Подблок 2"},{s:"ЭК-3",p:"ЭК-Подблок 3"},{s:"СЦ-1",p:"СЦ-Подблок 1"},{s:"СЦ-2",p:"СЦ-Подблок 2"},{s:"СЦ-3",p:"СЦ-Подблок 3"},{s:"УЭ-1",p:"УЭ-Подблок 1"},{s:"УЭ-2",p:"УЭ-Подблок 2"},{s:"УЭ-3",p:"УЭ-Подблок 3"});
+  const valOf=(pat,jk)=>{const m=findM(pat);if(!m)return 0;const mp=(!isCoh&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});const v=Number(mp[jk]);return isNaN(v)?0:Math.max(0,Math.min(1,v));};
+  return{
+    subLabels:subDefs.map(d=>d.s),
+    blkLabels:blkDefs.map(d=>d.s),
+    series:selMOs.map(mo=>{const tk=BENCH_STATE.tokens[mo.key]||"🔵";return{mo,tk,col:TOKEN_COLORS[tk]||"#2563eb",subVals:subDefs.map(d=>valOf(d.p,mo.key)),blkVals:blkDefs.map(d=>valOf(d.p,mo.key))};})
+  };
+}
+function buildMultiRadarSvg(labels,series,keyField){
+  const W=330,H=225,cx=W/2,cy=H/2+4,R=80,n=labels.length;
+  let s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  Array.of(0.25,0.5,0.75,1.0).forEach(lv=>{
+    const pts=labels.map((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;return(cx+Math.cos(a)*R*lv).toFixed(1)+","+(cy+Math.sin(a)*R*lv).toFixed(1);}).join(" ");
+    s+='<polygon points="'+pts+'" fill="none" stroke="#cbd5e1" stroke-width="1"/>';
+  });
+  labels.forEach((lbl,i)=>{
+    const a=-Math.PI/2+i*2*Math.PI/n,lx=cx+Math.cos(a)*(R+17),ly=cy+Math.sin(a)*(R+14);
+    s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Math.cos(a)*R).toFixed(1)+'" y2="'+(cy+Math.sin(a)*R).toFixed(1)+'" stroke="#cbd5e1" stroke-width="1"/>';
+    s+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="10.5" font-weight="bold" text-anchor="middle" fill="#1e293b">'+lbl+'</text>';
+  });
+  series.forEach(sr=>{
+    const vals=sr[keyField],pts=vals.map((v,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;return(cx+Math.cos(a)*R*v).toFixed(1)+","+(cy+Math.sin(a)*R*v).toFixed(1);}).join(" ");
+    s+='<polygon points="'+pts+'" fill="'+hexToRgba(sr.col,0.16)+'" stroke="'+sr.col+'" stroke-width="2"/>';
+    vals.forEach((v,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;s+='<circle cx="'+(cx+Math.cos(a)*R*v).toFixed(1)+'" cy="'+(cy+Math.sin(a)*R*v).toFixed(1)+'" r="3" fill="'+sr.col+'"/>';});
+  });
+  return s+'</svg>';
+}
+function drawMultiCanvasRadar(ctx,labels,series,keyField,rcx,rcy,R){
+  const n=labels.length;
+  Array.of(0.25,0.5,0.75,1.0).forEach(lv=>{ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.beginPath();labels.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n,x=rcx+Math.cos(a)*R*lv,y=rcy+Math.sin(a)*R*lv;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.closePath();ctx.stroke();});
+  labels.forEach((lbl,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;ctx.beginPath();ctx.moveTo(rcx,rcy);ctx.lineTo(rcx+Math.cos(a)*R,rcy+Math.sin(a)*R);ctx.stroke();ctx.fillStyle="#111111";ctx.font="bold 20px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(lbl,rcx+Math.cos(a)*(R+32),rcy+Math.sin(a)*(R+24));});
+  series.forEach(sr=>{
+    const vals=sr[keyField];ctx.beginPath();
+    vals.forEach((v,i)=>{const a=-Math.PI/2+i*2*Math.PI/n,x=rcx+Math.cos(a)*R*v,y=rcy+Math.sin(a)*R*v;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+    ctx.closePath();ctx.fillStyle=hexToRgba(sr.col,0.16);ctx.fill();ctx.strokeStyle=sr.col;ctx.lineWidth=3.2;ctx.stroke();
+  });
+  ctx.textAlign="left";
+}
 function cleanBenchGroup(gName){
   return String(gName||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
 }
@@ -145,6 +188,11 @@ function renderBenchmark(){
     const sp=document.createElement("span");sp.textContent=m.full;sp.title=m.full+" ("+yr+" г.)";row.append(sel,sp);hdr.appendChild(row);
   });
   stickyTop.appendChild(hdr);view.appendChild(stickyTop);
+  const rData=getBenchRadarSeries(selMOs,yr,isCoh);
+  const rBox=document.createElement("div");rBox.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid #cbd5e1;border-radius:4px;padding:6px;background:#fafbfc;margin-bottom:6px;";
+  rBox.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;"><div style="font-weight:bold;font-size:12px;">Субиндексы устойчивости (4)</div>'+buildMultiRadarSvg(rData.subLabels,rData.series,"subVals")+'</div>'+
+                 '<div style="display:flex;flex-direction:column;align-items:center;"><div style="font-weight:bold;font-size:12px;">Подблоки показателей (9)</div>'+buildMultiRadarSvg(rData.blkLabels,rData.series,"blkVals")+'</div>';
+  view.appendChild(rBox);
   const groups=Array.of();DATA.metrics.forEach(m=>{
     if((m.cat||m.is_cat)&&yr!=="2024")return;
     let g=groups.find(x=>x.name===m.group);if(!g){g={name:m.group,items:Array.of()};groups.push(g);}g.items.push(m);
@@ -223,7 +271,17 @@ function buildBenchCanvases(){
     const colsH=Math.max(1,selMOs.length),colWH=Math.floor((W-100)/colsH),hdrY=82;
     ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(50,hdrY,W-100,64);
     selMOs.forEach((m,idx)=>{const x=62+idx*colWH,y=hdrY+42;ctx.font="26px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[m.key]||"🎩",x,y);ctx.font="bold 20px 'Times New Roman'";const lbl=m.full;ctx.fillText(lbl.length>32?lbl.slice(0,31)+"…":lbl,x+36,y);});
-    const topY=170,botY=3110,step=Math.min(86,Math.floor((botY-topY)/Math.max(1,sub.length)));
+    let topY=165;
+    if(pgIdx===0){
+      const rData=getBenchRadarSeries(selMOs,yr,isCoh);
+      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,160,W-100,450);
+      ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";
+      ctx.fillText("Субиндексы устойчивости (4)",610,192);ctx.fillText("Подблоки показателей (9)",1620,192);ctx.textAlign="left";
+      drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,400,155);
+      drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,400,155);
+      topY=625;
+    }
+    const botY=3110,step=Math.min(86,Math.floor((botY-topY)/Math.max(1,sub.length)));
     sub.forEach((it,ri)=>{
       const y=topY+ri*step;
       if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,64,y+step-14);return;}
