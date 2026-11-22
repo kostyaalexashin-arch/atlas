@@ -1,3 +1,22 @@
+
+window._welcomeDismissed = false;
+window.startAtlasMode = function(modeVal){
+  window._welcomeDismissed = true;
+  const ov = document.getElementById('welcomeOverlay');
+  if(ov) ov.style.display = 'none';
+  if(modeVal === 'batch'){
+    const btnB = document.getElementById('btnOpenBatch') || document.querySelector('[onclick*="batch"], #btnBatch');
+    if(btnB) btnB.click();
+    return;
+  }
+  const sMode = document.getElementById('selMode');
+  if(sMode && modeVal){
+    sMode.value = modeVal;
+    if(typeof syncControls === 'function') syncControls();
+  }
+  if(typeof render === 'function') render();
+};
+
 let GEO=null,REGS=null,DATA=null,currentPal="RdYlGn";
 const PALETTES={
   "RdYlGn":Array.of("#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"),
@@ -194,6 +213,10 @@ function addCoreBadges(mapEl,isRegLevel){
 }
 
 function render(){
+  if(!window._welcomeDismissed){
+    const ov = document.getElementById('welcomeOverlay');
+    if(ov){ ov.style.display = 'flex'; return; }
+  }
   if(!GEO||!DATA)return;
   const mode=document.getElementById("selMode").value;if(mode==="bench"&&typeof renderBenchmark==="function"){renderBenchmark();return;}if(mode==="passport"&&typeof renderPassport==="function"){renderPassport();return;}const base=document.getElementById("selBase").value,yr=document.getElementById("selYear").value,mId=document.getElementById("selMetric").value,fo=document.getElementById("selFO").value,reg=document.getElementById("selReg").value,scMode=document.getElementById("selScale").value;
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0),box=document.getElementById("sheetBox");
