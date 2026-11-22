@@ -147,9 +147,10 @@ function addCoreBadges(mapEl,isRegLevel){
   const xMax=hasRight?0.76:0.99,placed=Array.of(),ptObstacles=Array.of();
   const placeItem=(cx,cy,lbl,sz,pad,distX,distY)=>{
     const bw=Math.max(46,lbl.length*(sz*0.62)+14),bh=sz+pad*2+6;
-    const dirs=[[0,-1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],,[-1,0],,[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
+    const dirs=[[0,-1],[1,-0.75],[-1,-0.75],[1,0.75],[-1,0.75],[1,0],[-1,0],[0,1],[0,-1.6],[0,1.6],[1.4,-1.1],[-1.4,-1.1],[1.4,1.1],[-1.4,1.1]];
     let bestLx=cx,bestLy=cy-distY;
-    for(const[ux,uy]of dirs){
+    for(const item of dirs){
+      const ux=item[0],uy=item[1];
       const lx=cx+Math.round(ux*distX),ly=cy+Math.round(uy*distY);
       if(lx-bw*0.5<sRect.left+6||lx+bw*0.5>sRect.left+pW*xMax-6||ly-bh*0.5<sRect.top+6||ly+bh*0.5>sRect.bottom-6)continue;
       const hitBox=placed.some(b=>Math.abs(lx-b.x)<(bw+b.w)*0.5+4&&Math.abs(ly-b.y)<(bh+b.h)*0.5+3);
