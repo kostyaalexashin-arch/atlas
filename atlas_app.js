@@ -121,7 +121,7 @@ function buildFooterHtml(isCat,scObj,legItems){
   f.appendChild(lBox);
   if(!isCat&&scObj){
     const cBox=document.createElement("div");cBox.className="cbar-box";
-    const palDisp=scObj.inv?scObj.pal.slice().reverse():scObj.pal,tckDisp=scObj.inv?scObj.ticks.slice().reverse():scObj.ticks;cBox.innerHTML='<div class="cbar-strip" style="background:linear-gradient(to right,'+palDisp.join(",")+')"></div><div class="cbar-ticks">'+tckDisp.map(t=>'<span>'+fmtNum(t,scObj.dec)+'</span>').join("")+'</div>';
+    cBox.innerHTML='<div class="cbar-strip" style="background:linear-gradient(to right,'+scObj.pal.join(",")+')"></div><div class="cbar-ticks">'+scObj.ticks.map(t=>'<span>'+fmtNum(t,scObj.dec)+'</span>').join("")+'</div>';
     f.appendChild(cBox);
   }
   return f;
