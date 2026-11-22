@@ -84,7 +84,7 @@ function syncControls(){
   const sMet=document.getElementById("selMetric");
   if(sMet){
     const isTbl=(sM.value==="table");
-    Array.from(sMet.options).forEach(opt=>{const mm=DATA.metrics.find(x=>x.id===opt.value);opt.style.display=(isTbl&&mm&&(mm.cat||mm.is_cat))?"none":"";});
+    Array.from(sMet.options).forEach(opt=>{if(opt.dataset.isSep==="1"){opt.style.display="";return;}const mm=DATA.metrics.find(x=>x.id===opt.value);opt.style.display=(isTbl&&mm&&(mm.cat||mm.is_cat))?"none":"";});
     const curMM=DATA.metrics.find(x=>x.id===sMet.value);
     if(isTbl&&curMM&&(curMM.cat||curMM.is_cat)){const okOpt=Array.from(sMet.options).find(o=>{const mm=DATA.metrics.find(x=>x.id===o.value);return mm&&!(mm.cat||mm.is_cat);});if(okOpt)sMet.value=okOpt.value;}
   }
@@ -100,7 +100,7 @@ Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJ
   DATA.metrics.forEach(m=>{if(!gm[m.group]){gm[m.group]=document.createElement("optgroup");gm[m.group].label=m.group;sMet.add(gm[m.group]);}gm[m.group].appendChild(new Option(m.id+" — "+m.title,m.id));});
   const cGF=document.getElementById("chkGroupFO");if(cGF)cGF.onchange=render;
   sFO.onchange=()=>{syncControls();sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(sFO.value!=="RF")(DATA.fo_to_regs[sFO.value]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));render();};
-  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{syncControls();render();});
+  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();syncControls();render();});
   document.getElementById("prevMet").onclick=()=>stepSelect("selMetric",-1);document.getElementById("nextMet").onclick=()=>stepSelect("selMetric",1);
   document.getElementById("prevFO").onclick=()=>stepSelect("selFO",-1);document.getElementById("nextFO").onclick=()=>stepSelect("selFO",1);
   document.getElementById("prevReg").onclick=()=>stepSelect("selReg",-1);document.getElementById("nextReg").onclick=()=>stepSelect("selReg",1);
@@ -316,4 +316,22 @@ function render(){
     }
   }
   box.appendChild(buildFooterHtml(((mMeta.cat||mMeta.is_cat)||mMeta.is_cat),scObj,legIt));
+}
+
+function addSubBlockSeparators(){
+  const s=document.getElementById("selMetric");if(!s||s.dataset.hasSeps==="1")return;
+  const defs=Array.of(
+    {id:"ЭК-01",lbl:"  ▸ Экологический блок (ЭК-01 — ЭК-13)"},
+    {id:"СЦ-01",lbl:"  ▸ Социальный блок (СЦ-01 — СЦ-13)"},
+    {id:"УЭ-01",lbl:"  ▸ Управленческо-экономический блок (УЭ-01 — УЭ-13)"}
+  );
+  defs.forEach(d=>{
+    const target=s.querySelector('option[value="'+d.id+'"]');
+    if(target){
+      const sep=document.createElement("option");sep.disabled=true;sep.dataset.isSep="1";
+      sep.style.cssText="font-weight:bold;font-style:italic;color:#0369a1;background:#eef6fb;";
+      sep.textContent=d.lbl;target.insertAdjacentElement("beforebegin",sep);
+    }
+  });
+  s.dataset.hasSeps="1";
 }
