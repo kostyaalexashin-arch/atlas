@@ -140,28 +140,35 @@ function applyZatoHatch(mapEl){
   svg.querySelectorAll("path").forEach(p=>{const st=(p.getAttribute("style")||"")+(p.getAttribute("fill")||"");if(st.includes("0.987")||st.replace(/\s/g,"").includes("203,213,225")){p.style.fill="url(#zatoHatch)";p.style.fillOpacity="1";p.setAttribute("fill","url(#zatoHatch)");}});
 }
 function addCoreBadges(mapEl,isRegLevel){
+  const svg=mapEl.querySelector("svg.main-svg");if(!svg)return Promise.resolve();
+  const mRect=mapEl.getBoundingClientRect(),pW=mRect.width,pH=mRect.height;if(pW<50||pH<50)return Promise.resolve();
   const oldA=(mapEl.layout.annotations||Array.of()).filter(a=>!a._isCore),anns=oldA.slice();
+  const hasRight=Boolean(document.querySelector(".mo-side-panel"))||(mapEl.layout&&Boolean(mapEl.layout.geo3));
+  const xMax=hasRight?0.76:0.99;
   if(isRegLevel){
+    const coreP=Array.from(svg.querySelectorAll(".geolayer .choropleth path")).find(p=>{const st=(p.getAttribute("style")||"").replace(/\s/g,"");return st.includes("230,0,126")||st.includes("e6007e");});
     const regName=document.getElementById("selReg")?.value||"";
     const coreFeat=GEO.features.find(f=>f.properties.region===regName&&f.properties.is_center&&f.properties._map_status==="В_выборке");
     const cName=coreFeat?coreFeat.properties._lbl:(DATA.core_names?.[regName]||regName);
-    const lon=coreFeat?.properties?._cent?.lon,lat=coreFeat?.properties?._cent?.lat;
-    if(lon!==undefined&&lat!==undefined){
-      anns.push({_isCore:true,xref:"geo",yref:"geo",x:lon,y:lat,text:"<b>"+cName+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.4,arrowcolor:"#e6007e",ax:62,ay:-34,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});
+    if(coreP){
+      const r=coreP.getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
+      if(r.width>0&&cx>=mRect.left+4&&cx<=mRect.left+pW*xMax&&cy>=mRect.top+4&&cy<=mRect.bottom-4){
+        const px=(cx-mRect.left)/pW,py=1.0-(cy-mRect.top)/pH,dx=(px>0.55?-64:64),dy=(py>0.75?34:-34);
+        anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+cName+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.3,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.96)",bordercolor:"#e6007e",borderwidth:1.2,borderpad:3,font:{family:"Times New Roman",size:13,color:"#111111"}});
+      }
     }
   }else{
-    const scTraces=(mapEl.data||Array.of()).filter(tr=>tr.type==="scattergeo"&&Array.isArray(tr.lon)&&Array.isArray(tr.text));
-    scTraces.forEach(tr=>{
-      const gRef=tr.geo||"geo";
-      for(let i=0;i<tr.lon.length;i++){
-        const lon=tr.lon.at(i),lat=tr.lat.at(i),lbl=tr.text.at(i)||"";
-        if(lon===undefined||lat===undefined||!lbl)continue;
-        const dx=(i%2===0?54:-54),dy=(i%3===0?-28:26);
-        anns.push({_isCore:true,xref:gRef,yref:gRef,x:lon,y:lat,text:"<b>"+lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.3,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.94)",bordercolor:"#e6007e",borderwidth:1.1,borderpad:2.5,font:{family:"Times New Roman",size:12,color:"#111111"}});
-      }
-    });
+    const pts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer path.point")),txts=Array.from(svg.querySelectorAll(".geolayer .scatterlayer text"));
+    const n=Math.min(pts.length,txts.length);
+    for(let i=0;i<n;i++){
+      const r=pts.at(i).getBoundingClientRect(),cx=r.left+r.width*0.5,cy=r.top+r.height*0.5;
+      if(r.width<=0||cx<mRect.left+4||cx>mRect.left+pW*xMax||cy<mRect.top+4||cy>mRect.bottom-4)continue;
+      const px=(cx-mRect.left)/pW,py=1.0-(cy-mRect.top)/pH,lbl=txts.at(i).textContent||"";
+      const dx=(px>0.62?-56:56),dy=(py>0.78?26:-26);
+      anns.push({_isCore:true,xref:"paper",yref:"paper",x:px,y:py,text:"<b>"+lbl+"</b>",showarrow:true,arrowhead:0,arrowwidth:1.2,arrowcolor:"#e6007e",ax:dx,ay:dy,bgcolor:"rgba(255,255,255,0.94)",bordercolor:"#e6007e",borderwidth:1.1,borderpad:2.5,font:{family:"Times New Roman",size:12,color:"#111111"}});
+    }
   }
-  window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},300);});
+  window._inBadgeRelayout=true;return Plotly.relayout(mapEl,{annotations:anns}).finally(()=>{setTimeout(()=>{window._inBadgeRelayout=false;},350);});
 }
 
 function render(){
