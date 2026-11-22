@@ -156,7 +156,22 @@ async function buildPassportCanvas(overrideMO=null){
 
   // Центральная однострочная таблица (x: 545..1685, 15 строк * 38px = 570px -> строго до y=940, без переносов строк!)
   const tx0=545,tw=1140,valW=145;let ty=355;
-  pd.midRows.forEach(r=>{
+  const midRows=(pd.midRows&&pd.midRows.length)?pd.midRows:Array.of(
+    {name:"Интегральный индекс устойчивого развития",val:(pd.subVals&&pd.subVals.length?((pd.subVals.at(0)+pd.subVals.at(1)+pd.subVals.at(2))/3).toFixed(4):"—"),isSub:true},
+    {name:"Экологический субиндекс",val:pd.subVals?pd.subVals.at(0).toFixed(4):"—",isSub:true},
+    {name:"ЭК-1. Качество окружающей среды",val:pd.blkVals?pd.blkVals.at(0).toFixed(4):"—",isSub:false},
+    {name:"ЭК-2. Износ коммунальных сетей",val:pd.blkVals?pd.blkVals.at(1).toFixed(4):"—",isSub:false},
+    {name:"ЭК-3. Обращение с отходами",val:pd.blkVals?pd.blkVals.at(2).toFixed(4):"—",isSub:false},
+    {name:"Социальный субиндекс",val:pd.subVals?pd.subVals.at(1).toFixed(4):"—",isSub:true},
+    {name:"СЦ-1. Демография и здравоохранение",val:pd.blkVals?pd.blkVals.at(3).toFixed(4):"—",isSub:false},
+    {name:"СЦ-2. Социальная инфраструктура",val:pd.blkVals?pd.blkVals.at(4).toFixed(4):"—",isSub:false},
+    {name:"СЦ-3. Потребительский рынок и ЖКХ",val:pd.blkVals?pd.blkVals.at(5).toFixed(4):"—",isSub:false},
+    {name:"Управленческо-экономический субиндекс",val:pd.subVals?pd.subVals.at(2).toFixed(4):"—",isSub:true},
+    {name:"УЭ-1. Производственно-инвестиционный потенциал",val:pd.blkVals?pd.blkVals.at(6).toFixed(4):"—",isSub:false},
+    {name:"УЭ-2. Бюджетная обеспеченность",val:pd.blkVals?pd.blkVals.at(7).toFixed(4):"—",isSub:false},
+    {name:"УЭ-3. Финансовая результативность",val:pd.blkVals?pd.blkVals.at(8).toFixed(4):"—",isSub:false}
+  );
+  midRows.forEach(r=>{
     const isHdr=r.isSub;
     ctx.fillStyle=isHdr?"#eef3f8":"#ffffff";ctx.fillRect(tx0,ty,tw,38);
     ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1;ctx.strokeRect(tx0,ty,tw-valW,38);ctx.strokeRect(tx0+tw-valW,ty,valW,38);

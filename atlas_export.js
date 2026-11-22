@@ -522,7 +522,7 @@ async function runControl1200DpiPdf(){
   let partIdx=1,pdfPages=Array.of();
   const flushVol=()=>{
     if(!pdfPages.length)return;
-    const a=document.createElement("a");a.download="Контрольный_пакет_1200dpi_Том_"+String(partIdx).padStart(2,"0")+".pdf";
+    const a=document.createElement("a");a.download="Контрольный_пакет_Атлас_1200dpi.pdf";
     const u=URL.createObjectURL(buildPdfBlob(pdfPages));a.href=u;a.click();setTimeout(()=>URL.revokeObjectURL(u),15000);pdfPages=Array.of();partIdx++;
   };
   const pushCv=cv=>{
@@ -532,7 +532,7 @@ async function runControl1200DpiPdf(){
     const bin=atob(b64),arr=new Uint8Array(bin.length);
     for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
     pdfPages.push({w,h,jpg:arr});
-    if(pdfPages.length>=25)flushVol();
+    
   };
 
   if(btn)btn.disabled=true;
