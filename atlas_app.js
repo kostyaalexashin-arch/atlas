@@ -251,7 +251,7 @@ function render(){
     rows.forEach(f=>{
       if(grpFO&&f.properties.fo!==curFO){curFO=f.properties.fo;const gr=tbody.insertRow(),gc=gr.insertCell();gc.colSpan=8;gc.style.background="#dbeafe";gc.style.fontWeight="bold";gc.style.textAlign="left";gc.style.padding="6px 10px";gc.textContent=curFO+" федеральный округ";}
       const tr=tbody.insertRow(),id=f.properties.join_key;const c0=tr.insertCell();c0.textContent=f.properties.region;const c1=tr.insertCell();c1.className="mo-name";c1.innerHTML=f.properties.is_center?("<b>"+f.properties._lbl+"</b>"):f.properties._lbl;
-      yrs.forEach(y=>{const td=tr.insertCell(),v=DATA.panel[mId]?.[y]?.[id],cc=DATA.panel_cats?.[y]?.[id]||"5";presCats.add(cc);td.innerHTML='<div>'+markerSvg(cc,scObj.getHex(v),22)+'</div><div style="font-size:12px;margin-top:2px;">'+fmtNum(v,mMeta.dec)+'</div>';});
+      yrs.forEach(y=>{const td=tr.insertCell(),v=DATA.panel[mId]?.[y]?.[id],cc=DATA.panel_cats?.[y]?.[id]||"5";presCats.add(cc);td.innerHTML='<div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:88px;"><span style="display:inline-flex;width:22px;justify-content:center;flex-shrink:0;">'+markerSvg(cc,scObj.getHex(v),19)+'</span><span style="display:inline-block;width:56px;text-align:right;font-size:13px;font-weight:bold;font-variant-numeric:tabular-nums;">'+fmtNum(v,mMeta.dec)+'</span></div>';});
     });
     const sHex=actCol.at(Math.floor(actCol.length*0.75)),legIt=Array.of();
     Object.keys(CAT_META).forEach(k=>{if(presCats.has(k))legIt.push({col:sHex,kind:"box",icon:markerSvg(k,sHex,18),txt:CAT_META[k].lbl});});

@@ -59,14 +59,14 @@ function buildTableCanvases(silent=false){
       ctx.font=(f.properties.is_center?"bold ":"")+"28px 'Times New Roman'";const mTxt=f.properties._lbl;ctx.fillText(mTxt.length>40?mTxt.slice(0,39)+"…":mTxt,544,y+48);
       ctx.textAlign="center";
       yrs.forEach((yr,yi)=>{
-        const cx=(xCols.at(yi+2)+xCols.at(yi+3))/2,v=DATA.panel[mId]?.[yr]?.[jk],catYr=String(DATA.panel_cats?.[yr]?.[jk]||"5");
+        const x0=xCols.at(yi+2),x1=xCols.at(yi+3),v=DATA.panel[mId]?.[yr]?.[jk],catYr=String(DATA.panel_cats?.[yr]?.[jk]||"5");
         let fill="#ffffff",txt="н/д";
         if(v!==undefined&&v!==null&&v!==""){
           if(mMeta.cat){fill=DATA.cluster_colors[v]||"#e2e8f0";txt=String(v).split(" ").at(0);}
           else{const nv=Number(v);txt=fmtNum(nv,mMeta.dec);if(scTbl){const u=scTbl.vmax<=scTbl.vmin?0.5:Math.pow(Math.max(0,Math.min(1,(nv-scTbl.vmin)/(scTbl.vmax-scTbl.vmin))),scTbl.gamma);const ci=Math.min(scTbl.pal.length-1,Math.floor(u*scTbl.pal.length));fill=scTbl.pal.at(ci);}}
         }
-        drawCatShape(ctx,catYr,cx,y+30,15,fill);
-        ctx.fillStyle="#111111";ctx.font="bold  24px \'Times New Roman\'";ctx.fillText(txt,cx,y+67);
+        drawCatShape(ctx,catYr,x0+74,y+rowH/2,16,fill);
+        ctx.fillStyle="#111111";ctx.font="bold 26px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(txt,x1-48,y+rowH/2+9);ctx.textAlign="center";
       });
     });
     const footY=2095;ctx.strokeStyle="#94a3b8";ctx.beginPath();ctx.moveTo(40,footY);ctx.lineTo(3120,footY);ctx.stroke();
