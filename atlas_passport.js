@@ -98,7 +98,7 @@ function renderPassport(){
   initPassportControls();
   const box=document.getElementById("sheetBox"),yr=document.getElementById("pYear").value,all=getPassMOs(),mo=all.find(m=>m.key===PASS_STATE.key);
   if(!mo){box.innerHTML='<div class="bench-empty"><b>Цифровой паспорт устойчивости муниципального образования</b><br><br>Выберите муниципальное образование в панели слева для формирования паспорта.<br><span style="font-size:13px;color:#64748b;">Для 193 МО динамической когорты доступен выбор года (2019–2024 гг.).</span></div>';return;}
-  const pd=getPassportData(mo,yr),bRow=(lbl,val,cls="")=>'<div class="pass-mid" style="display:grid;grid-template-columns:255px 1fr 255px;gap:8px;align-items:center;border:1px solid #cbd5e1;border-radius:4px;padding:6px;background:#fafbfc;"><span>'+lbl+'</span><b>'+val+'</b></div>';
+  const pd=getPassportData(mo,yr),bRow=(lbl,val,cls="")=>'<div class="pass-irow '+cls+'"><span>'+lbl+'</span><b>'+val+'</b></div>';
   const sec1Html=bRow("Интегральный индекс устойчивого развития",pd.idxMain,"main")+pd.topSubs.map(s=>bRow(s.name,s.txt,"sub")).join("");
   const sec2Html=pd.subBlocks.map(b=>bRow(b.name,b.txt,"blk")).join("");
   const colHtml=(title,arr)=>'<div><div class="pass-col-hdr">'+title+'</div>'+arr.map(x=>'<div class="pass-crow"><span><b>'+x.id+'</b> — '+x.title+'</span><b>'+x.val+'</b></div>').join("")+'</div>';
@@ -106,7 +106,7 @@ function renderPassport(){
     '<div class="pass-top" style="display:block;"><div class="pass-intro" style="width:100%;"><div class="pass-title">Цифровой паспорт устойчивости муниципального образования</div><div class="pass-sub">'+mo.full+' — '+yr+' г.</div><div class="pass-desc">Цифровой паспорт — это интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития. В режиме реального времени собраны ключевые показатели. Цифровой инструмент создан для открытого диалога между властью, бизнесом и жителями, помогая вместе планировать уверенное и экологичное будущее.</div></div></div>'+
     '<div class="pass-meta-grid"><div class="pass-mrow"><span>Кластер (2024 г.):</span><b>'+pd.clVal+'</b></div><div class="pass-mrow"><span>Категория:</span><b>'+pd.catTxt+'</b></div><div class="pass-mrow"><span>Площадь, га:</span><b>'+pd.area+'</b></div><div class="pass-mrow"><span>Численность, чел.:</span><b>'+pd.pop+'</b></div></div>'+
     '<div class="pass-sec"><div class="pass-radar-box"><div style="font-weight:bold;font-size:11px;">Субиндексы устойчивости</div>'+buildRadarSvg(pd.topSubs,"rgba(225,29,72,0.24)","#e11d48")+'</div><div class="pass-idx-box">'+sec1Html+'</div></div>'+
-    '<div class="pass-sec"><div class="pass-radar-box"><div style="font-weight:bold;font-size:11px;">Подблоки показателей</div>'+buildRadarSvg(pd.subBlocks,"rgba(2,132,199,0.24)","#0284c7")+'</div><div class="pass-idx-box">'+sec2Html+'</div></div>'+
+    '<div class="pass-sec"><div class="pass-radar-box"><div style="font-weight:bold;font-size:11px;">Подблоки показателей (9)</div>'+buildRadarSvg(pd.subBlocks,"rgba(2,132,199,0.24)","#0284c7")+'</div><div class="pass-idx-box">'+sec2Html+'</div></div>'+
     '<div class="pass-bot">'+colHtml("Экологический блок",pd.ekList)+colHtml("Социальный блок",pd.scList)+colHtml("Управленческо-экономический блок",pd.ueList)+'</div></div>';
 }
 function drawCanvasRadar(ctx,items,rcx,rcy,R,fillRgba,strokeHex){
@@ -123,83 +123,50 @@ function wrapPassText(ctx,txt,maxW){
   words.forEach(w=>{const test=cur?cur+" "+w:w;if(ctx.measureText(test).width<=maxW)cur=test;else{if(cur)lines.push(cur);cur=w;}});
   if(cur)lines.push(cur);return lines.slice(0,3);
 }
-async function buildPassportCanvas(overrideMO=null){
-  const mo=overrideMO||getPassMOs().find(m=>m.key===PASS_STATE.key);if(!mo)return null;
-  const yr=document.getElementById("pYear")?.value||"2024",pd=collectPassportData(mo,yr);
-  const sc=Number(document.getElementById("selDpi")?.value||1),W=Math.round(2234*sc),H=Math.round(3158*sc);
-  const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
-  ctx.fillStyle="#ffffff";ctx.fillRect(0,0,2234,3158);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(20,20,2194,3118);
-
-  // 1. Шапка на всю ширину
+function buildPassportCanvas(overrideMO=null){
+  const yr=document.getElementById("pYear").value,all=getPassMOs(),mo=overrideMO||all.find(m=>m.key===PASS_STATE.key);
+  if(!mo){alert("Выберите муниципальное образование для паспорта.");return null;}
+  const pd=getPassportData(mo,yr),W=2234,H=3160,canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
   ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 42px 'Times New Roman'";
-  ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1117,76);
-  ctx.font="bold 33px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,122);
-  ctx.font="italic 20.5px 'Times New Roman'";ctx.fillStyle="#334155";
-  ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1117,162);
-  ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1117,190);
+  ctx.fillText("Цифровой паспорт устойчивости муниципального образования",1117,84);
+  ctx.font="bold 33px 'Times New Roman'";ctx.fillText(mo.full+" ("+yr+" г.)",1117,132);
+  ctx.font="italic 21px 'Times New Roman'";
+  ctx.fillText("Цифровой паспорт — интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития МО.",1117,176);
+  ctx.fillText("В режиме реального времени собраны ключевые показатели для открытого диалога между властью, бизнесом и жителями.",1117,206);
   ctx.textAlign="left";
-
-  // 2. Общая характеристика (Численность под Категорией, Кластер без цветной заливки)
-  ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(45,212,2144,104);
-  ctx.font="bold 24px 'Times New Roman'";ctx.fillStyle="#111111";
-  ctx.fillText("Кластер (2024 г.): "+pd.clVal,68,254);ctx.fillText("Категория: "+pd.catTxt,1150,254);
-  ctx.fillText("Площадь, га: "+pd.area,68,298);ctx.fillText("Численность, чел.: "+pd.pop,1150,298);
-
-  // 3. Единый центральный блок (y: 332..965): Слева диаграмма субиндексов, по центру таблица в 1 строку (подблоки внутри субиндексов), справа диаграмма подблоков
-  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(45,332,2144,630);
-  ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";
-  ctx.fillText("Субиндексы устойчивости",295,368);
-  ctx.fillText("Подблоки показателей",1935,368);
-  ctx.textAlign="left";
-  drawCanvasRadar(ctx,pd.subLabels,pd.subVals,295,660,155);
-  drawCanvasRadar(ctx,pd.blkLabels,pd.blkVals,1935,660,155);
-
-  // Центральная однострочная таблица (x: 545..1685, 15 строк * 38px = 570px -> строго до y=940, без переносов строк!)
-  const tx0=545,tw=1140,valW=145;let ty=355;
-  const midRows=(pd.midRows&&pd.midRows.length)?pd.midRows:Array.of(
-    {name:"Интегральный индекс устойчивого развития",val:(pd.subVals&&pd.subVals.length?((pd.subVals.at(0)+pd.subVals.at(1)+pd.subVals.at(2))/3).toFixed(4):"—"),isSub:true},
-    {name:"Экологический субиндекс",val:pd.subVals?pd.subVals.at(0).toFixed(4):"—",isSub:true},
-    {name:"ЭК-1. Качество окружающей среды",val:pd.blkVals?pd.blkVals.at(0).toFixed(4):"—",isSub:false},
-    {name:"ЭК-2. Износ коммунальных сетей",val:pd.blkVals?pd.blkVals.at(1).toFixed(4):"—",isSub:false},
-    {name:"ЭК-3. Обращение с отходами",val:pd.blkVals?pd.blkVals.at(2).toFixed(4):"—",isSub:false},
-    {name:"Социальный субиндекс",val:pd.subVals?pd.subVals.at(1).toFixed(4):"—",isSub:true},
-    {name:"СЦ-1. Демография и здравоохранение",val:pd.blkVals?pd.blkVals.at(3).toFixed(4):"—",isSub:false},
-    {name:"СЦ-2. Социальная инфраструктура",val:pd.blkVals?pd.blkVals.at(4).toFixed(4):"—",isSub:false},
-    {name:"СЦ-3. Потребительский рынок и ЖКХ",val:pd.blkVals?pd.blkVals.at(5).toFixed(4):"—",isSub:false},
-    {name:"Управленческо-экономический субиндекс",val:pd.subVals?pd.subVals.at(2).toFixed(4):"—",isSub:true},
-    {name:"УЭ-1. Производственно-инвестиционный потенциал",val:pd.blkVals?pd.blkVals.at(6).toFixed(4):"—",isSub:false},
-    {name:"УЭ-2. Бюджетная обеспеченность",val:pd.blkVals?pd.blkVals.at(7).toFixed(4):"—",isSub:false},
-    {name:"УЭ-3. Финансовая результативность",val:pd.blkVals?pd.blkVals.at(8).toFixed(4):"—",isSub:false}
-  );
-  midRows.forEach(r=>{
-    const isHdr=r.isSub;
-    ctx.fillStyle=isHdr?"#eef3f8":"#ffffff";ctx.fillRect(tx0,ty,tw,38);
-    ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1;ctx.strokeRect(tx0,ty,tw-valW,38);ctx.strokeRect(tx0+tw-valW,ty,valW,38);
-    ctx.fillStyle="#111111";ctx.font=(isHdr?"bold 20px":"19px")+" 'Times New Roman'";
-    ctx.fillText(r.name,tx0+(isHdr?10:26),ty+26);
-    ctx.font="bold 20px 'Times New Roman'";ctx.textAlign="right";
-    ctx.fillText(r.val,tx0+tw-14,ty+26);ctx.textAlign="left";
-    ty+=38;
-  });
-
-  // 4. Нижний блок: 3 широких столбца с 39 частными показателями (y: 985..3100, высота 2115px -> 148px на каждую из 13 строк!)
-  const cw=702,gap=19,by0=985,rowStep=154;
-  pd.blocks.forEach((blk,bi)=>{
-    const cx0=45+bi*(cw+gap),valColX=cx0+cw-118;
-    ctx.fillStyle="#e2e8f0";ctx.fillRect(cx0,by0,cw,46);ctx.strokeStyle="#64748b";ctx.strokeRect(cx0,by0,cw,46);
-    ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.textAlign="center";
-    ctx.fillText(blk.title,cx0+cw/2,by0+31);ctx.textAlign="left";
-    blk.items.forEach((it,ri)=>{
-      const cy=by0+46+ri*rowStep;
-      ctx.fillStyle=ri%2?"#fafbfc":"#ffffff";ctx.fillRect(cx0,cy,cw,rowStep);
-      ctx.strokeStyle="#cbd5e1";ctx.strokeRect(cx0,cy,cw-118,rowStep);ctx.strokeRect(valColX,cy,118,rowStep);
-      ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";
-      const tLines=wrapPassText(ctx,it.id+" — "+it.title,cw-134);
-      const startY=cy+Math.max(26,Math.floor((rowStep-(tLines.length-1)*23)/2)+6);
-      tLines.slice(0,5).forEach((ln,li)=>ctx.fillText(ln,cx0+8,startY+li*23));
-      ctx.font="bold 21.5px 'Times New Roman'";ctx.textAlign="right";
-      ctx.fillText(it.val,cx0+cw-10,cy+rowStep/2+7);ctx.textAlign="left";
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,235,2134,115);
+  ctx.font="bold 25px 'Times New Roman'";ctx.fillStyle="#111111";
+  ctx.fillText("Кластер (2024 г.): "+pd.clVal,75,282);ctx.fillText("Категория: "+pd.catTxt,1150,282);
+  ctx.fillText("Площадь, га: "+pd.area,75,330);ctx.fillText("Численность, чел.: "+pd.pop,1150,330);
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,375,2134,660);
+  ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости",440,442);ctx.textAlign="left";
+  drawCanvasRadar(ctx,pd.topSubs,440,745,220,"rgba(225,29,72,0.24)","#e11d48");
+  let iy1=520;const ix=840,iw=1320;
+  ctx.fillStyle="#e2e8f0";ctx.fillRect(ix,iy1-34,iw,46);ctx.fillStyle="#111111";ctx.font="bold 27px 'Times New Roman'";ctx.fillText("Интегральный индекс устойчивого развития",ix+14,iy1);ctx.textAlign="right";ctx.fillText(pd.idxMain,ix+iw-14,iy1);ctx.textAlign="left";iy1+=68;
+  pd.topSubs.forEach(s=>{ctx.fillStyle="#f1f5f9";ctx.fillRect(ix,iy1-30,iw,42);ctx.fillStyle="#111111";ctx.font="bold 24px 'Times New Roman'";ctx.fillText(s.name,ix+14,iy1);ctx.textAlign="right";ctx.fillText(s.txt,ix+iw-14,iy1);ctx.textAlign="left";iy1+=62;});
+  ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,1070,2134,670);
+  ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Подблоки показателей (9)",440,1108);ctx.textAlign="left";
+  drawCanvasRadar(ctx,pd.subBlocks,440,1425,220,"rgba(2,132,199,0.24)","#0284c7");
+  let iy2=1145;
+  pd.subBlocks.forEach(b=>{ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(ix,iy2+14);ctx.lineTo(ix+iw,iy2+14);ctx.stroke();ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";ctx.fillText(b.name,ix+14,iy2);ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(b.txt,ix+iw-14,iy2);ctx.textAlign="left";iy2+=64;});
+  const cols=Array.of({t:"Экологический блок",a:pd.ekList},{t:"Социальный блок",a:pd.scList},{t:"Управленческо-экономический блок",a:pd.ueList});
+  const cw=690,by0=1760,rowStep=102;
+  cols.forEach((col,ci)=>{
+    const cx0=50+ci*722,valColX=cx0+cw-115;
+    ctx.fillStyle="#eef3f8";ctx.fillRect(cx0,by0,cw,48);ctx.strokeStyle="#94a3b8";ctx.strokeRect(cx0,by0,cw,48);
+    ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.textAlign="center";ctx.fillText(col.t,cx0+cw/2,by0+32);ctx.textAlign="left";
+    let cy=by0+76;
+    col.a.forEach(it=>{
+      ctx.strokeStyle="#cbd5e1";ctx.beginPath();ctx.moveTo(cx0,cy+66);ctx.lineTo(cx0+cw,cy+66);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(valColX,cy-24);ctx.lineTo(valColX,cy+66);ctx.stroke();
+      ctx.fillStyle="#111111";ctx.font="20.5px 'Times New Roman'";
+      const tLines=wrapPassText(ctx,it.id+" — "+it.title,valColX-cx0-12);
+      tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+6,cy+li*23));
+      ctx.font="bold 21.5px 'Times New Roman'";ctx.textAlign="right";ctx.fillText(it.val,cx0+cw-8,cy+22);ctx.textAlign="left";cy+=rowStep;
     });
   });
-  return cv;
+  const sc=Number(document.getElementById("selDpi")?.value||1);
+  if(sc<0.99){const c2=document.createElement("canvas");c2.width=Math.round(W*sc);c2.height=Math.round(H*sc);const x2=c2.getContext("2d");x2.imageSmoothingEnabled=true;x2.imageSmoothingQuality="high";x2.drawImage(canvas,0,0,c2.width,c2.height);return c2;}
+  return canvas;
 }
