@@ -106,3 +106,15 @@ window.formatAtlasMetricLabel = function(m){
   }
   return title || id;
 };
+
+(function(){
+  const fixDec = () => {
+    if(typeof DATA !== "undefined" && DATA && Array.isArray(DATA.metrics)){
+      DATA.metrics.forEach(m => {
+        if(m && (m.id === "УЭ-13" || m.id === "ЭК-13")) m.dec = 2;
+      });
+    }
+  };
+  fixDec();
+  window.addEventListener("DOMContentLoaded", fixDec);
+})();
