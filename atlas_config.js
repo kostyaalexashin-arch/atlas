@@ -23,8 +23,17 @@ window._cleanFilePart = function(s){
   return String(s||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/[^a-zA-Z0-9а-яА-ЯёЁ+,_-]+/g,"_").replace(/_+/g,"_").replace(/^_|_$/g,"");
 };
 window._foShort = function(fo){
-  const m = {"Центральный":"ЦФО","Северо-Западный":"СЗФО","Южный":"ЮФО","Северо-Кавказский":"СКФО","Приволжский":"ПФО","Уральский":"УФО","Сибирский":"СФО","Дальневосточный":"ДФО","RF":"РФ"};
-  return m[fo] || window._cleanFilePart(fo);
+  const s = String(fo || "").trim();
+  if(!s || s === "RF" || s.includes("Российская")) return "0_РФ";
+  if(s.includes("Центральный") || s === "ЦФО") return "1_ЦФО";
+  if(s.includes("Северо-Западный") || s === "СЗФО") return "2_СЗФО";
+  if(s.includes("Южный") || s === "ЮФО") return "3_ЮФО";
+  if(s.includes("Северо-Кавказский") || s === "СКФО") return "4_СКФО";
+  if(s.includes("Приволжский") || s === "ПФО") return "5_ПФО";
+  if(s.includes("Уральский") || s === "УФО") return "6_УФО";
+  if(s.includes("Сибирский") || s === "СФО") return "7_СФО";
+  if(s.includes("Дальневосточный") || s === "ДФО") return "8_ДФО";
+  return s;
 };
 window.buildAtlasFileName = function(opts){
   const parts = [];

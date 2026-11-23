@@ -72,9 +72,9 @@ async function buildSheetCanvas(){
     else{ctx.font="bold 34px 'Times New Roman'";ctx.fillText(lines.at(0),1580,36);ctx.fillText(lines.at(1),1580,72);ctx.fillText(lines.at(2),1580,108);ctx.font="bold 34px 'Times New Roman'";ctx.fillText(terrTitle,1580,144);}
     ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
-    ctx.drawImage(mapImg,40,155,mapW,mapH);
+    ctx.drawImage(mapImg,40,148,mapW,mapH);
     {
-      const idt=ctx.getImageData(40,155,mapW,mapH),px=idt.data;
+      const idt=ctx.getImageData(40,148,mapW,mapH),px=idt.data;
       for(let y=0;y<mapH;y++){for(let x=0;x<mapW;x++){const k=(y*mapW+x)*4;const isZ=(Math.abs(px[k]-204)<=4&&Math.abs(px[k+1]-214)<=4&&Math.abs(px[k+2]-225)<=4);if(isZ&&((x+y)%22)<7){px[k]=71;px[k+1]=85;px[k+2]=105;}}}
       ctx.putImageData(idt,40,155);
     }
@@ -94,7 +94,7 @@ async function buildSheetCanvas(){
           const domX=fl[gk].domain?fl[gk].domain.x:[0,1],domY=fl[gk].domain?fl[gk].domain.y:[0,1];
           const rx=xy.at(0)/w0,ry=xy.at(1)/h0;
           if(rx>=domX.at(0)-0.01&&rx<=domX.at(1)+0.01&&ry>=(1-domY.at(1))-0.01&&ry<=(1-domY.at(0))+0.01){
-            ptsOnCanvas.push({cx:40+rx*mapW,cy:155+ry*mapH,lbl:String(f.properties._lbl||"").trim()});
+            ptsOnCanvas.push({cx:40+rx*mapW,cy:148+ry*mapH,lbl:String(f.properties._lbl||"").trim()});
             break;
           }
         }
