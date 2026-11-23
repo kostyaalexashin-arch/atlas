@@ -95,7 +95,83 @@ function initBatchModal(){
     document.getElementById("bmAllTerr").onchange=e=>{modal.querySelectorAll(".bm-t-chk").forEach(c=>c.checked=e.target.checked);updSum();};
     document.getElementById("bmAllMet").onchange=e=>{modal.querySelectorAll(".bm-m-chk,.bm-g-chk").forEach(c=>c.checked=e.target.checked);updSum();};
     document.getElementById("bmAllYr").onchange=e=>{modal.querySelectorAll(".bm-y-chk:not(:disabled)").forEach(c=>c.checked=e.target.checked);updSum();};
-    modal.querySelectorAll("input[type=checkbox]").forEach(c=>c.addEventListener("change",updSum));updSum();modal.classList.add("open");
+    modal.querySelectorAll("input[type=checkbox]").forEach(c=>c.addEventListener("change",updSum));updSum();
+    const oldPresets = modal.querySelector("#bmQuickPresets");
+    if(oldPresets) oldPresets.remove();
+    if(mode === "single" || mode === "map" || mode === "grid" || mode === "table"){
+      const pBar = document.createElement("div");
+      pBar.id = "bmQuickPresets";
+      pBar.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 10px;background:#f8fafc;border-bottom:1px solid #cbd5e1;font-size:11.5px;";
+      pBar.innerHTML =
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">' +
+          '<b style="color:#334155;">Территории:</b>' +
+          '<button type="button" class="btn-rst" data-tp="rf">Только РФ</button>' +
+          '<button type="button" class="btn-rst" data-tp="fo">Только 8 ФО</button>' +
+          '<button type="button" class="btn-rst" data-tp="reg">Все регионы</button>' +
+          '<button type="button" class="btn-rst" data-tp="none">Снять</button>' +
+          '<label style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;cursor:pointer;color:#0369a1;font-weight:bold;"><input type="checkbox" id="bmAutoFORegs"> + регионы выбранных ФО</label>' +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">' +
+          '<b style="color:#334155;">Разделы:</b>' +
+          '<button type="button" class="btn-rst" data-mp="1.">1. Общ.</button>' +
+          '<button type="button" class="btn-rst" data-mp="2.">2. Цифр.</button>' +
+          '<button type="button" class="btn-rst" data-mp="3.">3. Инт.</button>' +
+          '<button type="button" class="btn-rst" data-mp="4.">4. Подбл.</button>' +
+          '<button type="button" class="btn-rst" data-mp="ЭК-0">5.1. ЭК</button>' +
+          '<button type="button" class="btn-rst" data-mp="СЦ-0">5.2. СЦ</button>' +
+          '<button type="button" class="btn-rst" data-mp="УЭ-0">5.3. УЭ</button>' +
+          '<button type="button" class="btn-rst" data-mp="all">Все</button>' +
+          '<button type="button" class="btn-rst" data-mp="none">Снять</button>' +
+        '</div>';
+      const bodyEl = modal.querySelector(".bm-body") || tList.parentElement.parentElement;
+      bodyEl.parentNode.insertBefore(pBar, bodyEl);
+
+      pBar.querySelectorAll("button[data-tp]").forEach(btn => {
+        btn.onclick = () => {
+          const tp = btn.dataset.tp;
+          tList.querySelectorAll(".bm-t-chk").forEach(c => {
+            const isRF = (c.dataset.fo === "RF");
+            const isFO = (!isRF && c.dataset.reg === "ALL");
+            const isReg = (c.dataset.reg !== "ALL");
+            if(tp === "rf") c.checked = isRF;
+            else if(tp === "fo") c.checked = isFO;
+            else if(tp === "reg") c.checked = isReg;
+            else c.checked = false;
+          });
+          updSum();
+        };
+      });
+
+      tList.addEventListener("change", e => {
+        const chk = e.target;
+        if(!chk || !chk.classList || !chk.classList.contains("bm-t-chk")) return;
+        const autoR = document.getElementById("bmAutoFORegs")?.checked;
+        if(autoR && chk.dataset.fo !== "RF" && chk.dataset.reg === "ALL"){
+          tList.querySelectorAll('.bm-t-chk[data-fo="' + chk.dataset.fo + '"]').forEach(c => {
+            if(c.dataset.reg !== "ALL") c.checked = chk.checked;
+          });
+          updSum();
+        }
+      });
+
+      pBar.querySelectorAll("button[data-mp]").forEach(btn => {
+        btn.onclick = () => {
+          const mp = btn.dataset.mp;
+          mList.querySelectorAll(".bm-m-chk").forEach(c => {
+            if(mp === "none") c.checked = false;
+            else if(mp === "all") c.checked = true;
+            else if(mp === "ЭК-0" || mp === "СЦ-0" || mp === "УЭ-0") c.checked = String(c.value).startsWith(mp.slice(0, 3)) && /^..\-\d{2}$/.test(String(c.value));
+            else{
+              const mObj = (DATA.metrics || []).find(x => x.id === c.value);
+              c.checked = Boolean(mObj && String(mObj.group || "").startsWith(mp));
+            }
+          });
+          updSum();
+        };
+      });
+    }
+
+    modal.classList.add("open");
   };
   btnClose.onclick=()=>modal.classList.remove("open");
   document.getElementById("bmRunZip").onclick=()=>runCustomBatchExport("zip");

@@ -33,7 +33,7 @@ async function buildSheetCanvas(){
         arr.forEach(p=>{const mX=Math.max(0.08,(b.x1-b.x0)*0.06),mY=Math.max(0.05,(b.y1-b.y0)*0.06);p.lon=Math.max(b.x0-mX,Math.min(b.x1+mX,p.lon));p.lat=Math.max(b.y0-mY,Math.min(b.y1+mY,p.lat));});if(reg.includes("Чукотск"))arr.forEach(p=>{if(p.ox<=180&&p.lon>179.8)p.lon=179.8;if(p.ox>180&&p.lon<180.2)p.lon=180.2;});const lLon=Array.of(),lLat=Array.of();arr.forEach(p=>{if(Math.hypot((p.lon-p.ox)/tx,(p.lat-p.oy)/ty)>lThr){lLon.push(p.ox,p.lon,null);lLat.push(p.oy,p.lat,null);}});
         return{arr,lLon,lLat};
       };
-      const mPack=packPts(mIdx,isKras?0.044:0.068,0.72),nPack=packPts(nIdx,0.22,0.45);
+      const mPack=packPts(mIdx,isKras?0.044:0.068,0.72),nPack=packPts(nIdx,0.29,0.40);
       const nTr=nPack.arr.length>0?Array.of(
         {type:"scattergeo",geo:"geo2",mode:"lines",lon:nPack.lLon,lat:nPack.lLat,line:{color:"#1e293b",width:1.1},showlegend:false,hoverinfo:"skip"},
         {type:"scattergeo",geo:"geo2",mode:"markers",lon:nPack.arr.map(p=>p.lon),lat:nPack.arr.map(p=>p.lat),marker:{size:21,color:"#ffffff",line:{color:"#475569",width:0.8}},showlegend:false,hoverinfo:"skip"},
@@ -82,7 +82,7 @@ async function buildSheetCanvas(){
     if(fo!=="RF"&&reg==="ALL"){
       const fl=mapEl._fullLayout,w0=fl?fl.width:1540,h0=fl?fl.height:972;
       const geoKeys=["geo","geo2","geo3","geo4"];
-      const coreFeats=GEO.features.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке"&&(f.properties.fo===fo));
+      const coreFeats=GEO.features.filter(f=>f.properties.is_center&&f.properties._map_status==="В_выборке"&&(f.properties.fo===fo)&&(!isNW||!f.properties.region.includes("Калининград")));
       const ptsOnCanvas=[],placedBadges=[];
       coreFeats.forEach(f=>{
         const c=f.properties._cent;if(!c)return;
@@ -145,6 +145,24 @@ async function buildSheetCanvas(){
         ctx.font=(f.properties.is_center?"bold ":"")+fs+"px 'Times New Roman'";ctx.fillText(txt.length>maxCh?txt.slice(0,maxCh-1)+"…":txt,lx+c*colW,lyTop+44+r*step);
       });
     }
+    
+    if(hasInsets){
+      ctx.save();
+      ctx.fillStyle="#111111";
+      ctx.font="bold 24px 'Times New Roman', serif";
+      ctx.textAlign="center";
+      const ixCenter = 40 + 0.89 * mapW;
+      if(isNW){
+        ctx.fillText("архипелаг Земля Франца-Иосифа", ixCenter, 155 + (1 - 0.72) * mapH + 26);
+        ctx.fillText("архипелаг Новая Земля", ixCenter, 155 + (1 - 0.39) * mapH + 26);
+        ctx.fillText("Калининградская область", ixCenter, 155 + (1 - 0.06) * mapH + 26);
+      }else if(isArk){
+        ctx.fillText("архипелаг Земля Франца-Иосифа", ixCenter, 155 + (1 - 0.56) * mapH + 26);
+        ctx.fillText("архипелаг Новая Земля", ixCenter, 155 + (1 - 0.07) * mapH + 26);
+      }
+      ctx.restore();
+    }
+
     const hasCbar=!!document.querySelector("#sheetBox .cbar-strip"),footY=2125,legW=hasCbar?1900:3080;
     const items=Array.from(document.querySelectorAll("#sheetBox .leg-item")),cols=hasCbar?3:5,colW=Math.floor(legW/cols);
     ctx.font=" 24px \'Times New Roman\'";
