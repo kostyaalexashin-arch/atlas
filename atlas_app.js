@@ -13,11 +13,11 @@ window._inflectAdjPrep = function(word){
 };
 
 window._formatMoInPrep = function(lbl){
-  let s = String(lbl || '').trim();
+  const s = String(lbl || '').trim();
   const mParen = s.match(/^(.+?)\s*\((МР|ГО|МО|ГП|СП)\)$/i);
   if(mParen){
-    const base = mParen.trim();
-    const kind = mParen.toUpperCase();
+    const base = mParen[1].trim();
+    const kind = mParen[2].toUpperCase();
     const typeMap = {
       'МР': 'муниципальном районе',
       'ГО': 'городском округе',
@@ -42,8 +42,9 @@ window._inflectRegionPrep = function(reg){
   r = r.replace(/\bавтономный округ\b/i, 'автономном округе');
   r = r.replace(/\bавтономная область\b/i, 'автономной области');
   r = r.replace(/^([А-ЯЁа-яё-]+)(?=\s+(?:области|крае|Республике|автономном|автономной))/u, m => window._inflectAdjPrep(m));
-  if(/ская$/i.test(r.split(' '))) r = r.replace(/^([А-ЯЁа-яё-]+)ая\b/u, '$1ой');
-  if(/яя$/i.test(r.split(' '))) r = r.replace(/^([А-ЯЁа-яё-]+)яя\b/u, '$1ей');
+  const w0 = r.split(/\s+/)[0] || '';
+  if(/ская$/i.test(w0)) r = r.replace(/^([А-ЯЁа-яё-]+)ая\b/u, '$1ой');
+  if(/яя$/i.test(w0)) r = r.replace(/^([А-ЯЁа-яё-]+)яя\b/u, '$1ей');
   return r;
 };
 
@@ -55,10 +56,9 @@ window._splitMetricTitleAndUnit = function(rawTitle){
     unit = t.slice(idxComma + 1).trim();
     t = t.slice(0, idxComma).trim();
   }
-  if(t.length > 1 && t === t.toUpperCase() && t === t.toLowerCase()){
-    t = t.toLowerCase() + t.slice(1);
+  if(t.length > 1 && t[0] === t[0].toUpperCase() && t[1] === t[1].toLowerCase()){
+    t = t[0].toLowerCase() + t.slice(1);
   }
-  // Если внутри названия есть обособленный запятой причастный/определительный оборот до конца фразы — добавляем закрывающую запятую
   if(/,\s*(?:находящ|требующ|нуждающ|приходящ|не\s+отвечающ|не\s+имеющ|используем|пользующ|проживающ|состоящ|оборудованн|в\s+отношении\s+которых|имеющ|расположенн|введенн)/i.test(t)){
     t = t + ',';
   }
@@ -67,25 +67,15 @@ window._splitMetricTitleAndUnit = function(rawTitle){
 
 window._agreeVerb = function(metricName, isUp, isStatic){
   const cleanName = String(metricName || '').replace(/,+$/, '').trim();
-  const firstWord = cleanName.split(/\s+/).toLowerCase();
+  const firstWord = (cleanName.split(/\s+/)[0] || '').toLowerCase();
   const plurStems = ['расходы', 'доходы', 'инвестиции', 'средства', 'выбросы', 'отходы', 'затраты', 'поступления', 'налоги', 'субсидии'];
   const femStems  = ['доля', 'площадь', 'протяженность', 'протяжённость', 'численность', 'обеспеченность', 'выручка', 'прибыль', 'добыча', 'мощность'];
   const neutStems = ['количество', 'число', 'отношение', 'соотношение', 'значение', 'потребление', 'водоотведение', 'водоснабжение'];
 
-  if(plurStems.some(w => firstWord.startsWith(w))){
-    if(isStatic) return 'составили';
-    return isUp ? 'выросли' : 'снизились';
-  }
-  if(femStems.some(w => firstWord.startsWith(w)) || /[ая]$/.test(firstWord)){
-    if(isStatic) return 'составила';
-    return isUp ? 'выросла' : 'снизилась';
-  }
-  if(neutStems.some(w => firstWord.startsWith(w)) || /[ое]$/.test(firstWord)){
-    if(isStatic) return 'составило';
-    return isUp ? 'выросло' : 'снизилось';
-  }
-  if(isStatic) return 'составил';
-  return isUp ? 'вырос' : 'снизился';
+  if(plurStems.some(w => firstWord.startsWith(w))) return isStatic ? 'составили' : (isUp ? 'выросли' : 'снизились');
+  if(femStems.some(w => firstWord.startsWith(w)) || /[ая]$/.test(firstWord)) return isStatic ? 'составила' : (isUp ? 'выросла' : 'снизилась');
+  if(neutStems.some(w => firstWord.startsWith(w)) || /[ое]$/.test(firstWord)) return isStatic ? 'составило' : (isUp ? 'выросло' : 'снизилось');
+  return isStatic ? 'составил' : (isUp ? 'вырос' : 'снизился');
 };
 
 window.renderRandomAtlasFact = function(){
@@ -95,9 +85,7 @@ window.renderRandomAtlasFact = function(){
     setTimeout(window.renderRandomAtlasFact, 250);
     return;
   }
-
-  const mos = [];
-  const seen = new Set();
+  const mos = [], seen = new Set();
   GEO.features.forEach(f => {
     const p = f.properties;
     if(p && p._map_status === 'В_выборке' && !p._inset && !seen.has(p.join_key)){
@@ -105,53 +93,34 @@ window.renderRandomAtlasFact = function(){
       mos.push(p);
     }
   });
-  if(!mos.length) return;
-
-  // Строго только 39 частных показателей (ЭК-01..13, СЦ-01..13, УЭ-01..13) — без индексов, субиндексов, подблоков, кластеров и категорий
-  const numMets = (DATA.metrics || []).filter(m => {
-    if(m.cat || m.is_cat) return false;
-    const id = String(m.id || '').trim();
-    return /^(ЭК|СЦ|УЭ)-\d{2}$/.test(id);
-  });
-  if(!numMets.length) return;
+  const numMets = (DATA.metrics || []).filter(m => !(m.cat || m.is_cat) && /^(ЭК|СЦ|УЭ)-\d{2}$/.test(String(m.id || '').trim()));
+  if(!mos.length || !numMets.length) return;
 
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-
   for(let attempt = 0; attempt < 50; attempt++){
-    const mo = pick(mos);
-    const jk = mo.join_key;
-    const moPrep = window._formatMoInPrep(mo._lbl);
-    const regPrep = window._inflectRegionPrep(mo.region);
-    const placePhrase = `в <b>${moPrep}</b> (${regPrep})`;
-    const useDyn = (attempt % 2 === 0) && mo.coh;
-
-    if(useDyn){
+    const mo = pick(mos), jk = mo.join_key;
+    const placePhrase = `в <b>${window._formatMoInPrep(mo._lbl)}</b> (${window._inflectRegionPrep(mo.region)})`;
+    if((attempt % 2 === 0) && mo.coh){
       const m = pick(numMets);
-      const v19 = DATA.panel?.[m.id]?.['2019']?.[jk];
-      const v24 = DATA.panel?.[m.id]?.['2024']?.[jk];
+      const v19 = DATA.panel?.[m.id]?.['2019']?.[jk], v24 = DATA.panel?.[m.id]?.['2024']?.[jk];
       if(v19 !== undefined && v19 !== null && v24 !== undefined && v24 !== null && Number(v19) !== Number(v24)){
         const s19 = typeof fmtNum === 'function' ? fmtNum(v19, m.dec) : Number(v19).toFixed(m.dec || 2);
         const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
         const { name, unit } = window._splitMetricTitleAndUnit(m.title);
         const uStr = unit ? (' ' + unit) : '';
-        const verb = window._agreeVerb(name, Number(v24) > Number(v19), false);
         window._lastFactMO = mo;
-        box.innerHTML = `А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${verb} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?`;
+        box.innerHTML = `А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${window._agreeVerb(name, Number(v24) > Number(v19), false)} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?`;
         return;
       }
     }
-
     const m = pick(numMets);
-    const v24 = (DATA.v2024?.[m.id]?.[jk] !== undefined && DATA.v2024?.[m.id]?.[jk] !== null)
-      ? DATA.v2024[m.id][jk]
-      : DATA.panel?.[m.id]?.['2024']?.[jk];
+    const v24 = (DATA.v2024?.[m.id]?.[jk] !== undefined && DATA.v2024?.[m.id]?.[jk] !== null) ? DATA.v2024[m.id][jk] : DATA.panel?.[m.id]?.['2024']?.[jk];
     if(v24 !== undefined && v24 !== null && v24 !== ''){
       const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
       const { name, unit } = window._splitMetricTitleAndUnit(m.title);
       const uStr = unit ? (' ' + unit) : '';
-      const eqVerb = window._agreeVerb(name, true, true);
       window._lastFactMO = mo;
-      box.innerHTML = `А вы знали, что в 2024 году ${placePhrase} ${name} ${eqVerb} <b>${s24}${uStr}</b>?`;
+      box.innerHTML = `А вы знали, что в 2024 году ${placePhrase} ${name} ${window._agreeVerb(name, true, true)} <b>${s24}${uStr}</b>?`;
       return;
     }
   }
@@ -171,6 +140,7 @@ window.openFactInPassport = function(){
 };
 
 setTimeout(() => { if(typeof window.renderRandomAtlasFact === 'function') window.renderRandomAtlasFact(); }, 300);
+
 
 
 window._welcomeDismissed = false;
