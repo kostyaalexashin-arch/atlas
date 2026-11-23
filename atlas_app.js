@@ -1,4 +1,17 @@
 
+window.returnToWelcome = function(){
+  window._welcomeDismissed = false;
+  document.body.classList.add('welcome-active');
+  const sb = document.getElementById('mainSidebar') || document.querySelector('.sidebar');
+  if(sb) sb.style.display = 'none';
+  const ov = document.getElementById('welcomeOverlay');
+  if(ov) ov.style.display = 'flex';
+  const btnH = document.getElementById('btnGoHome');
+  if(btnH) btnH.style.display = 'none';
+  if(typeof renderRandomAtlasFact === 'function') renderRandomAtlasFact();
+};
+
+
 window._lastFactMO = null;
 
 window._inflectAdjPrep = function(word){
@@ -167,6 +180,8 @@ window.startAtlasMode = function(modeVal){
   if(sb) sb.style.display = 'flex';
   const ov = document.getElementById('welcomeOverlay');
   if(ov) ov.style.display = 'none';
+  const btnH = document.getElementById('btnGoHome');
+  if(btnH) btnH.style.display = 'inline-block';
   const sMode = document.getElementById('selMode');
   if(sMode && modeVal){
     sMode.value = (modeVal === 'single') ? 'map' : modeVal;
