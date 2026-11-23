@@ -155,7 +155,8 @@ window.startAtlasMode = function(modeVal){
   }
   const sMode = document.getElementById('selMode');
   if(sMode && modeVal){
-    sMode.value = modeVal;
+    sMode.value = (modeVal === 'single') ? 'map' : modeVal;
+    if(!sMode.value && sMode.options.length) sMode.selectedIndex = 0;
     if(typeof syncControls === 'function') syncControls();
   }
   if(typeof render === 'function') render();
