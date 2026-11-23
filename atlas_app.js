@@ -1,4 +1,77 @@
 
+window._lastFactMO = null;
+window.renderRandomAtlasFact = function(){
+  const box = document.getElementById('welcomeFactText');
+  if(!box || typeof GEO === 'undefined' || typeof DATA === 'undefined' || !GEO || !DATA) return;
+
+  const mos = [];
+  const seen = new Set();
+  GEO.features.forEach(f => {
+    const p = f.properties;
+    if(p && p._map_status === 'В_выборке' && !p._inset && !seen.has(p.join_key)){
+      seen.add(p.join_key);
+      mos.push(p);
+    }
+  });
+  if(!mos.length) return;
+
+  const numMets = (DATA.metrics || []).filter(m => {
+    if(m.cat || m.is_cat) return false;
+    const id = String(m.id || '');
+    const ttl = String(m.title || '');
+    if(id.includes('Подблок') || ttl.includes('Площадь') || ttl.includes('Численность')) return false;
+    return true;
+  });
+  if(!numMets.length) return;
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  for(let attempt = 0; attempt < 40; attempt++){
+    const mo = pick(mos);
+    const jk = mo.join_key;
+    const useDyn = (attempt % 2 === 0) && mo.coh;
+
+    if(useDyn){
+      const m = pick(numMets);
+      const v19 = DATA.panel?.[m.id]?.['2019']?.[jk];
+      const v24 = DATA.panel?.[m.id]?.['2024']?.[jk];
+      if(v19 !== undefined && v19 !== null && v24 !== undefined && v24 !== null && Number(v19) !== Number(v24)){
+        const s19 = typeof fmtNum === 'function' ? fmtNum(v19, m.dec) : Number(v19).toFixed(m.dec || 2);
+        const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
+        const dirWord = Number(v24) > Number(v19) ? 'выросло' : 'снизилось';
+        window._lastFactMO = mo;
+        box.innerHTML = `А вы знали, что с 2019 по 2024 гг. в <b>${mo._lbl}</b> (${mo.region}) значение показателя <i>«${m.title}»</i> ${dirWord} с <b>${s19}</b> до <b>${s24}</b>?`;
+        return;
+      }
+    }
+
+    const m = pick(numMets);
+    const v24 = (DATA.v2024?.[m.id]?.[jk] !== undefined && DATA.v2024?.[m.id]?.[jk] !== null)
+      ? DATA.v2024[m.id][jk]
+      : DATA.panel?.[m.id]?.['2024']?.[jk];
+    if(v24 !== undefined && v24 !== null && v24 !== ''){
+      const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
+      window._lastFactMO = mo;
+      box.innerHTML = `А вы знали, что в 2024 г. в <b>${mo._lbl}</b> (${mo.region}) показатель <i>«${m.title}»</i> составляет <b>${s24}</b>?`;
+      return;
+    }
+  }
+};
+
+window.openFactInPassport = function(){
+  const mo = window._lastFactMO;
+  if(typeof startAtlasMode === 'function') startAtlasMode('passport');
+  if(mo && typeof PASS_STATE !== 'undefined'){
+    PASS_STATE.key = mo.join_key;
+    const mIn = document.getElementById('pMOIn');
+    if(mIn) mIn.value = mo._lbl + ' (' + mo.region + ')';
+    const ySel = document.getElementById('pYear');
+    if(ySel){ ySel.value = '2024'; ySel.disabled = !mo.coh; }
+    if(typeof renderPassport === 'function') renderPassport();
+  }
+};
+
+
 window._welcomeDismissed = false;
 window.startAtlasMode = function(modeVal){
   window._welcomeDismissed = true;
@@ -135,7 +208,7 @@ Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJ
   DATA.metrics.slice().sort((a,b)=>String(a.group||"").localeCompare(String(b.group||""),"ru")).forEach(m=>{const gLbl=String(m.group||"").replace(/^5\.1\./,"5.");if(!gm[gLbl]){gm[gLbl]=document.createElement("optgroup");gm[gLbl].label=gLbl;sMet.add(gm[gLbl]);}gm[gLbl].appendChild(new Option(m.id+": "+m.title,m.id));});
   const cGF=document.getElementById("chkGroupFO");if(cGF)cGF.onchange=render;
   sFO.onchange=()=>{syncControls();sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(sFO.value!=="RF")(DATA.fo_to_regs[sFO.value]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));render();};
-  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();syncControls();render();});
+  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();if(typeof renderRandomAtlasFact==="function")renderRandomAtlasFact();syncControls();render();});
   document.getElementById("prevMet").onclick=()=>stepSelect("selMetric",-1);document.getElementById("nextMet").onclick=()=>stepSelect("selMetric",1);
   document.getElementById("prevFO").onclick=()=>stepSelect("selFO",-1);document.getElementById("nextFO").onclick=()=>stepSelect("selFO",1);
   document.getElementById("prevReg").onclick=()=>stepSelect("selReg",-1);document.getElementById("nextReg").onclick=()=>stepSelect("selReg",1);
