@@ -118,3 +118,11 @@ window.formatAtlasMetricLabel = function(m){
   fixDec();
   window.addEventListener("DOMContentLoaded", fixDec);
 })();
+
+window.fmtNum = function(v, dec=2){
+  if(v===null||v===undefined||v===""||isNaN(Number(v))) return "н/д";
+  const d = (dec===undefined||dec===null) ? 2 : Number(dec);
+  const parts = Number(v).toFixed(d).split(".");
+  parts = parts.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return parts.join(",");
+};
