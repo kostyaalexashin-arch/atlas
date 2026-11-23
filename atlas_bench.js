@@ -54,7 +54,7 @@ function cleanBenchGroup(gName){
 }
 function cleanBenchMetName(m){
   const t=String(m.title||"").trim(),id=String(m.id||"").trim();
-  if(/^(ЭК|СЦ|УЭ)-\d+/.test(id))return id+" — "+t;
+  if(/^(ЭК|СЦ|УЭ)-\d+/.test(id))return id+": "+t;
   return t;
 }
 const MONOPOLY_TOKENS=Array.of("🔵","🟥","🟢","⭐","🟣","🔶","⬛");

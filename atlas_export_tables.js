@@ -102,7 +102,7 @@ function buildMergedTableCanvases(terrs,silent=false){
     const cv=document.createElement("canvas");cv.width=W;cv.height=H;const ctx=cv.getContext("2d");ctx.scale(sc,sc);
     ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3508,2480);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.strokeRect(18,18,3472,2444);
     ctx.fillStyle="#111111";ctx.font="bold 36px 'Times New Roman'";ctx.textAlign="center";
-    const mLines=wrapTitle(mObj.id+" — "+mObj.title,115).split("<br>");
+    const mLines=wrapTitle(mObj.id+": "+mObj.title,115).split("<br>");
     if(mLines.length===1){ctx.fillText(mLines.at(0),1754,64);}else{ctx.fillText(mLines.at(0),1754,54);ctx.fillText(mLines.at(1),1754,94);}
     ctx.font="bold 36px 'Times New Roman'";ctx.fillStyle="#111111";
     ctx.fillText(subTitle+" • Динамика 2019–2024 гг. • Лист "+(pg+1)+" из "+pages,1754,138);

@@ -101,7 +101,7 @@ function renderPassport(){
   const pd=getPassportData(mo,yr),bRow=(lbl,val,cls="")=>'<div class="pass-irow '+cls+'"><span>'+lbl+'</span><b>'+val+'</b></div>';
   const sec1Html=bRow("Интегральный индекс устойчивого развития",pd.idxMain,"main")+pd.topSubs.map(s=>bRow(s.name,s.txt,"sub")).join("");
   const sec2Html=pd.subBlocks.map(b=>bRow(b.name,b.txt,"blk")).join("");
-  const colHtml=(title,arr)=>'<div><div class="pass-col-hdr">'+title+'</div>'+arr.map(x=>'<div class="pass-crow"><span><b>'+x.id+'</b> — '+x.title+'</span><b>'+x.val+'</b></div>').join("")+'</div>';
+  const colHtml=(title,arr)=>'<div><div class="pass-col-hdr">'+title+'</div>'+arr.map(x=>'<div class="pass-crow"><span><b>'+x.id+':</b> '+x.title+'</span><b>'+x.val+'</b></div>').join("")+'</div>';
   box.innerHTML='<div class="pass-view">'+
     '<div class="pass-top" style="display:block;"><div class="pass-intro" style="width:100%;"><div class="pass-title">Цифровой паспорт устойчивости муниципального образования</div><div class="pass-sub">'+mo.full+' — '+yr+' г.</div><div class="pass-desc">Цифровой паспорт — это интерактивная аналитическая платформа, отражающая реальное состояние и потенциал развития. В режиме реального времени собраны ключевые показатели. Цифровой инструмент создан для открытого диалога между властью, бизнесом и жителями, помогая вместе планировать уверенное и экологичное будущее.</div></div></div>'+
     '<div class="pass-meta-grid"><div class="pass-mrow"><span>Кластер (2024 г.):</span><b>'+pd.clVal+'</b></div><div class="pass-mrow"><span>Категория:</span><b>'+pd.catTxt+'</b></div><div class="pass-mrow"><span>Площадь, га:</span><b>'+pd.area+'</b></div><div class="pass-mrow"><span>Численность, чел.:</span><b>'+pd.pop+'</b></div></div>'+
@@ -216,7 +216,7 @@ function buildPassportCanvas(overrideMO=null){
       if(rIdx>0){ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(cx0,cy0);ctx.lineTo(cx0+colW,cy0);ctx.stroke();}
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(valX,cy0);ctx.lineTo(valX,cy0+rowStep);ctx.stroke();
       ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";
-      const tLines=wrapPassText(ctx,it.id+" — "+it.title,valX-cx0-16);
+      const tLines=wrapPassText(ctx,it.id+": "+it.title,valX-cx0-16);
       const stTextY=cy0+(rowStep-(tLines.length-1)*21)/2+7;
       tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+10,stTextY+li*21));
       ctx.font="bold 25px 'Times New Roman'";ctx.textAlign="right";
