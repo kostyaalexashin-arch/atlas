@@ -8,8 +8,7 @@ window.returnToWelcome = function(){
   if(ov) ov.style.display = 'flex';
   const btnH = document.getElementById('btnGoHome');
   if(btnH) btnH.style.display = 'none';
-  if(typeof renderRandomAtlasFact === 'function') renderRandomAtlasFact();
-};
+  if(typeof renderRandomAtlasFact === 'function')void 0;};
 
 
 window._lastFactMO = null;
@@ -152,7 +151,7 @@ window.openFactInPassport = function(){
   }
 };
 
-setTimeout(() => { if(typeof window.renderRandomAtlasFact === 'function') window.renderRandomAtlasFact(); }, 300);
+
 
 
 
@@ -333,7 +332,7 @@ Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJ
   DATA.metrics.slice().sort((a,b)=>String(a.group||"").localeCompare(String(b.group||""),"ru")).forEach(m=>{const gLbl=formatAtlasGroupLabel(m.group);if(!gm[gLbl]){gm[gLbl]=document.createElement("optgroup");gm[gLbl].label=gLbl;sMet.add(gm[gLbl]);}gm[gLbl].appendChild(new Option(formatAtlasMetricLabel(m),m.id));});
   const cGF=document.getElementById("chkGroupFO");if(cGF)cGF.onchange=render;
   sFO.onchange=()=>{syncControls();sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(sFO.value!=="RF")(DATA.fo_to_regs[sFO.value]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));render();};
-  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();if(typeof renderRandomAtlasFact==="function")renderRandomAtlasFact();syncControls();render();});
+  Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();if(typeof renderRandomAtlasFact==="function")syncControls();render();});
   document.getElementById("prevMet").onclick=()=>stepSelect("selMetric",-1);document.getElementById("nextMet").onclick=()=>stepSelect("selMetric",1);
   document.getElementById("prevFO").onclick=()=>stepSelect("selFO",-1);document.getElementById("nextFO").onclick=()=>stepSelect("selFO",1);
   document.getElementById("prevReg").onclick=()=>stepSelect("selReg",-1);document.getElementById("nextReg").onclick=()=>stepSelect("selReg",1);
