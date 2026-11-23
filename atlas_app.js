@@ -536,7 +536,9 @@ function render(){
   if(allFeats.some(f=>f.properties._map_status!=="В_выборке"&&f.properties._map_status!=="ЗАТО"))legIt.push({col:"#f0f0f0",kind:"box",icon:'<span style="display:inline-block;width:18px;height:13px;background:#f0f0f0;border:1px solid #9aa2ae;"></span>',txt:"Вне выборки"});
 
   const zoomFeats=hasLeftInset?mainFeats.filter(f=>!isKrasNorth(f)):mainFeats;
-  const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(hasLeftInset?0.22:0.002,hasRightCol?0.785:0.998),Array.of(0.002,0.995)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
+  const regMoCnt=(reg!=="ALL")?new Set(allFeats.filter(f=>f.properties._map_status==="В_выборке"&&!f.properties._inset).map(f=>f.properties.join_key)).size:0;
+  const rightBound=hasInsets?0.785:(reg!=="ALL"?(regMoCnt<=32?0.955:0.815):0.999);
+  const layout={geo:wideGeoCfg(zoomFeats,projObj,Array.of(hasLeftInset?0.215:0.001,rightBound),Array.of(0.001,0.998)),annotations:Array.of(),showlegend:false,margin:{l:0,r:0,t:0,b:0},height:Math.max(420,mapEl.clientHeight||640)};
   const shrinkTop=hasKal||isArk;const yZFI=shrinkTop?Array.of(0.72,0.98):Array.of(0.56,0.98),yNZ=shrinkTop?Array.of(0.39,0.65):Array.of(0.07,0.49);
   if(hasLeftInset&&allFeats.length>0){layout.geo2=Object.assign(wideGeoCfg(allFeats,{type:"mercator"},Array.of(0.005,0.215),Array.of(0.07,0.94)),{fitbounds:false,center:{lon:95.5,lat:isKras?70.1:70.8},projection:{type:"mercator",scale:isKras?0.94:1.12}});layout.annotations.push({text:"<b></b>",x:0.11,y:0.055,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
   if(zfiFeats.length>0){layout.geo2=wideGeoCfg(zfiFeats,{type:"mercator"},Array.of(0.785,0.995),yZFI);layout.annotations.push({text:"<b>архипелаг Земля Франца-Иосифа</b>",x:0.89,xanchor:"center",y:yZFI.at(0)-0.012,yanchor:"top",xref:"paper",yref:"paper",showarrow:false,font:{family:"Times New Roman",size:12}});}
