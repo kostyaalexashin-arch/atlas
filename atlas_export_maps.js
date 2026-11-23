@@ -154,7 +154,7 @@ async function buildSheetCanvas(){
       ctx.fillStyle="#111111";ctx.fillText(el.textContent.trim(),ix+32,iy);
     });
     if(hasCbar){
-      const actCol=PALETTES[currentPal]||PALETTES["RdYlGn"],xBar=2050,wBar=1070,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
+      const _rawPal=PALETTES[currentPal]||PALETTES["RdYlGn"],actCol=(mMeta&&mMeta.inv)?_rawPal.slice().reverse():_rawPal,xBar=2050,wBar=1070,grd=ctx.createLinearGradient(xBar,0,xBar+wBar,0);
       actCol.forEach((c,i)=>grd.addColorStop(i/(actCol.length-1),c));
       ctx.fillStyle=grd;ctx.fillRect(xBar,footY+8,wBar,32);ctx.strokeStyle="#475569";ctx.lineWidth=1;ctx.strokeRect(xBar,footY+8,wBar,32);
       ctx.fillStyle="#111111";ctx.font="bold 28px 'Times New Roman'";ctx.textAlign="center";
