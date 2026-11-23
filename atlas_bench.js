@@ -281,17 +281,17 @@ function buildBenchCanvases(){
     const colsH=Math.max(1,selMOs.length),colWH=Math.floor((W-100)/colsH),hdrY=82;
     ctx.strokeStyle="#cbd5e1";ctx.lineWidth=1.5;ctx.strokeRect(50,hdrY,W-100,64);
     selMOs.forEach((m,idx)=>{const x=62+idx*colWH,y=hdrY+42;ctx.font="26px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[m.key]||"🎩",x,y);ctx.font="bold 20px 'Times New Roman'";const lbl=m.full;ctx.fillText(lbl.length>32?lbl.slice(0,31)+"…":lbl,x+36,y);});
-    const topY=165,botY=3110,step=Math.min(86,Math.floor((botY-topY)/Math.max(1,sub.reduce((s,x)=>s+(x.kind==="radars"?5:1),0))));
+    const topY=165,botY=3110,step=Math.min(84,Math.floor((botY-topY)/Math.max(1,sub.reduce((s,x)=>s+(x.kind==="radars"?5.8:1),0))));
     let curY=topY;
     sub.forEach((it,ri)=>{
-      const y=curY,rowH=it.kind==="radars"?step*5:step;curY+=rowH;
-      if(it.kind==="radars"){const rData=getBenchRadarSeries(selMOs,yr,isCoh);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,y+6,W-100,rowH-12);ctx.fillStyle="#111111";ctx.font="bold 22px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости (4)",610,y+34);ctx.fillText("Подблоки показателей (9)",1620,y+34);ctx.textAlign="left";const radR=Math.min(145,Math.floor((rowH-90)/2));drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,y+rowH/2+14,radR);drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,y+rowH/2+14,radR);return;}
-      if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,64,y+step/2+7);return;}
-      if(it.kind==="subblk"){ctx.fillStyle="#f1f5f9";ctx.fillRect(50,y+6,W-100,step-12);ctx.fillStyle="#0369a1";ctx.fillRect(50,y+6,8,step-12);ctx.fillStyle="#0f172a";ctx.font="bold 20px 'Times New Roman'";ctx.fillText(it.txt,70,y+step/2+6);return;}
+      const y=curY,rowH=it.kind==="radars"?Math.round(step*5.8):step;curY+=rowH;
+      if(it.kind==="radars"){const rData=getBenchRadarSeries(selMOs,yr,isCoh);ctx.strokeStyle="#cbd5e1";ctx.strokeRect(50,y+6,W-100,rowH-12);ctx.fillStyle="#111111";ctx.font="bold 24px 'Times New Roman'";ctx.textAlign="center";ctx.fillText("Субиндексы устойчивости (4)",610,y+32);ctx.fillText("Подблоки показателей (9)",1620,y+32);ctx.textAlign="left";const radR=Math.min(130,Math.floor((rowH-128)/2));drawMultiCanvasRadar(ctx,rData.subLabels,rData.series,"subVals",610,y+rowH/2+24,radR);drawMultiCanvasRadar(ctx,rData.blkLabels,rData.series,"blkVals",1620,y+rowH/2+24,radR);return;}
+      if(it.kind==="blk"){ctx.fillStyle="#e2e8f0";ctx.fillRect(50,y+4,W-100,step-10);ctx.fillStyle="#111111";ctx.font="bold 26px 'Times New Roman'";ctx.fillText(it.txt,64,y+step/2+8);return;}
+      if(it.kind==="subblk"){ctx.fillStyle="#f1f5f9";ctx.fillRect(50,y+6,W-100,step-12);ctx.fillStyle="#0369a1";ctx.fillRect(50,y+6,8,step-12);ctx.fillStyle="#0f172a";ctx.font="bold 23px 'Times New Roman'";ctx.fillText(it.txt,70,y+step/2+7);return;}
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(50,y+step);ctx.lineTo(W-50,y+step);ctx.stroke();
-      const sx=1040,sw=W-1090;
+      const sx=1220,sw=W-1270;
       if(it.kind==="cat"){
-        ctx.fillStyle="#111111";ctx.font="20px 'Times New Roman'";ctx.fillText("Категория МО по численности населения",56,y+step/2+6);
+        ctx.fillStyle="#111111";ctx.font="24px 'Times New Roman'";ctx.fillText("Категория МО по численности населения",56,y+step/2+8);
         const cw=Math.floor(sw/5),ch=Math.min(64,step-10),cy=y+(step-ch)/2;
         CAT_HOUSES.forEach((chObj,ci)=>{
           const cx=sx+ci*cw;ctx.fillStyle="#f8fafc";ctx.fillRect(cx,cy,cw-4,ch);ctx.strokeStyle="#64748b";ctx.strokeRect(cx,cy,cw-4,ch);
@@ -303,13 +303,13 @@ function buildBenchCanvases(){
         return;
       }
       const m=it.m,valMap=(!isCoh&&yr==="2024")?(DATA.v2024[m.id]||{}):(DATA.panel[m.id]?.[yr]||{});
-      ctx.fillStyle="#111111";ctx.font="19.5px 'Times New Roman'";const tLines=wrapBenchTitle(ctx,cleanBenchMetName(m),960),lH=22,stY=y+(step-(tLines.length-1)*lH)/2+6;
+      ctx.fillStyle="#111111";ctx.font="24px 'Times New Roman'";const tLines=wrapBenchTitle(ctx,cleanBenchMetName(m),1140),lH=26,stY=y+(step-(tLines.length-1)*lH)/2+8;
       tLines.forEach((ln,li)=>ctx.fillText(ln,56,stY+li*lH));
       if(m.cat||m.is_cat){
         const cw=Math.floor(sw/7),ch=Math.min(62,step-10),cy=y+(step-ch)/2;
         clEntries.forEach((pair,ci)=>{
-          const cname=pair.at(0),chex=pair.at(1),cx=sx+ci*cw;ctx.fillStyle=chex;ctx.fillRect(cx,cy,cw-4,ch);ctx.strokeStyle="#475569";ctx.strokeRect(cx,cy,cw-4,ch);
-          ctx.fillStyle=isDarkHex(chex)?"#ffffff":"#111111";ctx.font="bold 17px 'Times New Roman'";ctx.textAlign="center";
+          const cname=pair.at(0),cx=sx+ci*cw;ctx.fillStyle="#ffffff";ctx.fillRect(cx,cy,cw-4,ch);ctx.strokeStyle="#64748b";ctx.strokeRect(cx,cy,cw-4,ch);
+          ctx.fillStyle="#111111";ctx.font="bold 18px 'Times New Roman'";ctx.textAlign="center";
           const ltr=cname.split(" ").at(0).replace(/\.+$/,""),hits=selMOs.filter(mo=>valMap[mo.key]===cname);
           ctx.fillText(ltr,cx+(cw-4)/2,cy+19);
           if(hits.length){const rC=12,gC=26,bx0=cx+(cw-4)/2-(hits.length-1)*gC/2,byC=cy+ch-15;hits.forEach((mo,hi)=>{const bx=bx0+hi*gC;ctx.fillStyle="#ffffff";ctx.beginPath();ctx.arc(bx,byC,rC,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#1e293b";ctx.stroke();ctx.fillStyle="#111111";ctx.font="16px 'Times New Roman'";ctx.fillText(BENCH_STATE.tokens[mo.key]||"🎩",bx,byC+5);});}
