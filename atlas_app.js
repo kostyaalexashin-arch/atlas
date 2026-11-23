@@ -248,7 +248,7 @@ function wideGeoCfg(feats,projObj,domX,domY){
   feats.forEach(f=>{if(f.geometry&&f.geometry.coordinates)w(f.geometry.coordinates);});
   if(x0>900)return{domain:{x:domX,y:domY},fitbounds:"locations",visible:false,projection:projObj};
   if(projObj.type==="conic equal area"){
-    return{domain:{x:domX,y:domY},visible:false,showframe:false,projection:projObj,lonaxis:{range:Array.of(24.5,184.5)},lataxis:{range:Array.of(41.5,79.8)}};
+    return{domain:{x:domX,y:domY},visible:false,showframe:false,center:{lon:101,lat:61.5},projection:Object.assign({},projObj,{scale:1.26})};
   }
   const mEl=document.getElementById("mapDiv"),W=(mEl&&mEl.clientWidth>200)?mEl.clientWidth:1540,H=(mEl&&mEl.clientHeight>200)?mEl.clientHeight:740;
   const boxW=W*(domX.at(1)-domX.at(0)),boxH=H*(domY.at(1)-domY.at(0)),aspect=boxW/Math.max(1,boxH);
