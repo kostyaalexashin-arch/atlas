@@ -121,7 +121,7 @@ function drawCanvasRadar(ctx,items,rcx,rcy,R,fillRgba,strokeHex){
 function wrapPassText(ctx,txt,maxW){
   const words=txt.split(" "),lines=Array.of();let cur="";
   words.forEach(w=>{const test=cur?cur+" "+w:w;if(ctx.measureText(test).width<=maxW)cur=test;else{if(cur)lines.push(cur);cur=w;}});
-  if(cur)lines.push(cur);return lines.slice(0,3);
+  if(cur)lines.push(cur);return lines.slice(0,4);
 }
 function buildPassportCanvas(overrideMO=null){
   const yr=document.getElementById("pYear").value,all=getPassMOs(),mo=overrideMO||all.find(m=>m.key===PASS_STATE.key);
@@ -212,13 +212,13 @@ function buildPassportCanvas(overrideMO=null){
 
     blk.a.forEach((it,idx)=>{
       const cIdx=idx<rowsCnt?0:1,rIdx=idx<rowsCnt?idx:(idx-rowsCnt);
-      const cx0=50+cIdx*(colW+gapW),cy0=curY+44+rIdx*rowStep,valX=cx0+colW-118;
+      const cx0=50+cIdx*(colW+gapW),cy0=curY+44+rIdx*rowStep,valX=cx0+colW-148;
       if(rIdx>0){ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(cx0,cy0);ctx.lineTo(cx0+colW,cy0);ctx.stroke();}
       ctx.strokeStyle="#e2e8f0";ctx.beginPath();ctx.moveTo(valX,cy0);ctx.lineTo(valX,cy0+rowStep);ctx.stroke();
-      ctx.fillStyle="#111111";ctx.font="23px 'Times New Roman'";
+      ctx.fillStyle="#111111";ctx.font="22px 'Times New Roman'";
       const tLines=wrapPassText(ctx,it.id+" — "+it.title,valX-cx0-16);
-      const stTextY=cy0+(rowStep-(tLines.length-1)*25)/2+7;
-      tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+10,stTextY+li*25));
+      const stTextY=cy0+(rowStep-(tLines.length-1)*21)/2+7;
+      tLines.forEach((ln,li)=>ctx.fillText(ln,cx0+10,stTextY+li*21));
       ctx.font="bold 25px 'Times New Roman'";ctx.textAlign="right";
       ctx.fillText(it.val,cx0+colW-10,cy0+rowStep/2+8);ctx.textAlign="left";
     });
