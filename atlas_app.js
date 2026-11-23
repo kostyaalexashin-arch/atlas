@@ -207,7 +207,29 @@ Object.keys(PALETTES).forEach(p=>{const it=document.createElement("div");it.clas
 btnP.onclick=e=>{e.stopPropagation();menuP.classList.toggle("open");};
 document.addEventListener("click",()=>menuP.classList.remove("open"));updBtn(currentPal);
 const fmtNum=(v,d)=>(v===null||v===undefined||v===""||isNaN(Number(v)))?"н/д":Number(v).toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d});
-function wrapTitle(s,lim=92){if(s.length<=lim)return s;const idx=s.lastIndexOf(" ",lim);if(idx<=28)return s;const tail=s.slice(idx+1);return tail.length<12?s:(s.slice(0,idx)+"<br>"+tail);}
+function wrapTitle(str,maxLen=95){
+  const s=String(str||"").trim();
+  if(s.length<=maxLen)return s;
+  const words=s.split(/\s+/);
+  const lines=[];
+  let cur="";
+  words.forEach(w=>{
+    const cand=cur?(cur+" "+w):w;
+    if(cand.length>maxLen&&cur){
+      lines.push(cur);
+      cur=w;
+    }else{
+      cur=cand;
+    }
+  });
+  if(cur)lines.push(cur);
+  if(lines.length>3){
+    const merged=lines.slice(0,2);
+    merged.push(lines.slice(2).join(" "));
+    return merged.join("<br>");
+  }
+  return lines.join("<br>");
+}
 function markerSvg(c,f,sz=20){const s="#1e293b",h=sz/2;if(c==="1")return '<svg width="'+sz+'" height="'+sz+'"><rect x="3" y="3" width="'+(sz-6)+'" height="'+(sz-6)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="2")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+h+' '+h+','+(sz-2)+' 2,'+h+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="3")return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz-3)+' 2,'+(sz-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';if(c==="4")return '<svg width="'+sz+'" height="'+sz+'"><circle cx="'+h+'" cy="'+h+'" r="'+(h-3)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';return '<svg width="'+sz+'" height="'+sz+'"><polygon points="'+h+',2 '+(sz-2)+','+(sz*0.42)+' '+(sz*0.8)+','+(sz-2)+' '+(sz*0.2)+','+(sz-2)+' 2,'+(sz*0.42)+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.2"/></svg>';}
 function getCenter(g){
   if(!g)return{lon:0,lat:0};

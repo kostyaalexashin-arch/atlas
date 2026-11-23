@@ -40,8 +40,10 @@ function buildTableCanvases(silent=false){
     const sub=pagesArr.at(pg),canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
     ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 36px 'Times New Roman'";
-    const mLines=wrapTitle(mMeta.title+" (2019–2024 гг.)",105).split("<br>");
-    if(mLines.length===1){ctx.fillText(mLines.at(0),W/2,56);}else{ctx.fillText(mLines.at(0),W/2,44);ctx.fillText(mLines.at(1),W/2,84);}
+    const mLines=wrapTitle(mMeta.title+" (2019–2024 гг.)",95).split("<br>");
+    if(mLines.length===1){ctx.fillText(mLines.at(0),W/2,56);}
+    else if(mLines.length===2){ctx.fillText(mLines.at(0),W/2,44);ctx.fillText(mLines.at(1),W/2,84);}
+    else{ctx.font="bold 30px 'Times New Roman'";ctx.fillText(mLines.at(0),W/2,34);ctx.fillText(mLines.at(1),W/2,66);ctx.fillText(mLines.at(2),W/2,98);ctx.font="bold 36px 'Times New Roman'";}
     ctx.font="bold 36px 'Times New Roman'";ctx.fillText(terrTitle+(totalPages>1?" — Лист "+(pg+1)+" из "+totalPages:""),W/2,128);ctx.textAlign="left";
     const xCols=Array.of(40,530,1240,1553,1866,2179,2492,2805,3120),tTop=156,hdrH=52,rowH=81;
     ctx.fillStyle="#eef3f8";ctx.fillRect(40,tTop,3080,hdrH);ctx.strokeStyle="#64748b";ctx.lineWidth=1.5;ctx.strokeRect(40,tTop,3080,hdrH);

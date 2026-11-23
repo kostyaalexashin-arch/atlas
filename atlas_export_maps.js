@@ -65,10 +65,12 @@ async function buildSheetCanvas(){
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,3160,2234);
     const terrTitle=reg!=="ALL"?reg:(fo!=="RF"?fo+" федеральный округ":"Российская Федерация");
     const fullMet=mMeta.title+" ("+(mode==="grid"?"2019–2024 гг.":yr+" г.")+")";
-    ctx.fillStyle="#111111";ctx.textAlign="center";ctx.font="bold 44px 'Times New Roman'";
+    ctx.fillStyle="#111111";ctx.textAlign="center";
     const lines=wrapTitle(fullMet,92).split("<br>");
-    if(lines.length===1){ctx.fillText(lines.at(0),1580,68);}else{ctx.fillText(lines.at(0),1580,48);ctx.fillText(lines.at(1),1580,88);}
-    ctx.font="bold 36px \'Times New Roman\'";ctx.fillText(terrTitle,1580,134);ctx.textAlign="left";
+    if(lines.length===1){ctx.font="bold 44px 'Times New Roman'";ctx.fillText(lines.at(0),1580,68);ctx.font="bold 36px 'Times New Roman'";ctx.fillText(terrTitle,1580,124);}
+    else if(lines.length===2){ctx.font="bold 42px 'Times New Roman'";ctx.fillText(lines.at(0),1580,48);ctx.fillText(lines.at(1),1580,88);ctx.font="bold 36px 'Times New Roman'";ctx.fillText(terrTitle,1580,134);}
+    else{ctx.font="bold 34px 'Times New Roman'";ctx.fillText(lines.at(0),1580,36);ctx.fillText(lines.at(1),1580,72);ctx.fillText(lines.at(2),1580,108);ctx.font="bold 34px 'Times New Roman'";ctx.fillText(terrTitle,1580,144);}
+    ctx.textAlign="left";
     const mapImg=new Image();await new Promise(ok=>{mapImg.onload=ok;mapImg.src=imgData;});
     ctx.drawImage(mapImg,40,155,mapW,mapH);
     {
