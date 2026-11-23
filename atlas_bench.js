@@ -223,7 +223,7 @@ function renderBenchmark(){
       if(m.cat||m.is_cat){
         const grid=document.createElement("div");grid.className="bench-clust-cells";
         clEntries.forEach(pair=>{
-          const cname=pair.at(0),chex=pair.at(1),cell=document.createElement("div");cell.className="bench-ccell";cell.style.background=chex;cell.style.color=isDarkHex(chex)?"#ffffff":"#111111";cell.title=cname;
+          const cname=pair.at(0),cell=document.createElement("div");cell.className="bench-ccell";cell.style.background="#ffffff";cell.style.borderColor="#64748b";cell.style.color="#111111";cell.title=cname;
           const letter=cname.split(" ").at(0).replace(/\.+$/,""),hits=selMOs.filter(mo=>valMap[mo.key]===cname);
           cell.innerHTML='<div>'+letter+'</div><div class="bench-ccell-toks">'+hits.map(mo=>'<span class="bench-ctok" title="'+mo.full+': '+cname+'">'+(BENCH_STATE.tokens[mo.key]||"🎩")+'</span>').join("")+'</div>';
           grid.appendChild(cell);
