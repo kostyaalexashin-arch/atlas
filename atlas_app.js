@@ -109,7 +109,7 @@ window.renderRandomAtlasFact = function(){
         const { name, unit } = window._splitMetricTitleAndUnit(m.title);
         const uStr = unit ? (' ' + unit) : '';
         window._lastFactMO = mo;
-        box.innerHTML = `А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${window._agreeVerb(name, Number(v24) > Number(v19), false)} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?`;
+        box.innerHTML = `<span>А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${window._agreeVerb(name, Number(v24) > Number(v19), false)} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?</span>`;
         return;
       }
     }
@@ -120,7 +120,7 @@ window.renderRandomAtlasFact = function(){
       const { name, unit } = window._splitMetricTitleAndUnit(m.title);
       const uStr = unit ? (' ' + unit) : '';
       window._lastFactMO = mo;
-      box.innerHTML = `А вы знали, что в 2024 году ${placePhrase} ${name} ${window._agreeVerb(name, true, true)} <b>${s24}${uStr}</b>?`;
+      box.innerHTML = `<span>А вы знали, что в 2024 году ${placePhrase} ${name} ${window._agreeVerb(name, true, true)} <b>${s24}${uStr}</b>?</span>`;
       return;
     }
   }
