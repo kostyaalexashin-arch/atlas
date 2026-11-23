@@ -466,3 +466,13 @@ function addSubBlockSeparators(){
   });
   s.dataset.hasSeps="1";
 }
+
+window._bindSelModeSync = function(){
+  const sM = document.getElementById("selMode");
+  if(!sM) return;
+  sM.onchange = function(){
+    syncControls();
+    if(typeof render === "function") render();
+  };
+};
+window.addEventListener("DOMContentLoaded", window._bindSelModeSync);
