@@ -275,7 +275,8 @@ function computeScale(vals,palArr,inv){
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear");
   const isBench=(sM.value==="bench"),isPass=(sM.value==="passport"),hideStd=isBench||isPass;
-  const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
+  const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),dp=document.getElementById("distPanel"),mb=document.getElementById("stdMetBox");
+  if(dp)dp.style.display=(sM.value==="dist")?"flex":"none";
   if(bp)bp.style.display=isBench?"flex":"none";
   if(pp)pp.style.display=isPass?"flex":"none";
   if(mb)mb.style.display=hideStd?"none":"flex";
@@ -293,6 +294,7 @@ function syncControls(){
       else scEl.innerHTML='<option value="cur">Текущий лист</option><option value="fo">РФ + 8 ФО (по показателю)</option><option value="cur_fo">Регионы ФО (по показателю)</option><option value="all">Весь атлас (по показателю)</option><option value="all_met">Все показатели (по территории)</option>';
     }
   }
+  const sScEl=document.getElementById("selScale");if(sScEl)sScEl.style.display=(sM.value==="dist")?"none":"";
   const gW=document.getElementById("grpFOWrap"),cGFEl=document.getElementById("chkGroupFO");
   const isTblMode=(sM.value==="table"),canGrpFO=(isTblMode&&document.getElementById("selFO")?.value==="RF");
   if(cGFEl)cGFEl.disabled=!canGrpFO;
