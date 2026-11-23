@@ -41,6 +41,7 @@ window.buildAtlasFileName = function(opts){
   if(opts.page !== undefined && opts.page !== null){
     parts.push("Стр" + String(opts.page).padStart(2, "0"));
   }
+  parts.push(opts.dpi || window._getCurrentDpiTag());
   const base = parts.filter(Boolean).join("_") || "Документ";
   return opts.ext ? (base + "." + opts.ext) : base;
 };
@@ -50,6 +51,7 @@ window.buildAtlasBatchName = function(opts){
   if(opts.terr) parts.push(window._cleanFilePart(opts.terr));
   if(opts.met) parts.push(window._cleanFilePart(opts.met));
   if(opts.yr) parts.push(window._cleanFilePart(opts.yr));
+  parts.push(opts.dpi || window._getCurrentDpiTag());
   const base = parts.filter(Boolean).join("_");
   return opts.ext ? (base + "." + opts.ext) : base;
 };
@@ -69,4 +71,11 @@ window.formatYearsTag = function(yrs){
   }
   ranges.push(st === prev ? String(st) : (st + "-" + prev));
   return ranges.join(",");
+};
+
+window._getCurrentDpiTag = function(){
+  const raw = document.getElementById("bmDpi")?.value || document.getElementById("selDpi")?.value || "1";
+  const sc = Number(raw);
+  if(!sc || isNaN(sc)) return "300dpi";
+  return Math.round(300 * sc) + "dpi";
 };
