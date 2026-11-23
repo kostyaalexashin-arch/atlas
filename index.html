@@ -169,7 +169,7 @@ table.dyn-tbl td.mo-name{text-align:left}
     margin: 0 auto !important;
     padding: 4mm 6mm !important;
   }
-  /* Карта: симметричная центровка без сдвига заголовка и подвала */
+  /* Карта на 1 альбомный лист: симметричная центровка, легенда и шкала прижаты к нижнему полю */
   .sheet:has(#mapDiv) {
     display: flex !important;
     flex-direction: column !important;
@@ -201,7 +201,25 @@ table.dyn-tbl td.mo-name{text-align:left}
     margin-top: auto !important;
     flex-shrink: 0 !important;
   }
-  /* Таблицы, бенчмаркинг и паспорт: многостраничная печать с самого начала */
+  /* Таблица: растягиваем контейнер на высоту листа, чтобы легенда и шкала прижимались к нижнему полю */
+  .sheet:has(.tbl-wrap) {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 192mm !important;
+  }
+  .sheet:has(.tbl-wrap) .tbl-wrap {
+    flex: 1 0 auto !important;
+    margin-bottom: 12px !important;
+  }
+  .sheet:has(.tbl-wrap) .footer-grid {
+    width: 100% !important;
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  /* Снимаем обрезку и липкое позиционирование для многостраничной печати */
   .tbl-wrap, .bench-view, .pass-view {
     display: block !important;
     position: static !important;
