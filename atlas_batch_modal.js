@@ -107,14 +107,18 @@ function getPassportBatchTasks(){
   const tasks=Array.of();
   yrs.forEach(yr=>baseList.forEach(mo=>{if(yr==="2024"||mo.coh)tasks.push({yr,mo});}));
   
-  const _pParts = [];
-  const _pCatEl = document.getElementById("bmPassCat");
-  const _pFOEl  = document.getElementById("bmPassFO");
-  const _pRegEl = document.getElementById("bmPassReg");
-  if(_pCatEl && _pCatEl.value && _pCatEl.value !== "ALL") _pParts.push(String(_pCatEl.options[_pCatEl.selectedIndex]?.text || "").split("(").at(0).trim());
-  if(_pFOEl  && _pFOEl.value  && _pFOEl.value  !== "ALL") _pParts.push(typeof _foShort === "function" ? _foShort(_pFOEl.value) : _pFOEl.value);
-  if(_pRegEl && _pRegEl.value && _pRegEl.value !== "ALL") _pParts.push(_pRegEl.value);
-  window._lastPassBatchTag = _pParts.filter(Boolean).join("_");
+  const _pScope = document.querySelector('input[name="bmPassScope"]:checked')?.value || "reg";
+  if(_pScope === "reg"){
+    window._lastPassBatchTag = document.getElementById("bmPassReg")?.value || "";
+  }else if(_pScope === "fo"){
+    const fVal = document.getElementById("bmPassFO")?.value || "";
+    window._lastPassBatchTag = typeof _foShort === "function" ? _foShort(fVal) : fVal;
+  }else if(_pScope === "cat"){
+    const cEl = document.getElementById("bmPassCat");
+    window._lastPassBatchTag = cEl ? String(cEl.options[cEl.selectedIndex]?.text || "").split("(").at(0).trim() : "";
+  }else{
+    window._lastPassBatchTag = "Когорта_193_МО";
+  }
   return tasks;
 }
 document.addEventListener("DOMContentLoaded",initBatchModal);
