@@ -281,7 +281,7 @@ async function runCustomBatchExport(fmt){
   if(!terrs.length||!mets.length)return alert("Выберите хотя бы одну территорию и один показатель.");
   const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric"),sYr=document.getElementById("selYear");
   const origFO=sFO.value,origReg=sReg.value,origMet=sMet.value,origYr=sYr.value;
-  const yrs=(mode==="single"&&document.getElementById("selBase").value==="coh"&&yrsChecked.length)?yrsChecked:Array.of(origYr);
+  const yrs=((mode==="single"||mode==="map")&&document.getElementById("selBase").value==="coh"&&yrsChecked.length)?yrsChecked:Array.of(origYr);
   const mergeTbl=(mode==="table"&&document.getElementById("bmMergeTbl")?.checked&&terrs.length>1);
   const tasks=Array.of();
   if(mergeTbl){mets.forEach(m=>tasks.push({mergedTerrs:terrs,fo:"RF",reg:"ALL",met:m,yr:origYr}));}
@@ -294,14 +294,14 @@ async function runCustomBatchExport(fmt){
       btnZ.textContent=lbl;btnP.textContent=lbl;
       if(sFO.value!==t.fo){sFO.value=t.fo;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(t.fo!=="RF")(DATA.fo_to_regs[t.fo]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));}
       sReg.value=t.reg;sMet.value=t.met;sYr.value=t.yr;
-      const tag=((t.mergedTerrs?"Сводная_выборка":(t.reg!=="ALL"?t.reg:t.fo))+"_"+t.met+(mode==="single"?"_"+t.yr:"")).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
+      const tag=((t.mergedTerrs?"Сводная_выборка":(t.reg!=="ALL"?t.reg:t.fo))+"_"+t.met+((mode==="single"||mode==="map")?"_"+t.yr:"")).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
       const cvs=(mode==="table")?(t.mergedTerrs?buildMergedTableCanvases(t.mergedTerrs,true):buildTableCanvases(true)):Array.of(await (async()=>{render();if(window._plotReady)await window._plotReady;await bgTick(280);return await buildSheetCanvas();})());
       for(let ci=0;ci<cvs.length;ci++){
         const cv=cvs.at(ci);if(!cv)continue;
         if(fmt==="zip"){
           const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
           for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
-          const _docCode=(mode==="table")?"Табл":"Карта",_yrStr=(mode==="single")?t.yr:"2019-2024";
+          const _docCode=(mode==="table")?"Табл":"Карта",_yrStr=((mode==="single"||mode==="map"))?t.yr:"2019-2024";
           zFiles.push({name:buildAtlasFileName({doc:_docCode,fo:t.fo,reg:t.reg,met:t.met,yr:_yrStr,page:ci+1,ext:"png"}),data:arr});
         }else{
           const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
@@ -313,7 +313,7 @@ async function runCustomBatchExport(fmt){
     const _pDoc=(mode==="table")?"Табл":"Карта";
     const _pTerr=(terrs.length===1)?(terrs.at(0).reg!=="ALL"?terrs.at(0).reg:_foShort(terrs.at(0).fo)):(terrs.length+"терр");
     const _pMet=(mets.length===1)?mets.at(0):(mets.length+"пок");
-    const _pYr=(mode==="single"||mode==="map")?(formatYearsTag(yrs)||origYr):"2019-2024";
+    const _pYr=((mode==="single"||mode==="map")||mode==="map")?(formatYearsTag(yrs)||origYr):"2019-2024";
     if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
     if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
     modal.classList.remove("open");

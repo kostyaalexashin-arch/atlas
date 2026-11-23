@@ -390,7 +390,7 @@ function addCoreBadges(mapEl,isRegLevel){
 }
 
 function render(){
-  if(!window._welcomeDismissed){
+  if(!window._welcomeDismissed && !window._isExportMode){
     const ov = document.getElementById('welcomeOverlay');
     if(ov){ ov.style.display = 'flex'; return; }
   }
