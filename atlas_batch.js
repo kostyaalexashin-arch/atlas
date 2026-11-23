@@ -235,13 +235,22 @@ async function runCustomBatchExport(fmt){
         const {yr,pr}=tasks.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+(i+1)+"/"+tasks.length;btnZ.textContent=lbl;btnP.textContent=lbl;await bgTick(8);
         bYEl.value=yr;BENCH_STATE.mainKey=baseMO.key;BENCH_STATE.compKeys=Array.of(pr.key);BENCH_STATE.tokens[baseMO.key]="🔵";BENCH_STATE.tokens[pr.key]="🟥";
         const cs=buildBenchCanvases();
-        cs.forEach((cv,ci)=>{
-          if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:buildAtlasFileName({doc:"Бенч",fo:baseMO.fo,reg:baseMO.reg,mo:baseMO.lbl,plus:1,yr:yr,page:ci+1,ext:"png"}),data:arr});}
-          else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
-        });
+        for(let ci=0;ci<cs.length;ci++){
+          const cv=cs.at(ci);
+          if(fmt==="zip"){
+            const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+            for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
+            zFiles.push({name:buildAtlasFileName({doc:"Бенч",fo:baseMO.fo,reg:baseMO.reg,mo:baseMO.lbl,plus:1,yr:yr,page:ci+1,ext:"png"}),data:arr});
+          }else{
+            const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
+            for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
+            pdfPages.push({w:cv.width,h:cv.height,jpg:arr});
+          }
+        }
       }
-      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:yr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
-      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:yr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
+      const _bYr=tasks.at(0)?.yr||origBY;
+      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
     }finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
     return;
@@ -258,8 +267,11 @@ async function runCustomBatchExport(fmt){
         if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:fName,data:arr});}
         else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
       }
-      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",yr:origPY,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
-      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",yr:origPY,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
+      const _pYr=tasks.at(0)?.yr||origPY;
+      const _pCatEl=modal.querySelector("#bmPassCat, select");
+      const _pGrp=(_pCatEl&&_pCatEl.selectedIndex>=0)?_pCatEl.options[_pCatEl.selectedIndex].text.split("(")[0].trim():"";
+      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
     }finally{pYEl.value=origPY;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
     return;
