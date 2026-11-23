@@ -144,17 +144,29 @@ setTimeout(() => { if(typeof window.renderRandomAtlasFact === 'function') window
 
 
 window._welcomeDismissed = false;
+window.toggleWelcomeBatchCats = function(){
+  const row = document.getElementById('welcomeBatchSubRow');
+  if(row) row.style.display = (row.style.display === 'none' || !row.style.display) ? 'grid' : 'none';
+};
+
+window.openBatchFromWelcome = function(targetMode){
+  const sMode = document.getElementById('selMode');
+  if(sMode && targetMode){
+    sMode.value = targetMode;
+    if(!sMode.value && sMode.options.length) sMode.selectedIndex = 0;
+    if(typeof syncControls === 'function') syncControls();
+  }
+  const btnB = document.getElementById('btnOpenBatch') || document.querySelector('[onclick*="batch"], #btnBatch');
+  if(btnB) btnB.click();
+};
+
 window.startAtlasMode = function(modeVal){
   window._welcomeDismissed = true;
+  document.body.classList.remove('welcome-active');
   const sb = document.getElementById('mainSidebar') || document.querySelector('.sidebar');
   if(sb) sb.style.display = 'flex';
   const ov = document.getElementById('welcomeOverlay');
   if(ov) ov.style.display = 'none';
-  if(modeVal === 'batch'){
-    const btnB = document.getElementById('btnOpenBatch') || document.querySelector('[onclick*="batch"], #btnBatch');
-    if(btnB) btnB.click();
-    return;
-  }
   const sMode = document.getElementById('selMode');
   if(sMode && modeVal){
     sMode.value = (modeVal === 'single') ? 'map' : modeVal;

@@ -283,7 +283,20 @@ window.addEventListener("beforeprint", () => {
   document.querySelectorAll(".bench-view, .tbl-wrap, .pass-view").forEach(el => { el.scrollTop = 0; });
 });
 </script>
-</head><body><div class="workspace"><div class="sidebar" id="mainSidebar" style="display:none;">
+<style id="welcome-full-css">
+body.welcome-active { background: #ffffff !important; }
+body.welcome-active .workspace { padding: 0 !important; gap: 0 !important; background: #ffffff !important; }
+body.welcome-active .sheet {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  aspect-ratio: auto !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+</style>
+</head><body class="welcome-active"><div class="workspace"><div class="sidebar" id="mainSidebar" style="display:none;">
 <select id="selMode"><option value="single">Одиночная карта (срез)</option><option value="table">Таблица динамики МО (2019–2024)</option><option value="bench">Бенчмаркинг</option><option value="passport">Цифровой паспорт МО</option></select>
 <select id="selBase"><option value="all">Генеральный срез 2024 (2269 МО)</option><option value="coh">Динамическая когорта (193 МО)</option></select>
 <select id="selYear"><option value="2024">2024 г.</option><option value="2023">2023 г.</option><option value="2022">2022 г.</option><option value="2021">2021 г.</option><option value="2020">2020 г.</option><option value="2019">2019 г.</option></select>
@@ -321,7 +334,7 @@ window.addEventListener("beforeprint", () => {
 <div class="exp-row"><select id="selDpi"><option value="0.32" selected>72 dpi (эскиз)</option><option value="0.45">96 dpi</option><option value="0.72">150 dpi</option><option value="1.0">300 dpi (стандарт)</option><option value="2.0">600 dpi (печать)</option><option value="4.0">1200 dpi (макс.)</option></select><button type="button" id="btnOpenBatch" style="flex:1;background:#f1f5f9;font-weight:bold;cursor:pointer;" title="Выбор территорий, показателей и годов галочками">📦 Пакетная выгрузка...</button><select id="selPdfScope" style="display:none;"><option value="fo">РФ + 8 ФО</option><option value="cur_fo">Регионы ФО</option><option value="all">Весь атлас</option></select></div>
 <div class="exp-row"><button type="button" class="btn-main" id="btnPng">💾 PNG</button><button type="button" class="btn-main btn-pdf" id="btnPdf">💾 PDF</button></div>
 <div class="exp-row"><button type="button" id="btnCtrl1200" onclick="runControl1200DpiPdf()" style="width:100%;height:28px;background:#fef3c7;border:1px solid #d97706;color:#78350f;font-weight:bold;border-radius:3px;cursor:pointer;" title="Контрольный пакет 1200 dpi: все 82 региона, все показатели, таблицы (РФ + 4 ФО + 20 регионов), 40 бенчмарков и 40 паспортов">🧪 Контроль 1200 dpi (PDF)</button></div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;"><a href="designer.html?v=20261122221001" target="_blank" style="font-size:11px;color:#0369a1;text-decoration:none;font-weight:bold;">🛠 Отладчик макетов</a><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.23 05:05 МСК</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;"><a href="designer.html?v=20261122221001" target="_blank" style="font-size:11px;color:#0369a1;text-decoration:none;font-weight:bold;">🛠 Отладчик макетов</a><span id="verBadge" style="font-size:10.5px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #cbd5e1;">v.2026.11.23 05:09 МСК</span></div>
 </div><div class="sheet" id="sheetBox" style="position:relative;">
 <div id="welcomeOverlay" style="position:absolute;inset:0;z-index:50;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;font-family:'Times New Roman',Times,serif;">
   <div style="max-width:760px;width:100%;text-align:center;">
@@ -346,9 +359,15 @@ window.addEventListener("beforeprint", () => {
       </button>
     </div>
     <div style="margin-top:14px;">
-      <button type="button" onclick="startAtlasMode('batch')" style="width:100%;height:auto;padding:12px 16px;background:#eef3f8;border:1.5px solid #64748b;border-radius:6px;cursor:pointer;font-size:15px;font-weight:bold;color:#0f172a;">
-        📦 Пакетная выгрузка материалов атласа (PNG / PDF)
+      <button type="button" onclick="toggleWelcomeBatchCats()" style="width:100%;height:auto;padding:12px 16px;background:#eef3f8;border:1.5px solid #64748b;border-radius:6px;cursor:pointer;font-size:15px;font-weight:bold;color:#0f172a;">
+        📦 Пакетная выгрузка материалов атласа (PNG / PDF) ▾
       </button>
+      <div id="welcomeBatchSubRow" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px;">
+        <button type="button" onclick="openBatchFromWelcome('map')" style="height:auto;padding:9px 8px;background:#ffffff;border:1.5px solid #0284c7;border-radius:5px;cursor:pointer;font-size:13px;font-weight:bold;color:#0369a1;">🗺 Пакет карт</button>
+        <button type="button" onclick="openBatchFromWelcome('table')" style="height:auto;padding:9px 8px;background:#ffffff;border:1.5px solid #0284c7;border-radius:5px;cursor:pointer;font-size:13px;font-weight:bold;color:#0369a1;">📊 Пакет таблиц</button>
+        <button type="button" onclick="openBatchFromWelcome('bench')" style="height:auto;padding:9px 8px;background:#ffffff;border:1.5px solid #0284c7;border-radius:5px;cursor:pointer;font-size:13px;font-weight:bold;color:#0369a1;">⚖️ Пакет бенчмаркинга</button>
+        <button type="button" onclick="openBatchFromWelcome('passport')" style="height:auto;padding:9px 8px;background:#ffffff;border:1.5px solid #0284c7;border-radius:5px;cursor:pointer;font-size:13px;font-weight:bold;color:#0369a1;">📋 Пакет паспортов</button>
+      </div>
     </div>
 
     <div id="welcomeFactCard" style="margin-top:20px;padding:14px 18px;background:#f8fafc;border:1.5px solid #cbd5e1;border-left:4px solid #0284c7;border-radius:6px;text-align:left;">
@@ -367,7 +386,7 @@ window.addEventListener("beforeprint", () => {
 </div><script src="atlas_passport.js?v=20261123042644"></script><script src="atlas_bench.js?v=20261123042644"></script><script src="atlas_config.js?v=20261123050042"></script>
 <script src="atlas_export_tables.js?v=20261123042644"></script>
 <script src="atlas_export_maps.js?v=20261123042644"></script>
-<script src="atlas_batch.js?v=20261123050042"></script><script src="atlas_batch_modal.js?v=20261123045425"></script><script src="atlas_app.js?v=20261123050513"></script><div class="bm-overlay" id="batchModal">
+<script src="atlas_batch.js?v=20261123050042"></script><script src="atlas_batch_modal.js?v=20261123045425"></script><script src="atlas_app.js?v=20261123050946"></script><div class="bm-overlay" id="batchModal">
   <div class="bm-box">
     <div class="bm-hdr"><span>Пакетная выгрузка материалов атласа</span><button type="button" id="btnCloseBatch" style="border:none;background:none;font-size:18px;cursor:pointer;font-weight:bold;">✕</button></div>
     <div class="bm-body">
