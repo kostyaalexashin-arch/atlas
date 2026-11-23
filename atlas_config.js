@@ -88,3 +88,21 @@ window._getCurrentDpiTag = function(){
   if(!sc || isNaN(sc)) return "300dpi";
   return Math.round(300 * sc) + "dpi";
 };
+
+window.formatAtlasGroupLabel = function(rawGrp){
+  const g = String(rawGrp || "").replace(/^5\.1\./, "5.").trim();
+  if(g.startsWith("2.")) return "2. Цифровизация";
+  if(g.startsWith("3.")) return "3. Интегральный индекс и его субиндексы";
+  if(g.startsWith("4.")) return "4. Подблоки показателей";
+  return g;
+};
+
+window.formatAtlasMetricLabel = function(m){
+  if(!m) return "";
+  const id = String(m.id || "").trim();
+  const title = String(m.title || "").trim();
+  if(/^(ЭК|СЦ|УЭ)-\d{2}$/.test(id) || /^(ЭК|СЦ|УЭ)-Подблок\s*\d+$/i.test(id)){
+    return id + ": " + title;
+  }
+  return title || id;
+};

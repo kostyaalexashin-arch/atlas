@@ -330,7 +330,7 @@ Promise.all(Array.of(getJson("geo_plotly.json"),getJson("regions_geo.json"),getJ
   GEO=res.at(0);REGS=res.at(1);DATA=res.at(2);GEO.features.forEach(f=>{f.properties._cent=(f.properties._cx!==undefined)?{lon:f.properties._cx,lat:f.properties._cy}:getCenter(f.geometry);});
   const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sMet=document.getElementById("selMetric");
   DATA.fos.forEach(f=>sFO.add(new Option(f+" ФО",f)));const gm={};
-  DATA.metrics.slice().sort((a,b)=>String(a.group||"").localeCompare(String(b.group||""),"ru")).forEach(m=>{const gLbl=String(m.group||"").replace(/^5\.1\./,"5.");if(!gm[gLbl]){gm[gLbl]=document.createElement("optgroup");gm[gLbl].label=gLbl;sMet.add(gm[gLbl]);}gm[gLbl].appendChild(new Option(m.id+": "+m.title,m.id));});
+  DATA.metrics.slice().sort((a,b)=>String(a.group||"").localeCompare(String(b.group||""),"ru")).forEach(m=>{const gLbl=formatAtlasGroupLabel(m.group);if(!gm[gLbl]){gm[gLbl]=document.createElement("optgroup");gm[gLbl].label=gLbl;sMet.add(gm[gLbl]);}gm[gLbl].appendChild(new Option(formatAtlasMetricLabel(m),m.id));});
   const cGF=document.getElementById("chkGroupFO");if(cGF)cGF.onchange=render;
   sFO.onchange=()=>{syncControls();sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(sFO.value!=="RF")(DATA.fo_to_regs[sFO.value]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));render();};
   Array.of("selMode","selBase","selYear","selReg","selMetric","selScale").forEach(id=>document.getElementById(id).onchange=()=>{addSubBlockSeparators();if(typeof renderRandomAtlasFact==="function")renderRandomAtlasFact();syncControls();render();});
