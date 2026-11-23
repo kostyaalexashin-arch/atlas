@@ -248,7 +248,7 @@ async function runCustomBatchExport(fmt){
           }
         }
       }
-      const _bYr=tasks.at(0)?.yr||origBY;
+      const _bYr=formatYearsTag(tasks.map(t=>t.yr))||origBY;
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
@@ -267,7 +267,7 @@ async function runCustomBatchExport(fmt){
         if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:fName,data:arr});}
         else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
       }
-      const _pYr=tasks.at(0)?.yr||origPY;
+      const _pYr=formatYearsTag(tasks.map(t=>t.yr))||origPY;
       const _pGrp = window._lastPassBatchTag || "";
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
@@ -313,7 +313,7 @@ async function runCustomBatchExport(fmt){
     const _pDoc=(mode==="table")?"Табл":"Карта";
     const _pTerr=(terrs.length===1)?(terrs.at(0).reg!=="ALL"?terrs.at(0).reg:_foShort(terrs.at(0).fo)):(terrs.length+"терр");
     const _pMet=(mets.length===1)?mets.at(0):(mets.length+"пок");
-    const _pYr=(mode==="single")?(yrs.length===1?yrs.at(0):(yrs.length+"лет")):"2019-2024";
+    const _pYr=(mode==="single"||mode==="map")?(formatYearsTag(yrs)||origYr):"2019-2024";
     if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
     if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
     modal.classList.remove("open");

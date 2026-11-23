@@ -20,7 +20,7 @@ window.ATLAS_STYLE = {
 };
 
 window._cleanFilePart = function(s){
-  return String(s||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/[^a-zA-Z0-9а-яА-ЯёЁ+_-]+/g,"_").replace(/_+/g,"_").replace(/^_|_$/g,"");
+  return String(s||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/[^a-zA-Z0-9а-яА-ЯёЁ+,_-]+/g,"_").replace(/_+/g,"_").replace(/^_|_$/g,"");
 };
 window._foShort = function(fo){
   const m = {"Центральный":"ЦФО","Северо-Западный":"СЗФО","Южный":"ЮФО","Северо-Кавказский":"СКФО","Приволжский":"ПФО","Уральский":"УФО","Сибирский":"СФО","Дальневосточный":"ДФО","RF":"РФ"};
@@ -52,4 +52,21 @@ window.buildAtlasBatchName = function(opts){
   if(opts.yr) parts.push(window._cleanFilePart(opts.yr));
   const base = parts.filter(Boolean).join("_");
   return opts.ext ? (base + "." + opts.ext) : base;
+};
+
+window.formatYearsTag = function(yrs){
+  const nums = Array.from(new Set((yrs || []).map(Number).filter(n => !isNaN(n)))).sort((a, b) => a - b);
+  if(!nums.length) return "";
+  const ranges = [];
+  let st = nums[0], prev = nums[0];
+  for(let i = 1; i < nums.length; i++){
+    if(nums[i] === prev + 1){
+      prev = nums[i];
+    }else{
+      ranges.push(st === prev ? String(st) : (st + "-" + prev));
+      st = prev = nums[i];
+    }
+  }
+  ranges.push(st === prev ? String(st) : (st + "-" + prev));
+  return ranges.join(",");
 };

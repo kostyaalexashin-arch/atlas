@@ -146,6 +146,8 @@ setTimeout(() => { if(typeof window.renderRandomAtlasFact === 'function') window
 window._welcomeDismissed = false;
 window.startAtlasMode = function(modeVal){
   window._welcomeDismissed = true;
+  const sb = document.getElementById('mainSidebar') || document.querySelector('.sidebar');
+  if(sb) sb.style.display = 'flex';
   const ov = document.getElementById('welcomeOverlay');
   if(ov) ov.style.display = 'none';
   if(modeVal === 'batch'){
