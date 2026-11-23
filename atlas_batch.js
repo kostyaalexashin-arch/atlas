@@ -1,3 +1,16 @@
+function _downloadBatchZipOrSinglePng(zFiles, zipFileName){
+  if(!zFiles || !zFiles.length) return;
+  const a = document.createElement("a");
+  if(zFiles.length === 1){
+    a.download = zFiles.at(0).name;
+    a.href = URL.createObjectURL(new Blob([zFiles.at(0).data], {type: "image/png"}));
+  }else{
+    a.download = zipFileName;
+    a.href = URL.createObjectURL(buildZipBlob(zFiles));
+  }
+  a.click();
+}
+
 // Модуль пакетной выгрузки (ZIP, PDF, контроль 1200 dpi)
 window._buildCustomCtrlTasks = function(allMos){
   const list = Array.isArray(allMos) ? allMos.filter(m => m && m.oktmo) : [];
@@ -249,7 +262,7 @@ async function runCustomBatchExport(fmt){
         }
       }
       const _bYr=formatYearsTag(tasks.map(t=>t.yr))||origBY;
-      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+      if(fmt==="zip"&&zFiles.length){_downloadBatchZipOrSinglePng(zFiles,buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"zip"}));}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:_bYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
     }finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
@@ -269,7 +282,7 @@ async function runCustomBatchExport(fmt){
       }
       const _pYr=formatYearsTag(tasks.map(t=>t.yr))||origPY;
       const _pGrp = window._lastPassBatchTag || "";
-      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+      if(fmt==="zip"&&zFiles.length){_downloadBatchZipOrSinglePng(zFiles,buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"zip"}));}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
     }finally{pYEl.value=origPY;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
@@ -314,7 +327,7 @@ async function runCustomBatchExport(fmt){
     const _pTerr=(terrs.length===1)?(terrs.at(0).reg!=="ALL"?terrs.at(0).reg:_foShort(terrs.at(0).fo)):(terrs.length+"терр");
     const _pMet=(mets.length===1)?mets.at(0):(mets.length+"пок");
     const _pYr=((mode==="single"||mode==="map")||mode==="map")?(formatYearsTag(yrs)||origYr):"2019-2024";
-    if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+    if(fmt==="zip"&&zFiles.length){_downloadBatchZipOrSinglePng(zFiles,buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"zip"}));}
     if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
     modal.classList.remove("open");
   }finally{

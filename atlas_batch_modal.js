@@ -98,6 +98,9 @@ function initBatchModal(){
     modal.querySelectorAll("input[type=checkbox]").forEach(c=>c.addEventListener("change",updSum));updSum();
     const oldPresets = modal.querySelector("#bmQuickPresets");
     if(oldPresets) oldPresets.remove();
+    tList.querySelectorAll('.bm-t-chk[data-fo="RF"]').forEach(c => { c.checked = false; });
+    updSum();
+
     if(mode === "single" || mode === "map" || mode === "grid" || mode === "table"){
       const pBar = document.createElement("div");
       pBar.id = "bmQuickPresets";
