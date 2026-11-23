@@ -1,5 +1,83 @@
 
 window._lastFactMO = null;
+
+window._inflectAdjPrep = function(word){
+  // Склонение прилагательного (муж. род им. п.) в предложный падеж: -ский -> -ском, -ий -> -ом, -ый -> -ом, -ой -> -ом
+  if(/([жшщч])ий$/i.test(word)) return word.replace(/ий$/i, 'ем');
+  if(/([гкх])ий$/i.test(word)) return word.replace(/ий$/i, 'ом');
+  if(/ский$/i.test(word)) return word.replace(/ский$/i, 'ском');
+  if(/цкий$/i.test(word)) return word.replace(/цкий$/i, 'цком');
+  if(/ний$/i.test(word)) return word.replace(/ний$/i, 'нем');
+  if(/[ыо]й$/i.test(word)) return word.replace(/[ыо]й$/i, 'ом');
+  if(/ий$/i.test(word)) return word.replace(/ий$/i, 'ом');
+  return word;
+};
+
+window._formatMoInPrep = function(lbl){
+  let s = String(lbl || '').trim();
+  // Вариант 1: "Агаповский (МР)" -> "Агаповском муниципальном районе"
+  const mParen = s.match(/^(.+?)\s*\((МР|ГО|МО|ГП|СП)\)$/i);
+  if(mParen){
+    const base = mParen[1].trim();
+    const kind = mParen[2].toUpperCase();
+    const typeMap = {
+      'МР': 'муниципальном районе',
+      'ГО': 'городском округе',
+      'МО': 'муниципальном округе',
+      'ГП': 'городском поселении',
+      'СП': 'сельском поселении'
+    };
+    const words = base.split(/\s+/);
+    const inflected = words.map((w, i) => (i === 0 || /[ыио]й$/i.test(w)) ? window._inflectAdjPrep(w) : w).join(' ');
+    return inflected + ' ' + (typeMap[kind] || 'муниципальном образовании');
+  }
+  // Вариант 2: "г. Череповец" или "город Череповец" -> "городе Череповец"
+  if(/^г\.\s*/i.test(s)) return 'городе ' + s.replace(/^г\.\s*/i, '');
+  if(/^город\s+/i.test(s)) return 'городе ' + s.replace(/^город\s+/i, '');
+  return s;
+};
+
+window._inflectRegionPrep = function(reg){
+  let r = String(reg || '').trim();
+  r = r.replace(/\bобласть\b/i, 'области');
+  r = r.replace(/\bкрай\b/i, 'крае');
+  r = r.replace(/\bРеспублика\b/i, 'Республике');
+  r = r.replace(/\bавтономный округ\b/i, 'автономном округе');
+  r = r.replace(/\bавтономная область\b/i, 'автономной области');
+  r = r.replace(/^([А-ЯЁа-яё-]+)(?=\s+(?:области|крае|Республике|автономном|автономной))/u, m => window._inflectAdjPrep(m));
+  if(/ская$/i.test(r.split(' ')[0])) r = r.replace(/^([А-ЯЁа-яё-]+)ая\b/u, '$1ой');
+  if(/яя$/i.test(r.split(' ')[0])) r = r.replace(/^([А-ЯЁа-яё-]+)яя\b/u, '$1ей');
+  return r;
+};
+
+window._splitMetricTitleAndUnit = function(rawTitle){
+  let t = String(rawTitle || '').trim();
+  let unit = '';
+  const idxComma = t.lastIndexOf(',');
+  if(idxComma > 10 && idxComma >= t.length - 18){
+    unit = t.slice(idxComma + 1).trim();
+    t = t.slice(0, idxComma).trim();
+  }
+  // Делаем первую букву строчной, если это не аббревиатура (например, IQ, ЖКХ, МСП)
+  if(t.length > 1 && t[0] === t[0].toUpperCase() && t[1] === t[1].toLowerCase()){
+    t = t[0].toLowerCase() + t.slice(1);
+  }
+  return { name: t, unit };
+};
+
+window._agreeVerb = function(metricName, isUp){
+  const firstWord = String(metricName || '').trim().split(/\s+/)[0].toLowerCase();
+  const femStems = ['доля', 'площадь', 'протяженность', 'протяжённость', 'численность', 'обеспеченность', 'доля', 'выручка', 'прибыль', 'добыча', 'мощность', 'инвестиционная', 'бюджетная', 'финансовая', 'демографическая', 'экологическая', 'социальная'];
+  const neutStems = ['количество', 'число', 'отношение', 'соотношение', 'значение'];
+  if(femStems.some(w => firstWord.startsWith(w)) || /[ая]$/.test(firstWord)){
+    return isUp ? 'выросла' : 'снизилась';
+  }
+  if(neutStems.some(w => firstWord.startsWith(w)) || /[ое]$/.test(firstWord)){
+    return isUp ? 'выросло' : 'снизилось';
+  }
+  return isUp ? 'вырос' : 'снизился';
+};
+
 window.renderRandomAtlasFact = function(){
   const box = document.getElementById('welcomeFactText');
   if(!box || typeof GEO === 'undefined' || typeof DATA === 'undefined' || !GEO || !DATA) return;
@@ -26,9 +104,12 @@ window.renderRandomAtlasFact = function(){
 
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-  for(let attempt = 0; attempt < 40; attempt++){
+  for(let attempt = 0; attempt < 45; attempt++){
     const mo = pick(mos);
     const jk = mo.join_key;
+    const moPrep = window._formatMoInPrep(mo._lbl);
+    const regPrep = window._inflectRegionPrep(mo.region);
+    const placePhrase = `в <b>${moPrep}</b> (${regPrep})`;
     const useDyn = (attempt % 2 === 0) && mo.coh;
 
     if(useDyn){
@@ -38,9 +119,11 @@ window.renderRandomAtlasFact = function(){
       if(v19 !== undefined && v19 !== null && v24 !== undefined && v24 !== null && Number(v19) !== Number(v24)){
         const s19 = typeof fmtNum === 'function' ? fmtNum(v19, m.dec) : Number(v19).toFixed(m.dec || 2);
         const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
-        const dirWord = Number(v24) > Number(v19) ? 'выросло' : 'снизилось';
+        const { name, unit } = window._splitMetricTitleAndUnit(m.title);
+        const uStr = unit ? (' ' + unit) : '';
+        const verb = window._agreeVerb(name, Number(v24) > Number(v19));
         window._lastFactMO = mo;
-        box.innerHTML = `А вы знали, что с 2019 по 2024 гг. в <b>${mo._lbl}</b> (${mo.region}) значение показателя <i>«${m.title}»</i> ${dirWord} с <b>${s19}</b> до <b>${s24}</b>?`;
+        box.innerHTML = `А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${verb} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?`;
         return;
       }
     }
@@ -51,8 +134,11 @@ window.renderRandomAtlasFact = function(){
       : DATA.panel?.[m.id]?.['2024']?.[jk];
     if(v24 !== undefined && v24 !== null && v24 !== ''){
       const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
+      const { name, unit } = window._splitMetricTitleAndUnit(m.title);
+      const uStr = unit ? (' ' + unit) : '';
+      const eqVerb = window._agreeVerb(name, true).replace('выросла', 'составила').replace('выросло', 'составило').replace('вырос', 'составил');
       window._lastFactMO = mo;
-      box.innerHTML = `А вы знали, что в 2024 г. в <b>${mo._lbl}</b> (${mo.region}) показатель <i>«${m.title}»</i> составляет <b>${s24}</b>?`;
+      box.innerHTML = `А вы знали, что в 2024 году ${placePhrase} ${name} ${eqVerb} <b>${s24}${uStr}</b>?`;
       return;
     }
   }
