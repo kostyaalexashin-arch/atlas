@@ -1,7 +1,7 @@
 // Модуль рендера картографических листов
 async function buildSheetCanvas(){
   const mode=document.getElementById("selMode").value;
-  if(mode==="table"){alert("Переключитесь в режим карты или диаграммы.");return null;}
+  if(mode==="table"){alert("Переключитесь в режим карты или сетки.");return null;}
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value,yr=document.getElementById("selYear").value;
   const mMeta=DATA.metrics.find(x=>x.id===mId)||DATA.metrics.at(0);
   const isArk=reg.includes("Архангельск"),isNW=(fo.includes("Северо-Запад")||fo==="СЗФО")&&reg==="ALL";
