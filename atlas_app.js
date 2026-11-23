@@ -153,39 +153,33 @@ function computeScale(vals,palArr,inv){
 }
 function syncControls(){
   const sM=document.getElementById("selMode"),sB=document.getElementById("selBase"),sY=document.getElementById("selYear");
-  const isBench=(sM.value==="bench"),isPass=(sM.value==="passport"),hideStd=isBench||isPass;
+  const sFO=document.getElementById("selFO"),sReg=document.getElementById("selReg"),sSc=document.getElementById("selScale");
+  const mVal=sM?sM.value:"single";
+  const isBench=(mVal==="bench"),isPass=(mVal==="passport"),isTbl=(mVal==="table"),isCard=(isBench||isPass);
+
   const bp=document.getElementById("benchPanel"),pp=document.getElementById("passPanel"),mb=document.getElementById("stdMetBox");
-  if(bp)bp.style.display=isBench?"flex":"none";
-  if(pp)pp.style.display=isPass?"flex":"none";
-  if(mb)mb.style.display=hideStd?"none":"flex";
-  Array.of("selBase","selYear","selFO","selReg","prevFO","nextFO","prevReg","nextReg").forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=hideStd?"none":"";});
-  document.querySelectorAll(".nav-grp").forEach(el=>el.style.display=hideStd?"none":"flex");
-  const shB=document.getElementById("sheetBox");if(shB)shB.classList.toggle("portrait",isPass);
-  const scEl=document.getElementById("selPdfScope");
-  if(scEl){
-    const targetMode=isPass?"pass":(isBench?"bench":(sM.value==="table"?"table":"map"));
-    if(scEl.dataset.mode!==targetMode){
-      scEl.dataset.mode=targetMode;
-      if(targetMode==="pass")scEl.innerHTML='<option value="cur">Текущее МО (1 лист)</option><option value="reg">Все МО региона</option><option value="fo">Все МО ФО</option><option value="cat">По категории МО</option><option value="coh">Все 193 МО когорты</option>';
-      else if(targetMode==="bench")scEl.innerHTML='<option value="cur">Текущее сравнение (2 листа)</option>';
-      else if(targetMode==="table")scEl.innerHTML='<option value="cur">Текущая таблица</option><option value="all_fo">Все 8 ФО (по показателю)</option><option value="all_reg">Все регионы (по показателю)</option><option value="all_met">Все показатели (по территории)</option>';
-      else scEl.innerHTML='<option value="cur">Текущий лист</option><option value="fo">РФ + 8 ФО (по показателю)</option><option value="cur_fo">Регионы ФО (по показателю)</option><option value="all">Весь атлас (по показателю)</option><option value="all_met">Все показатели (по территории)</option>';
-    }
+  if(bp){bp.style.display=isBench?"flex":"none";if(isBench&&typeof initBenchControls==="function")initBenchControls();}
+  if(pp){pp.style.display=isPass?"flex":"none";if(isPass&&typeof initPassportControls==="function")initPassportControls();}
+  if(mb)mb.style.display=isCard?"none":"flex";
+
+  const palDd=document.querySelector(".pal-dd");
+  if(palDd)palDd.style.display=isCard?"none":"block";
+  if(sSc)sSc.style.display=isCard?"none":"block";
+
+  if(sB){
+    sB.style.display=isCard?"none":"block";
+    if(isTbl){sB.value="coh";sB.disabled=true;}else{sB.disabled=false;}
   }
-  const gW=document.getElementById("grpFOWrap"),cGFEl=document.getElementById("chkGroupFO");
-  const isTblMode=(sM.value==="table"),canGrpFO=(isTblMode&&document.getElementById("selFO")?.value==="RF");
-  if(cGFEl)cGFEl.disabled=!canGrpFO;
-  if(gW){gW.style.display=isTblMode?"flex":"none";gW.style.opacity=canGrpFO?"1":"0.45";gW.style.pointerEvents=canGrpFO?"auto":"none";}
-  if(hideStd)return;
-  const sMet=document.getElementById("selMetric");
-  if(sMet){
-    const isTbl=(sM.value==="table");
-    Array.from(sMet.options).forEach(opt=>{if(opt.dataset.isSep==="1"){opt.style.display="";return;}const mm=DATA.metrics.find(x=>x.id===opt.value);opt.style.display=(isTbl&&mm&&(mm.cat||mm.is_cat))?"none":"";});
-    const curMM=DATA.metrics.find(x=>x.id===sMet.value);
-    if(isTbl&&curMM&&(curMM.cat||curMM.is_cat)){const okOpt=Array.from(sMet.options).find(o=>{const mm=DATA.metrics.find(x=>x.id===o.value);return mm&&!(mm.cat||mm.is_cat);});if(okOpt)sMet.value=okOpt.value;}
+  if(sY){
+    sY.style.display=(isCard||isTbl)?"none":"block";
+    const isCoh=(sB&&sB.value==="coh");
+    if(!isCoh)sY.value="2024";
+    sY.disabled=(!isCoh||isTbl);
   }
-  if(sM.value==="table"){sB.value="coh";sB.disabled=true;sY.disabled=true;}
-  else{sB.disabled=false;if(sB.value==="all"){sY.value="2024";sY.disabled=true;}else{sY.disabled=false;}}
+
+  document.querySelectorAll(".nav-grp").forEach(el=>{el.style.display=isCard?"none":"flex";});
+  const gW=document.getElementById("grpFOWrap");
+  if(gW)gW.style.display=(isTbl&&sFO&&sFO.value==="RF")?"flex":"none";
 }
 function stepSelect(selId,dir){
   const el=document.getElementById(selId);if(!el||el.options.length===0)return;
