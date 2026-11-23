@@ -268,8 +268,7 @@ async function runCustomBatchExport(fmt){
         else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
       }
       const _pYr=tasks.at(0)?.yr||origPY;
-      const _pCatEl=document.getElementById("bmPassCat");
-      const _pGrp=(_pCatEl&&_pCatEl.value&&_pCatEl.value!=="ALL")?String(_pCatEl.options[_pCatEl.selectedIndex]?.text||"").split("(").at(0).trim():"";
+      const _pGrp = window._lastPassBatchTag || "";
       if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
       if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:_pGrp,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");

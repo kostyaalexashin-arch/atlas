@@ -106,6 +106,15 @@ function getPassportBatchTasks(){
   const yrs=yrsSel.length?yrsSel:Array.of(document.getElementById("pYear")?.value||"2024");
   const tasks=Array.of();
   yrs.forEach(yr=>baseList.forEach(mo=>{if(yr==="2024"||mo.coh)tasks.push({yr,mo});}));
+  
+  const _pParts = [];
+  const _pCatEl = document.getElementById("bmPassCat");
+  const _pFOEl  = document.getElementById("bmPassFO");
+  const _pRegEl = document.getElementById("bmPassReg");
+  if(_pCatEl && _pCatEl.value && _pCatEl.value !== "ALL") _pParts.push(String(_pCatEl.options[_pCatEl.selectedIndex]?.text || "").split("(").at(0).trim());
+  if(_pFOEl  && _pFOEl.value  && _pFOEl.value  !== "ALL") _pParts.push(typeof _foShort === "function" ? _foShort(_pFOEl.value) : _pFOEl.value);
+  if(_pRegEl && _pRegEl.value && _pRegEl.value !== "ALL") _pParts.push(_pRegEl.value);
+  window._lastPassBatchTag = _pParts.filter(Boolean).join("_");
   return tasks;
 }
 document.addEventListener("DOMContentLoaded",initBatchModal);
