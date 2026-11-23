@@ -2,7 +2,6 @@
 window._lastFactMO = null;
 
 window._inflectAdjPrep = function(word){
-  // Склонение прилагательного (муж. род им. п.) в предложный падеж: -ский -> -ском, -ий -> -ом, -ый -> -ом, -ой -> -ом
   if(/([жшщч])ий$/i.test(word)) return word.replace(/ий$/i, 'ем');
   if(/([гкх])ий$/i.test(word)) return word.replace(/ий$/i, 'ом');
   if(/ский$/i.test(word)) return word.replace(/ский$/i, 'ском');
@@ -15,11 +14,10 @@ window._inflectAdjPrep = function(word){
 
 window._formatMoInPrep = function(lbl){
   let s = String(lbl || '').trim();
-  // Вариант 1: "Агаповский (МР)" -> "Агаповском муниципальном районе"
   const mParen = s.match(/^(.+?)\s*\((МР|ГО|МО|ГП|СП)\)$/i);
   if(mParen){
-    const base = mParen[1].trim();
-    const kind = mParen[2].toUpperCase();
+    const base = mParen.trim();
+    const kind = mParen.toUpperCase();
     const typeMap = {
       'МР': 'муниципальном районе',
       'ГО': 'городском округе',
@@ -31,7 +29,6 @@ window._formatMoInPrep = function(lbl){
     const inflected = words.map((w, i) => (i === 0 || /[ыио]й$/i.test(w)) ? window._inflectAdjPrep(w) : w).join(' ');
     return inflected + ' ' + (typeMap[kind] || 'муниципальном образовании');
   }
-  // Вариант 2: "г. Череповец" или "город Череповец" -> "городе Череповец"
   if(/^г\.\s*/i.test(s)) return 'городе ' + s.replace(/^г\.\s*/i, '');
   if(/^город\s+/i.test(s)) return 'городе ' + s.replace(/^город\s+/i, '');
   return s;
@@ -45,8 +42,8 @@ window._inflectRegionPrep = function(reg){
   r = r.replace(/\bавтономный округ\b/i, 'автономном округе');
   r = r.replace(/\bавтономная область\b/i, 'автономной области');
   r = r.replace(/^([А-ЯЁа-яё-]+)(?=\s+(?:области|крае|Республике|автономном|автономной))/u, m => window._inflectAdjPrep(m));
-  if(/ская$/i.test(r.split(' ')[0])) r = r.replace(/^([А-ЯЁа-яё-]+)ая\b/u, '$1ой');
-  if(/яя$/i.test(r.split(' ')[0])) r = r.replace(/^([А-ЯЁа-яё-]+)яя\b/u, '$1ей');
+  if(/ская$/i.test(r.split(' '))) r = r.replace(/^([А-ЯЁа-яё-]+)ая\b/u, '$1ой');
+  if(/яя$/i.test(r.split(' '))) r = r.replace(/^([А-ЯЁа-яё-]+)яя\b/u, '$1ей');
   return r;
 };
 
@@ -58,29 +55,46 @@ window._splitMetricTitleAndUnit = function(rawTitle){
     unit = t.slice(idxComma + 1).trim();
     t = t.slice(0, idxComma).trim();
   }
-  // Делаем первую букву строчной, если это не аббревиатура (например, IQ, ЖКХ, МСП)
-  if(t.length > 1 && t[0] === t[0].toUpperCase() && t[1] === t[1].toLowerCase()){
-    t = t[0].toLowerCase() + t.slice(1);
+  if(t.length > 1 && t === t.toUpperCase() && t === t.toLowerCase()){
+    t = t.toLowerCase() + t.slice(1);
+  }
+  // Если внутри названия есть обособленный запятой причастный/определительный оборот до конца фразы — добавляем закрывающую запятую
+  if(/,\s*(?:находящ|требующ|нуждающ|приходящ|не\s+отвечающ|не\s+имеющ|используем|пользующ|проживающ|состоящ|оборудованн|в\s+отношении\s+которых|имеющ|расположенн|введенн)/i.test(t)){
+    t = t + ',';
   }
   return { name: t, unit };
 };
 
-window._agreeVerb = function(metricName, isUp){
-  const firstWord = String(metricName || '').trim().split(/\s+/)[0].toLowerCase();
-  const femStems = ['доля', 'площадь', 'протяженность', 'протяжённость', 'численность', 'обеспеченность', 'доля', 'выручка', 'прибыль', 'добыча', 'мощность', 'инвестиционная', 'бюджетная', 'финансовая', 'демографическая', 'экологическая', 'социальная'];
-  const neutStems = ['количество', 'число', 'отношение', 'соотношение', 'значение'];
+window._agreeVerb = function(metricName, isUp, isStatic){
+  const cleanName = String(metricName || '').replace(/,+$/, '').trim();
+  const firstWord = cleanName.split(/\s+/).toLowerCase();
+  const plurStems = ['расходы', 'доходы', 'инвестиции', 'средства', 'выбросы', 'отходы', 'затраты', 'поступления', 'налоги', 'субсидии'];
+  const femStems  = ['доля', 'площадь', 'протяженность', 'протяжённость', 'численность', 'обеспеченность', 'выручка', 'прибыль', 'добыча', 'мощность'];
+  const neutStems = ['количество', 'число', 'отношение', 'соотношение', 'значение', 'потребление', 'водоотведение', 'водоснабжение'];
+
+  if(plurStems.some(w => firstWord.startsWith(w))){
+    if(isStatic) return 'составили';
+    return isUp ? 'выросли' : 'снизились';
+  }
   if(femStems.some(w => firstWord.startsWith(w)) || /[ая]$/.test(firstWord)){
+    if(isStatic) return 'составила';
     return isUp ? 'выросла' : 'снизилась';
   }
   if(neutStems.some(w => firstWord.startsWith(w)) || /[ое]$/.test(firstWord)){
+    if(isStatic) return 'составило';
     return isUp ? 'выросло' : 'снизилось';
   }
+  if(isStatic) return 'составил';
   return isUp ? 'вырос' : 'снизился';
 };
 
 window.renderRandomAtlasFact = function(){
   const box = document.getElementById('welcomeFactText');
-  if(!box || typeof GEO === 'undefined' || typeof DATA === 'undefined' || !GEO || !DATA) return;
+  if(!box) return;
+  if(typeof GEO === 'undefined' || typeof DATA === 'undefined' || !GEO || !DATA){
+    setTimeout(window.renderRandomAtlasFact, 250);
+    return;
+  }
 
   const mos = [];
   const seen = new Set();
@@ -93,18 +107,17 @@ window.renderRandomAtlasFact = function(){
   });
   if(!mos.length) return;
 
+  // Строго только 39 частных показателей (ЭК-01..13, СЦ-01..13, УЭ-01..13) — без индексов, субиндексов, подблоков, кластеров и категорий
   const numMets = (DATA.metrics || []).filter(m => {
     if(m.cat || m.is_cat) return false;
-    const id = String(m.id || '');
-    const ttl = String(m.title || '');
-    if(id.includes('Подблок') || ttl.includes('Площадь') || ttl.includes('Численность')) return false;
-    return true;
+    const id = String(m.id || '').trim();
+    return /^(ЭК|СЦ|УЭ)-\d{2}$/.test(id);
   });
   if(!numMets.length) return;
 
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-  for(let attempt = 0; attempt < 45; attempt++){
+  for(let attempt = 0; attempt < 50; attempt++){
     const mo = pick(mos);
     const jk = mo.join_key;
     const moPrep = window._formatMoInPrep(mo._lbl);
@@ -121,7 +134,7 @@ window.renderRandomAtlasFact = function(){
         const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
         const { name, unit } = window._splitMetricTitleAndUnit(m.title);
         const uStr = unit ? (' ' + unit) : '';
-        const verb = window._agreeVerb(name, Number(v24) > Number(v19));
+        const verb = window._agreeVerb(name, Number(v24) > Number(v19), false);
         window._lastFactMO = mo;
         box.innerHTML = `А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${verb} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?`;
         return;
@@ -136,7 +149,7 @@ window.renderRandomAtlasFact = function(){
       const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
       const { name, unit } = window._splitMetricTitleAndUnit(m.title);
       const uStr = unit ? (' ' + unit) : '';
-      const eqVerb = window._agreeVerb(name, true).replace('выросла', 'составила').replace('выросло', 'составило').replace('вырос', 'составил');
+      const eqVerb = window._agreeVerb(name, true, true);
       window._lastFactMO = mo;
       box.innerHTML = `А вы знали, что в 2024 году ${placePhrase} ${name} ${eqVerb} <b>${s24}${uStr}</b>?`;
       return;
@@ -156,6 +169,8 @@ window.openFactInPassport = function(){
     if(typeof renderPassport === 'function') renderPassport();
   }
 };
+
+setTimeout(() => { if(typeof window.renderRandomAtlasFact === 'function') window.renderRandomAtlasFact(); }, 300);
 
 
 window._welcomeDismissed = false;
