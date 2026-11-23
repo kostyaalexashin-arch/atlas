@@ -178,15 +178,17 @@ async function exportFullSheetPng(){
     if(!items.length)return;
     if(items.length===1){const a=document.createElement("a");a.download=items.at(0).name;a.href=items.at(0).cv.toDataURL("image/png");a.click();return;}
     const zFiles=items.map(it=>{const b64=it.cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:it.name,data:arr};});
-    const a=document.createElement("a");a.download="Таблица_динамики_МО.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
+    const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Табл",terr:reg!=="ALL"?reg:_foShort(fo),met:mId,yr:"2019-2024",ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
   }
   if(mVal==="bench"){
     const cs=buildBenchCanvases();if(!cs.length)return;
-    const zFiles=cs.map((cv,i)=>{const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:"Бенчмаркинг_Лист_"+(i+1)+".png",data:arr};});
-    const a=document.createElement("a");a.download="Бенчмаркинг_МО.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
+    const _bMOs=getBenchMOs(),_m0=_bMOs.find(x=>x.key===BENCH_STATE.mainKey)||{},_bYr=document.getElementById("bYear")?.value||"2024",_plus=BENCH_STATE.compKeys.length;
+    const zFiles=cs.map((cv,i)=>{const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:buildAtlasFileName({doc:"Бенч",fo:_m0.fo,reg:_m0.reg,mo:_m0.lbl,plus:_plus,yr:_bYr,page:i+1,ext:"png"}),data:arr};});
+    const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:_m0.lbl?(_m0.lbl+"_+"+_plus):"",yr:_bYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
   }
   const c=mVal==="passport"?(await buildPassportCanvas()):(await buildSheetCanvas());if(!c)return;
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
-  const a=document.createElement("a");a.download="Атлас_"+mId+"_"+(reg!=="ALL"?reg:fo)+".png";a.href=c.toDataURL("image/png");a.click();
+  const _mYr=(document.getElementById("selMode")?.value==="grid")?"2019-2024":(document.getElementById("selYear")?.value||"2024");
+  const a=document.createElement("a");a.download=buildAtlasFileName({doc:"Карта",fo:fo,reg:reg,met:mId,yr:_mYr,page:1,ext:"png"});a.href=c.toDataURL("image/png");a.click();
 }
 window.exportFullSheetPng = exportFullSheetPng;

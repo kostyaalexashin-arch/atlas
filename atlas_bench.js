@@ -1,7 +1,7 @@
 function getSubBlockDivider(mId){
-  if(mId==="ЭК-01")return"Экологический блок";
-  if(mId==="СЦ-01")return"Социальный блок";
-  if(mId==="УЭ-01")return"Управленческо-экономический блок";
+  if(mId==="ЭК-01")return"5.1. Экологический блок";
+  if(mId==="СЦ-01")return"5.2. Социальный блок";
+  if(mId==="УЭ-01")return"5.3. Управленческо-экономический блок";
   return null;
 }
 const TOKEN_COLORS={"🔵":"#1d4ed8","🟥":"#dc2626","🟢":"#15803d","⭐":"#d97706","🟣":"#7e22ce","🔶":"#ea580c","⬛":"#0f172a"};
@@ -49,7 +49,7 @@ function drawMultiCanvasRadar(ctx,labels,series,keyField,rcx,rcy,R){
 }
 function cleanBenchGroup(gName){
   const s=String(gName||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
-  if(s.startsWith("5."))return"5.1. Частные показатели";
+  if(s.startsWith("5."))return"5. Частные показатели";
   return s;
 }
 function cleanBenchMetName(m){
@@ -202,6 +202,7 @@ function renderBenchmark(){
   groups.forEach((g,gi)=>{
     if(gi===0){
       
+      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=cleanBenchGroup(g.name);view.appendChild(gh);
       const crow=document.createElement("div");crow.className="bench-row";
       crow.innerHTML='<div class="bench-met-name">Категория МО по численности населения</div>';
       const cgrid=document.createElement("div");cgrid.className="bench-cat-cells";
@@ -212,7 +213,6 @@ function renderBenchmark(){
         cgrid.appendChild(cell);
       });
       crow.appendChild(cgrid);view.appendChild(crow);
-      const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=cleanBenchGroup(g.name);view.appendChild(gh);
     }else{
       const gh=document.createElement("div");gh.className="bench-blk-hdr";gh.textContent=cleanBenchGroup(g.name);view.appendChild(gh);
     }
@@ -266,8 +266,8 @@ function buildBenchCanvases(){
   const groups=Array.of();DATA.metrics.forEach(m=>{if((m.cat||m.is_cat)&&yr!=="2024")return;const cg=cleanBenchGroup(m.group);let g=groups.find(x=>x.name===cg);if(!g){g={name:cg,items:Array.of()};groups.push(g);}g.items.push(m);});
   const rows=Array.of();
   groups.forEach((g,gi)=>{
-    if(gi===0){rows.push({kind:"cat"});}
     rows.push({kind:"blk",txt:cleanBenchGroup(g.name)});
+    if(gi===0){rows.push({kind:"cat"});}
     g.items.forEach(m=>{const divT=getSubBlockDivider(m.id);if(divT)rows.push({kind:"subblk",txt:divT});rows.push({kind:"met",m});});
     if(g.name.startsWith("4."))rows.push({kind:"radars"});
   });

@@ -167,7 +167,7 @@ async function exportBatchPdf(){
   if(curM==="table"){
     const items=collectTableBatchCanvases(scope);if(!items.length)return;
     const pages=items.map(it=>{const b64=it.cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:it.cv.width,h:it.cv.height,jpg:arr};});
-    const a=document.createElement("a");a.download="Таблица_динамики_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
+    const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Табл",terr:reg!=="ALL"?reg:_foShort(fo),met:scope==="all_met"?"Все_пок":mId,yr:"2019-2024",ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
   }
   if(curM==="passport"){
     const allM=getPassMOs(),curMO=allM.find(m=>m.key===PASS_STATE.key);
@@ -189,14 +189,15 @@ async function exportBatchPdf(){
         const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
         for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:cv.width,h:cv.height,jpg:arr});
       }
-      if(pages.length>0){const a=document.createElement("a");a.download="Цифровые_паспорта_МО_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
+      if(pages.length>0){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:scope,yr:document.getElementById("pYear")?.value||"2024",ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
     }finally{btn.disabled=false;btn.textContent="💾 PDF";}
     return;
   }
   if(curM==="bench"){
     const cs=buildBenchCanvases();if(!cs.length)return;
     const pages=cs.map(cv=>{const b64=cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:cv.width,h:cv.height,jpg:arr};});
-    const a=document.createElement("a");a.download="Бенчмаркинг_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
+    const a=document.createElement("a");const _bMOs=getBenchMOs(),_m0=_bMOs.find(x=>x.key===BENCH_STATE.mainKey)||{},_bYr=document.getElementById("bYear")?.value||"2024",_plus=BENCH_STATE.compKeys.length;
+    a.download=buildAtlasFileName({doc:"Бенч",fo:_m0.fo,reg:_m0.reg,mo:_m0.lbl,plus:_plus,yr:_bYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
   }
   const origFO=sFO.value,origReg=sReg.value,queue=Array.of(),pages=Array.of();
   if(scope==="cur"){queue.push({fo:origFO,reg:origReg,met:mId});}
@@ -214,7 +215,7 @@ async function exportBatchPdf(){
       const scDpi=Number(document.getElementById("selDpi")?.value||1),qJpg=scDpi<0.38?0.48:(scDpi<0.6?0.62:(scDpi<0.9?0.74:(scDpi>2.5?0.78:0.86))),b64=c.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
       for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:c.width,h:c.height,jpg:arr});
     }
-    if(pages.length>0){const a=document.createElement("a");a.download="Атлас_"+mId+"_"+scope+".pdf";a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
+    if(pages.length>0){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Карта",terr:scope==="cur"?(origReg!=="ALL"?origReg:_foShort(origFO)):scope,met:scope==="all_met"?"Все_пок":mId,yr:document.getElementById("selYear")?.value||"2024",ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
   }finally{
     window._isExportMode=false;setKeepAlive(false);sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));
     document.getElementById("selMetric").value=mId;sReg.value=origReg;render();btn.disabled=false;btn.textContent="💾 PDF";
@@ -233,14 +234,14 @@ async function runCustomBatchExport(fmt){
       for(let i=0;i<tasks.length;i++){
         const {yr,pr}=tasks.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+(i+1)+"/"+tasks.length;btnZ.textContent=lbl;btnP.textContent=lbl;await bgTick(8);
         bYEl.value=yr;BENCH_STATE.mainKey=baseMO.key;BENCH_STATE.compKeys=Array.of(pr.key);BENCH_STATE.tokens[baseMO.key]="🔵";BENCH_STATE.tokens[pr.key]="🟥";
-        const cs=buildBenchCanvases(),tag=(baseMO.lbl+"_vs_"+pr.lbl+"_"+yr).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
+        const cs=buildBenchCanvases();
         cs.forEach((cv,ci)=>{
-          if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+"_Лист_"+(ci+1)+".png",data:arr});}
+          if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:buildAtlasFileName({doc:"Бенч",fo:baseMO.fo,reg:baseMO.reg,mo:baseMO.lbl,plus:1,yr:yr,page:ci+1,ext:"png"}),data:arr});}
           else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
         });
       }
-      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
-      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Бенчмаркинг_1на1.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
+      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:yr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:baseMO.lbl,yr:yr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
     }finally{bYEl.value=origBY;BENCH_STATE.mainKey=origMain;BENCH_STATE.compKeys=origComps;BENCH_STATE.tokens=origToks;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
     return;
@@ -253,12 +254,12 @@ async function runCustomBatchExport(fmt){
       for(let i=0;i<tasks.length;i++){
         const {yr,mo}=tasks.at(i),lbl=(fmt==="zip"?"PNG: ":"PDF: ")+(i+1)+"/"+tasks.length;btnZ.textContent=lbl;btnP.textContent=lbl;await bgTick(8);
         pYEl.value=yr;const cv=await buildPassportCanvas(mo);if(!cv)continue;
-        const tag=(mo.lbl+"_"+mo.reg+"_"+yr).replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_");
-        if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:tag+".png",data:arr});}
+        const fName=buildAtlasFileName({doc:"Пасп",fo:mo.fo,reg:mo.reg,mo:mo.lbl,yr:yr,page:1,ext:"png"});
+        if(fmt==="zip"){const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);zFiles.push({name:fName,data:arr});}
         else{const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pdfPages.push({w:cv.width,h:cv.height,jpg:arr});}
       }
-      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Паспорта_МО_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
-      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Паспорта_МО.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
+      if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",yr:origPY,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+      if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",yr:origPY,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
       modal.classList.remove("open");
     }finally{pYEl.value=origPY;btnZ.disabled=false;btnP.disabled=false;btnZ.textContent="💾 PNG (ZIP-архив)";btnP.textContent="💾 Скачать PDF";}
     return;
@@ -289,7 +290,8 @@ async function runCustomBatchExport(fmt){
         if(fmt==="zip"){
           const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
           for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
-          zFiles.push({name:tag+(cvs.length>1?"_Лист_"+String(ci+1).padStart(2,"0"):"")+".png",data:arr});
+          const _docCode=(mode==="table")?"Табл":"Карта",_yrStr=(mode==="single")?t.yr:"2019-2024";
+          zFiles.push({name:buildAtlasFileName({doc:_docCode,fo:t.fo,reg:t.reg,met:t.met,yr:_yrStr,page:ci+1,ext:"png"}),data:arr});
         }else{
           const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
           for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
@@ -297,8 +299,12 @@ async function runCustomBatchExport(fmt){
         }
       }
     }
-    if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download="Пакет_Атлас_PNG.zip";a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
-    if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download="Пакет_Атлас.pdf";a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
+    const _pDoc=(mode==="table")?"Табл":"Карта";
+    const _pTerr=(terrs.length===1)?(terrs.at(0).reg!=="ALL"?terrs.at(0).reg:_foShort(terrs.at(0).fo)):(terrs.length+"терр");
+    const _pMet=(mets.length===1)?mets.at(0):(mets.length+"пок");
+    const _pYr=(mode==="single")?(yrs.length===1?yrs.at(0):(yrs.length+"лет")):"2019-2024";
+    if(fmt==="zip"&&zFiles.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();}
+    if(fmt==="pdf"&&pdfPages.length){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:_pDoc,terr:_pTerr,met:_pMet,yr:_pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pdfPages));a.click();}
     modal.classList.remove("open");
   }finally{
     window._isExportMode=false;setKeepAlive(false);sFO.value=origFO;sReg.innerHTML='<option value="ALL">Весь округ / РФ</option>';if(origFO!=="RF")(DATA.fo_to_regs[origFO]||Array.of()).forEach(r=>sReg.add(new Option(r,r)));

@@ -147,7 +147,7 @@ function collectTableBatchCanvases(scope){
     tasks.forEach(t=>{
       sFO.value=t.fo;sReg.value=t.reg;sMet.value=t.met;
       const cs=buildTableCanvases(tasks.length>1);
-      cs.forEach((cv,i)=>allOut.push({cv,name:t.tag.replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]/g,"_")+"_Лист_"+String(i+1).padStart(2,"0")+".png"}));
+      cs.forEach((cv,i)=>allOut.push({cv,name:buildAtlasFileName({doc:"Табл",fo:t.fo,reg:t.reg,met:t.met,yr:"2019-2024",page:i+1,ext:"png"})}));
     });
   }finally{sFO.value=origFO;sReg.value=origReg;sMet.value=origMet;}
   return allOut;
