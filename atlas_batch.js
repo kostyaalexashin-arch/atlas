@@ -180,7 +180,7 @@ async function exportBatchPdf(){
   if(curM==="table"){
     const items=collectTableBatchCanvases(scope);if(!items.length)return;
     const pages=items.map(it=>{const b64=it.cv.toDataURL("image/jpeg",0.85).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{w:it.cv.width,h:it.cv.height,jpg:arr};});
-    const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Табл",terr:reg!=="ALL"?reg:_foShort(fo),met:scope==="all_met"?"Все_пок":mId,yr:"2019-2024",ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
+    const a=document.createElement("a");a.download=(scope==="cur")?buildAtlasFileName({doc:"Табл",fo:sFO.value,reg:sReg.value,met:mId,yr:"2019-2024",page:1,ext:"pdf"}):buildAtlasBatchName({doc:"Табл",terr:sReg.value!=="ALL"?sReg.value:_foShort(sFO.value),met:scope==="all_met"?"Все_пок":mId,yr:"2019-2024",ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();return;
   }
   if(curM==="passport"){
     const allM=getPassMOs(),curMO=allM.find(m=>m.key===PASS_STATE.key);
@@ -202,7 +202,7 @@ async function exportBatchPdf(){
         const b64=cv.toDataURL("image/jpeg",qJpg).split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);
         for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);pages.push({w:cv.width,h:cv.height,jpg:arr});
       }
-      if(pages.length>0){const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Пасп",terr:scope,yr:document.getElementById("pYear")?.value||"2024",ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
+      if(pages.length>0){const pYr=document.getElementById("pYear")?.value||"2024";const a=document.createElement("a");a.download=(scope==="cur"&&curMO)?buildAtlasFileName({doc:"Пасп",fo:curMO.fo,reg:curMO.reg,mo:curMO.lbl,yr:pYr,page:1,ext:"pdf"}):buildAtlasBatchName({doc:"Пасп",terr:scope,yr:pYr,ext:"pdf"});a.href=URL.createObjectURL(buildPdfBlob(pages));a.click();}
     }finally{btn.disabled=false;btn.textContent="💾 PDF";}
     return;
   }

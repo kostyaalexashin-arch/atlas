@@ -205,7 +205,13 @@ async function exportFullSheetPng(){
     const zFiles=cs.map((cv,i)=>{const b64=cv.toDataURL("image/png").split(",").at(1),bin=atob(b64),arr=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return{name:buildAtlasFileName({doc:"Бенч",fo:_m0.fo,reg:_m0.reg,mo:_m0.lbl,plus:_plus,yr:_bYr,page:i+1,ext:"png"}),data:arr};});
     const a=document.createElement("a");a.download=buildAtlasBatchName({doc:"Бенч",terr:_m0.lbl?(_m0.lbl+"_+"+_plus):"",yr:_bYr,ext:"zip"});a.href=URL.createObjectURL(buildZipBlob(zFiles));a.click();return;
   }
-  const c=mVal==="passport"?(await buildPassportCanvas()):(await buildSheetCanvas());if(!c)return;
+  if(mVal==="passport"){
+    const c=await buildPassportCanvas();if(!c)return;
+    const allM=getPassMOs(),curMO=allM.find(m=>m.key===PASS_STATE.key)||{};
+    const pYr=document.getElementById("pYear")?.value||"2024";
+    const a=document.createElement("a");a.download=buildAtlasFileName({doc:"Пасп",fo:curMO.fo,reg:curMO.reg,mo:curMO.lbl,yr:pYr,page:1,ext:"png"});a.href=c.toDataURL("image/png");a.click();return;
+  }
+  const c=await buildSheetCanvas();if(!c)return;
   const mId=document.getElementById("selMetric").value,reg=document.getElementById("selReg").value,fo=document.getElementById("selFO").value;
   const _mYr=(document.getElementById("selMode")?.value==="grid")?"2019-2024":(document.getElementById("selYear")?.value||"2024");
   const a=document.createElement("a");a.download=buildAtlasFileName({doc:"Карта",fo:fo,reg:reg,met:mId,yr:_mYr,page:1,ext:"png"});a.href=c.toDataURL("image/png");a.click();
