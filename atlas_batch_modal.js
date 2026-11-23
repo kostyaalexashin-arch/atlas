@@ -31,6 +31,12 @@ function initBatchModal(){
     document.getElementById("bmSummary").textContent="Выбрано позиций: "+(tCnt*mCnt*mult)+" (территорий: "+tCnt+", показателей: "+mCnt+")";
   };
   btnOpen.onclick=()=>{
+    const sDpi = document.getElementById("selDpi"), bmDpi = document.getElementById("bmDpi");
+    if(sDpi && bmDpi){
+      bmDpi.value = sDpi.value || "1";
+      bmDpi.onchange = () => { sDpi.value = bmDpi.value; };
+    }
+
     const mode=document.getElementById("selMode").value,c1T=document.getElementById("bmCol1Title"),c2T=document.getElementById("bmCol2Title");
     const tList=document.getElementById("bmTerrList"),mList=document.getElementById("bmMetList"),yList=document.getElementById("bmYrList");
     if(c1T)c1T.textContent=mode==="bench"?"Эталонное МО (кого сравниваем):":(mode==="passport"?"1. Выбор охвата МО":"1. Территории");
