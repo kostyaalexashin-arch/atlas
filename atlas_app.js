@@ -1,16 +1,3 @@
-
-window.returnToWelcome = function(){
-  window._welcomeDismissed = false;
-  document.body.classList.add('welcome-active');
-  const sb = document.getElementById('mainSidebar') || document.querySelector('.sidebar');
-  if(sb) sb.style.display = 'none';
-  const ov = document.getElementById('welcomeOverlay');
-  if(ov) ov.style.display = 'flex';
-  const btnH = document.getElementById('btnGoHome');
-  if(btnH) btnH.style.display = 'none';
-  if(typeof renderRandomAtlasFact === 'function')void 0;};
-
-
 window._lastFactMO = null;
 
 window._inflectAdjPrep = function(word){
@@ -22,28 +9,6 @@ window._inflectAdjPrep = function(word){
   if(/[ыо]й$/i.test(word)) return word.replace(/[ыо]й$/i, 'ом');
   if(/ий$/i.test(word)) return word.replace(/ий$/i, 'ом');
   return word;
-};
-
-window._formatMoInPrep = function(lbl){
-  const s = String(lbl || '').trim();
-  const mParen = s.match(/^(.+?)\s*\((МР|ГО|МО|ГП|СП)\)$/i);
-  if(mParen){
-    const base = mParen[1].trim();
-    const kind = mParen[2].toUpperCase();
-    const typeMap = {
-      'МР': 'муниципальном районе',
-      'ГО': 'городском округе',
-      'МО': 'муниципальном округе',
-      'ГП': 'городском поселении',
-      'СП': 'сельском поселении'
-    };
-    const words = base.split(/\s+/);
-    const inflected = words.map((w, i) => (i === 0 || /[ыио]й$/i.test(w)) ? window._inflectAdjPrep(w) : w).join(' ');
-    return inflected + ' ' + (typeMap[kind] || 'муниципальном образовании');
-  }
-  if(/^г\.\s*/i.test(s)) return 'городе ' + s.replace(/^г\.\s*/i, '');
-  if(/^город\s+/i.test(s)) return 'городе ' + s.replace(/^город\s+/i, '');
-  return s;
 };
 
 window._inflectRegionPrep = function(reg){
@@ -90,54 +55,6 @@ window._agreeVerb = function(metricName, isUp, isStatic){
   return isStatic ? 'составил' : (isUp ? 'вырос' : 'снизился');
 };
 
-window.renderRandomAtlasFact = function(){
-  const box = document.getElementById('welcomeFactText');
-  if(!box) return;
-  if(typeof GEO === 'undefined' || typeof DATA === 'undefined' || !GEO || !DATA){
-    setTimeout(window.renderRandomAtlasFact, 250);
-    return;
-  }
-  const mos = [], seen = new Set();
-  GEO.features.forEach(f => {
-    const p = f.properties;
-    if(p && p._map_status === 'В_выборке' && !p._inset && !seen.has(p.join_key)){
-      seen.add(p.join_key);
-      mos.push(p);
-    }
-  });
-  const numMets = (DATA.metrics || []).filter(m => !(m.cat || m.is_cat) && /^(ЭК|СЦ|УЭ)-\d{2}$/.test(String(m.id || '').trim()));
-  if(!mos.length || !numMets.length) return;
-
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  for(let attempt = 0; attempt < 50; attempt++){
-    const mo = pick(mos), jk = mo.join_key;
-    const placePhrase = `в <b>${window._formatMoInPrep(mo._lbl)}</b> (${window._inflectRegionPrep(mo.region)})`;
-    if((attempt % 2 === 0) && mo.coh){
-      const m = pick(numMets);
-      const v19 = DATA.panel?.[m.id]?.['2019']?.[jk], v24 = DATA.panel?.[m.id]?.['2024']?.[jk];
-      if(v19 !== undefined && v19 !== null && v24 !== undefined && v24 !== null && Number(v19) !== Number(v24)){
-        const s19 = typeof fmtNum === 'function' ? fmtNum(v19, m.dec) : Number(v19).toFixed(m.dec || 2);
-        const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
-        const { name, unit } = window._splitMetricTitleAndUnit(m.title);
-        const uStr = unit ? (' ' + unit) : '';
-        window._lastFactMO = mo;
-        box.innerHTML = `<span>А вы знали, что с 2019 по 2024 годы ${placePhrase} ${name} ${window._agreeVerb(name, Number(v24) > Number(v19), false)} с <b>${s19}${uStr}</b> до <b>${s24}${uStr}</b>?</span>`;
-        return;
-      }
-    }
-    const m = pick(numMets);
-    const v24 = (DATA.v2024?.[m.id]?.[jk] !== undefined && DATA.v2024?.[m.id]?.[jk] !== null) ? DATA.v2024[m.id][jk] : DATA.panel?.[m.id]?.['2024']?.[jk];
-    if(v24 !== undefined && v24 !== null && v24 !== ''){
-      const s24 = typeof fmtNum === 'function' ? fmtNum(v24, m.dec) : Number(v24).toFixed(m.dec || 2);
-      const { name, unit } = window._splitMetricTitleAndUnit(m.title);
-      const uStr = unit ? (' ' + unit) : '';
-      window._lastFactMO = mo;
-      box.innerHTML = `<span>А вы знали, что в 2024 году ${placePhrase} ${name} ${window._agreeVerb(name, true, true)} <b>${s24}${uStr}</b>?</span>`;
-      return;
-    }
-  }
-};
-
 window.openFactInPassport = function(){
   const mo = window._lastFactMO;
   if(typeof startAtlasMode === 'function') startAtlasMode('passport');
@@ -151,44 +68,7 @@ window.openFactInPassport = function(){
   }
 };
 
-
-
-
-
 window._welcomeDismissed = false;
-window.toggleWelcomeBatchCats = function(){
-  const row = document.getElementById('welcomeBatchSubRow');
-  if(row) row.style.display = (row.style.display === 'none' || !row.style.display) ? 'grid' : 'none';
-};
-
-window.openBatchFromWelcome = function(targetMode){
-  const sMode = document.getElementById('selMode');
-  if(sMode && targetMode){
-    sMode.value = targetMode;
-    if(!sMode.value && sMode.options.length) sMode.selectedIndex = 0;
-    if(typeof syncControls === 'function') syncControls();
-  }
-  const btnB = document.getElementById('btnOpenBatch') || document.querySelector('[onclick*="batch"], #btnBatch');
-  if(btnB) btnB.click();
-};
-
-window.startAtlasMode = function(modeVal){
-  window._welcomeDismissed = true;
-  document.body.classList.remove('welcome-active');
-  const sb = document.getElementById('mainSidebar') || document.querySelector('.sidebar');
-  if(sb) sb.style.display = 'flex';
-  const ov = document.getElementById('welcomeOverlay');
-  if(ov) ov.style.display = 'none';
-  const btnH = document.getElementById('btnGoHome');
-  if(btnH) btnH.style.display = 'inline-block';
-  const sMode = document.getElementById('selMode');
-  if(sMode && modeVal){
-    sMode.value = (modeVal === 'single') ? 'map' : modeVal;
-    if(!sMode.value && sMode.options.length) sMode.selectedIndex = 0;
-    if(typeof syncControls === 'function') syncControls();
-  }
-  if(typeof render === 'function') render();
-};
 
 let GEO=null,REGS=null,DATA=null,currentPal="RdYlGn";
 const PALETTES={
@@ -358,7 +238,6 @@ function buildFooterHtml(isCat,scObj,legItems){
   }
   return f;
 }
-
 
 function applyZatoHatch(mapEl){
   const svg=mapEl.querySelector("svg.main-svg");if(!svg)return;
