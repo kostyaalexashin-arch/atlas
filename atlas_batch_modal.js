@@ -142,6 +142,20 @@ function initBatchModal(){
         };
       });
 
+      const syncSelectedFORegs = (isOn) => {
+        tList.querySelectorAll('.bm-t-chk[data-reg="ALL"]').forEach(foChk => {
+          if(foChk.dataset.fo === "RF") return;
+          if(foChk.checked){
+            tList.querySelectorAll('.bm-t-chk[data-fo="' + foChk.dataset.fo + '"]').forEach(c => {
+              if(c.dataset.reg !== "ALL") c.checked = isOn;
+            });
+          }
+        });
+        updSum();
+      };
+      const autoChkEl = document.getElementById("bmAutoFORegs");
+      if(autoChkEl) autoChkEl.onchange = () => syncSelectedFORegs(autoChkEl.checked);
+
       tList.addEventListener("change", e => {
         const chk = e.target;
         if(!chk || !chk.classList || !chk.classList.contains("bm-t-chk")) return;
