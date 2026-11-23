@@ -244,8 +244,10 @@ function syncControls(){
       else scEl.innerHTML='<option value="cur">Текущий лист</option><option value="fo">РФ + 8 ФО (по показателю)</option><option value="cur_fo">Регионы ФО (по показателю)</option><option value="all">Весь атлас (по показателю)</option><option value="all_met">Все показатели (по территории)</option>';
     }
   }
-  const gW=document.getElementById("grpFOWrap");
-  if(gW)gW.style.display=(sM.value==="table"&&document.getElementById("selFO")?.value==="RF")?"flex":"none";
+  const gW=document.getElementById("grpFOWrap"),cGFEl=document.getElementById("chkGroupFO");
+  const isTblMode=(sM.value==="table"),canGrpFO=(isTblMode&&document.getElementById("selFO")?.value==="RF");
+  if(cGFEl)cGFEl.disabled=!canGrpFO;
+  if(gW){gW.style.display=isTblMode?"flex":"none";gW.style.opacity=canGrpFO?"1":"0.45";gW.style.pointerEvents=canGrpFO?"auto":"none";}
   if(hideStd)return;
   const sMet=document.getElementById("selMetric");
   if(sMet){
